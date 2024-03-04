@@ -1,4 +1,4 @@
-﻿# Egocentric Universe
+﻿# Universe
 
 Under construction
 
