@@ -34,112 +34,51 @@
 		import MyThree from '../../../commonNodeJS/master/myThree/myThree.js';
 		//import MyThree from '../../../commonNodeJS/master/myThree/build/myThree.module.js';
 		//import MyThree from '../../../commonNodeJS/master/myThree/build/myThree.module.min.js';
-		//import MyThree from 'https://raw.githack.com/anhr/commonNodeJS/master/myThree/myThree.js';
-		//import MyThree from 'https://raw.githack.com/anhr/commonNodeJS/master/myThree/build/myThree.module.js';
-		//import MyThree from 'https://raw.githack.com/anhr/commonNodeJS/master/myThree/build/myThree.module.min.js';
 		MyThree.three.THREE = THREE;
 
-		import Universe1D from '../universe1D.js';
+		import EgocentricUniverse from '../edges.js';
 
-		new MyThree( (scene, options) => {
+		new MyThree(function (scene, options) {
 
-			//divide circle to segments
-			const anglesCount = 10, angle = Math.PI * 2 / anglesCount, angles = [];
-			for (let angleId = 0; angleId < anglesCount; angleId++) angles.push([angle * angleId]);
-			
-			const universe = new Universe1D(options, {
-				
-				intersection: {
-
-					position: 0.5,
-					//color: 'red',
-					
-				},
-				edges: {
-
-					creationMethod: Universe1D.edgesCreationMethod.Random,
-					project: false,
-					
-				},
-				//edges: false,
-				projectParams:{
-					
-					scene: scene,
-					/*
-					params: {
-						
-						//center: {x: 0.5, y: 0.3},
-					
-					}
-					 */
-					
-				},
-				//t: 0.5,
-				debug: {
-
-					probabilityDensity: false,
-					//probabilityDensity: [],
-					//testVertice: false,
-					
-				},
-				//debug: false,
-				//mode: 1,
-				settings: {
-					
-					object: {
-	
-						//name: 'edges',
-						//color: 'red',
-						//color: 0x0000ff,//blue
-						geometry: {
-
-							angles: [[], [Math.PI * 2 / 3], [- Math.PI * 2 / 3]],//triangle
-							angles: [[], [1.1], [2.6], [Math.PI], ],
-							angles: [
-								//[Math.PI * 2],
-								[Math.PI * 1 / 4],
-								[Math.PI * 3 / 4], [- Math.PI * 3 / 4], [- Math.PI * 1 / 4], ],//Square
-							//angles: angles,
-							angles: { count: 300, },
-
-							/*
-							colors: [
-								1, 0, 0,//red
-								//0, 1, 0,//green
-								0, 0, 1,//blue
-								//0.6, 1, 0,
-							//	0, 0, 1,	0, 0.6, 1
-							],
-							*/
-							//opacity: [1, 0.5],
-							indices: {
-								
-								//edges: { count: 5000 }
-								//edges: [[0,1], [1,2], [2,0]],//triangle
-							
-							}
-						
-						}
-
-					}
-				
-				},
-				
-				
-			});
-
-/*			
-			universe.project( scene,
-				//{ center: {x: 0.5, y: 0.3},}
+			const universe = new EgocentricUniverse( scene, options,
+				/*
+				{
+					//count: 10,//1D universe space edges count.
+					edges: [
+						{
+							distance : 0.3,
+							//vertices: [0, 1],
+							//vertices: [0, 3],//Errors: Edges: edges[0].vertices[1]. Vertice index = 3 is limit from 0 to 0
+											//EgocentricUniverse: vertices get. Invalid index = 3 vertices.length = 1
+						},//0
+						{
+							//vertices: [0, 1],
+						},//1
+						{
+							//vertices: [1, 2],
+							//vertices: [0, 2],
+						},//2
+						{
+							//vertices: [2, 0],
+						},//3
+					],
+					edgesId: [
+						0,
+						//1,
+						2,
+						3,
+					],
+				}
+				 */
 			);
-*/   
+			//universe.settings.indices.edges.push();//Error: Edges: push edge. Invalid edge = undefined
+			//universe.pushEdge();
 
 		}, {
 
 			//axesHelper: false,
 			orbitControls: { enableRotate: false, },
-			dat: { guiSelectPoint: { point: (options, dat, fMesh) => { return new Universe1D.ND.gui(options, dat, fMesh); }, }, },
-			//dat: false,
+            dat: { guiSelectPoint: { point: function (options, dat, fMesh) { return new EgocentricUniverse.ND.gui(options, dat, fMesh); }, }, },
 			camera: { position: new THREE.Vector3( 0, 0, 2 ) },
 			stereoEffect: false,
 			//canvasMenu: false,
@@ -147,22 +86,22 @@
 
 				x: {},
 				y: {},
-				//posAxesIntersection: new THREE.Vector3( -1, -1, 0 ),
+				posAxesIntersection: new THREE.Vector3( -1, -1, 0 ),
 				text: { precision: 1, rect: { displayRect: false, }, }
 
 			},
+//			title: '<a href="https://github.com/anhr/egocentricUniverse" target="_blank" rel="noopener">Egocentric Universe</a>',
+			//dat: false,
 			canvas: {
 
 				noButtonFullScreen: true,
+/*
+				fullScreen: false,
+				width: window.innerWidth / 2,
+				height: window.innerHeight / 2,
+*/				
 
 			},
-			//point: { size: 0.0 },
-			playerOptions: {
-				
-				max: Infinity,
-				interval: 100,
-				
-			}
 			
 		});
 
