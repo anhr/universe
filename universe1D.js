@@ -91,7 +91,7 @@ class Universe1D extends Universe {
 	logUniverse1D() {
 
 		if (!this.classSettings.debug) return;
-		this.logUniverse();
+		this.logHuperSphere();
 		
 	}
 
@@ -141,4 +141,25 @@ class Universe1D extends Universe {
 	}
 
 }
+
+//Примеси
+//https://learn.javascript.ru/mixins#:~:text=JavaScript%20%D0%BD%D0%B5%20%D0%BF%D0%BE%D0%B4%D0%B4%D0%B5%D1%80%D0%B6%D0%B8%D0%B2%D0%B0%D0%B5%D1%82%20%D0%BC%D0%BD%D0%BE%D0%B6%D0%B5%D1%81%D1%82%D0%B2%D0%B5%D0%BD%D0%BD%D0%BE%D0%B5%20%D0%BD%D0%B0%D1%81%D0%BB%D0%B5%D0%B4%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5,%D0%BA%D0%B0%D0%BA%20%D0%BC%D1%8B%20%D1%81%D0%B4%D0%B5%D0%BB%D0%B0%D0%BB%D0%B8%20%D1%8D%D1%82%D0%BE%20%D0%B2%D1%8B%D1%88%D0%B5.
+/*
+let mixin = {
+  sayHi() {
+    alert(`Привет`);
+  },
+  sayBye() {
+    alert(`Пока`);
+  }
+};
+Object.assign(Universe1D.prototype, mixin);
+*/
+/*
+import Circle from '../../commonNodeJS/master/HuperSphere/circle.js'
+Object.assign(Universe1D.prototype, Circle);
+Universe1D.ND = Circle.ND;
+Universe1D.edgesCreationMethod = Circle.edgesCreationMethod
+*/
+
 export default Universe1D;

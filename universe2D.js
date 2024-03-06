@@ -112,7 +112,7 @@ class Universe2D extends Universe1D {
 	logUniverse2D() {
 
 		if (!this.classSettings.debug) return;
-		this.logUniverse();
+		this.logHuperSphere();
 		
 	}
 
