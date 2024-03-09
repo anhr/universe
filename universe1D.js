@@ -42,7 +42,7 @@ class Universe1D extends Universe {
 			},
 			edges: {
 
-				creationMethod: Universe1D.edgesCreationMethod.Random,
+				//creationMethod: Universe1D.edgesCreationMethod.Random,
 				project: false,
 
 			},
