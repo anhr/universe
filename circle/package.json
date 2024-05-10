@@ -1,14 +1,14 @@
 {
-  "name": "MyThree",
+  "name": "CircularUniverse",
   "version": "0.1.0",
-  "description": "I use MyThree in my projects for displaying of my 3D objects in the canvas.",
-  "main": "build/myThree.js",
+  "description": "Circular universe.",
+  "main": "build/circularUniverse.js",
   "scripts": {
     "build": "rollup -c && rollup -c rollup.config.min.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/anhr/commonNodeJS/tree/master/myThree"
+    "url": "git+https://github.com/anhr/universe"
   },
   "author": "Andrej Hristoliubov https://anhr.github.io/AboutMe/",
   "license": "Apache-2.0",

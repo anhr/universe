@@ -1,6 +1,6 @@
 /**
  * @module Universe2D
- * @description 2 dimensional hypersphere universe.
+ * @description 2 dimensional sphere universe.
  * All the vertices of the Universe2D form a sphere.
  *
  * @author [Andrej Hristoliubov]{@link https://github.com/anhr}
