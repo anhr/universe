@@ -1,6 +1,6 @@
 /**
  * @module Universe3D
- * @description 3 dimensional universe.
+ * @description 3 dimensional hypersphere universe.
  * All the vertices of the Universe3D form a [hupersphere]{@link https://en.wikipedia.org/wiki/N-sphere}.
  *
  * @author [Andrej Hristoliubov]{@link https://github.com/anhr}

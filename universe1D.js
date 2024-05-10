@@ -1,6 +1,6 @@
 /**
  * @module Universe1D
- * @description 1 dimensional universe.
+ * @description 1 dimensional hypersphere universe.
  * All the vertices of the Universe1D form a circle.
  *
  * @author [Andrej Hristoliubov]{@link https://github.com/anhr}
@@ -23,7 +23,7 @@ const sUniverse1D = 'Universe1D';
 
 class Universe1D extends Universe {
 
-	constructor(scene, options) {
+	constructor(universeSettings = {}) {
 
 
 		/*
@@ -32,87 +32,35 @@ class Universe1D extends Universe {
 		for (let angleId = 0; angleId < anglesCount; angleId++) angles.push([angle * angleId]);
 		*/
 		
-		super(new Circle(options, {
+		super(universeSettings);
 
-			intersection: {
+	}
+	getHuperSphere(scene, options, universeSettings) {
 
-				position: 0.5,
-				//color: 'red',
+		return new Circle(options, universeSettings);
 
-			},
-			edges: {
+	}
+	name(options) {
 
-				//creationMethod: Universe1D.edgesCreationMethod.Random,
-				project: false,
+		//Localization
 
-			},
-			//edges: false,
-			projectParams: {
+		const lang = {
 
-				scene: scene,
-				/*
-				params: {
-					
-					//center: {x: 0.5, y: 0.3},
-				
-				}
-				 */
+			name: '1D Universe',
 
-			},
-			//t: 0.5,
-			debug: {
+		};
 
-				probabilityDensity: false,
-				//probabilityDensity: [],
-				//testVertice: false,
+		switch (options.getLanguageCode()) {
 
-			},
-			//debug: false,
-			//mode: 1,
-			settings: {
+			case 'ru'://Russian language
 
-				object: {
+				lang.name = '1D Вселенная';
 
-					//name: 'edges',
-					//color: 'red',
-					//color: 0x0000ff,//blue
-					geometry: {
+				break;
 
-						angles: [[], [Math.PI * 2 / 3], [- Math.PI * 2 / 3]],//triangle
-						angles: [[], [1.1], [2.6], [Math.PI],],
-						angles: [
-							//[Math.PI * 2],
-							[Math.PI * 1 / 4],
-							[Math.PI * 3 / 4], [- Math.PI * 3 / 4], [- Math.PI * 1 / 4],],//Square
-						//angles: angles,
-						//angles: { count: 300, },
-
-						/*
-						colors: [
-							1, 0, 0,//red
-							//0, 1, 0,//green
-							0, 0, 1,//blue
-							//0.6, 1, 0,
-						//	0, 0, 1,	0, 0.6, 1
-						],
-						*/
-						//opacity: [1, 0.5],
-						indices: {
-
-							//edges: { count: 5000 }
-							//edges: [[0,1], [1,2], [2,0]],//triangle
-
-						}
-
-					}
-
-				}
-
-			},
-
-
-		}));
-
+		}
+		return lang.name;
+		
 	}
 
 }

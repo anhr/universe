@@ -1,6 +1,6 @@
 /**
  * @module Universe
- * @description Base class for n dimensional universe.
+ * @description Base class for n dimensional hypersphere universe.
  *
  * @author [Andrej Hristoliubov]{@link https://github.com/anhr}
  *
@@ -13,15 +13,90 @@
  * http://www.apache.org/licenses/LICENSE-2.0
 */
 
-//import HuperSphere from '../../commonNodeJS/master/HuperSphere/huperSphere.js'
+import * as THREE from '../../three.js/dev/build/three.module.js';
+//import * as THREE from 'https://threejs.org/build/three.module.js';
+//import * as THREE from 'https://raw.githack.com/anhr/three.js/dev/build/three.module.js';
+
+import MyThree from '../../commonNodeJS/master/myThree/myThree.js';
+//import MyThree from '../../../commonNodeJS/master/myThree/build/myThree.module.js';
+//import MyThree from '../../../commonNodeJS/master/myThree/build/myThree.module.min.js';
+//import MyThree from 'https://raw.githack.com/anhr/commonNodeJS/master/myThree/myThree.js';
+//import MyThree from 'https://raw.githack.com/anhr/commonNodeJS/master/myThree/build/myThree.module.js';
+//import MyThree from 'https://raw.githack.com/anhr/commonNodeJS/master/myThree/build/myThree.module.min.js';
+MyThree.three.THREE = THREE;
+
+import HuperSphere from '../../commonNodeJS/master/HuperSphere/huperSphere.js';
 
 class Universe// extends HuperSphere
 {
 
-	constructor(huperSphere) {
+	constructor(universeSettings = {}) {
 
-		this.huperSphere = huperSphere;
-		huperSphere.child = this;
+		new MyThree((scene, options) => {
+
+			universeSettings.projectParams ||= {};
+			universeSettings.projectParams.scene = scene;
+
+			universeSettings.settings ||= {};
+			universeSettings.settings.object ||= {};
+			universeSettings.settings.object.name ||= this.name(options);
+			
+			this.huperSphere = this.getHuperSphere(scene, options, universeSettings);
+			this.huperSphere.child = this;
+
+		}, {
+
+			//axesHelper: false,
+			orbitControls: { enableRotate: false, },
+			dat: { guiSelectPoint: { point: (options, dat, fMesh) => { return new HuperSphere.ND.gui(options, dat, fMesh); }, }, },
+			//dat: false,
+			camera: { position: new THREE.Vector3( 0, 0, 2 ) },
+			stereoEffect: false,
+			//canvasMenu: false,
+			scales: {
+
+				x: {},
+				y: {},
+				//posAxesIntersection: new THREE.Vector3( -1, -1, 0 ),
+				text: { precision: 1, rect: { displayRect: false, }, }
+
+			},
+			canvas: {
+
+				noButtonFullScreen: true,
+
+			},
+			//point: { size: 0.0 },
+			playerOptions: {
+				
+				max: Infinity,
+				interval: 100,
+				
+			}
+			
+		});
+		
+	}
+	name(options) {
+
+		//Localization
+
+		const lang = {
+
+			name: 'Universe',
+
+		};
+
+		switch (options.getLanguageCode()) {
+
+			case 'ru'://Russian language
+
+				lang.name = 'Вселенная';
+
+				break;
+
+		}
+		return lang.name;
 		
 	}
 	arc(aAngleControls, lang, arcAngles) {
