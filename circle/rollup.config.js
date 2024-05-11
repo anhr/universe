@@ -1,6 +1,6 @@
 ﻿/**
- * @module CircularUniverse
- * @description Circular universe.
+ * @module ND
+ * @description N-dimensional graphics.
  *
  * @author [Andrej Hristoliubov]{@link https://github.com/anhr}
  *
@@ -21,29 +21,27 @@ import babel from 'rollup-plugin-babel';
 
 const banner = fs.readFileSync(path.join(__dirname, 'licenseBanner.txt'));
 
-/*
 function callback( err ) {
     if ( err ) throw err;
     //    console.log( 'colorpicker.css was copied' );
 }
-*/
 fs.mkdirSync( path.join( __dirname, 'build' ), { recursive: true, force: true } );
-//fs.copyFile( path.join( __dirname, '..\\colorpicker\\colorpicker.css' ), 'build\\colorpicker.css', callback );
+fs.copyFile( path.join( __dirname, '..\\colorpicker\\colorpicker.css' ), 'build\\colorpicker.css', callback );
 
 export default {
 
-    input: 'circle/circularUniverse.js',
+  input: 'nD.js',
 
   output: [{
     // TODO: Remove default exports, and this line, in v0.8.0.
     exports: 'named',
-      file: './build/circularUniverse.js',
+    file: './build/nD.js',
     format: 'umd',
-      name: 'CircularUniverse',
+    name: 'ND',
     sourcemap: true,
     banner: banner
   }, {
-      file: './build/circularUniverse.module.js',
+    file: './build/nD.module.js',
     format: 'es',
     sourcemap: true,
     banner: banner
