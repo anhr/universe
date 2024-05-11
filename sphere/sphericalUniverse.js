@@ -1,7 +1,7 @@
 /**
- * @module Universe2D
- * @description 2 dimensional sphere universe.
- * All the vertices of the Universe2D form a sphere.
+ * @module SphericalUniverse
+ * @description Spherical universe.
+ * All the vertices of the SphericalUniverse form a sphere.
  *
  * @author [Andrej Hristoliubov]{@link https://github.com/anhr}
  *
@@ -15,14 +15,30 @@
 */
 
 
-import Universe1D from './universe1D.js';
-//import ProgressBar from '../../commonNodeJS/master/ProgressBar/ProgressBar.js'
-import three from '../../commonNodeJS/master/three.js'
+import CircularUniverse from '../circle/circularUniverse.js';
 
-const sUniverse2D = 'Universe2D',
+const sSphericalUniverse = 'SphericalUniverse',
 	π = Math.PI;
 
-class Universe2D extends Universe1D {
+class SphericalUniverse extends CircularUniverse {
+
+	/**
+	 * SphericalUniverse.
+	 * All the vertices of the SphericalUniverse form a sphere.
+	 * @param {object} [universeSettings] <b>SphericalUniverse</b> class settings. See <a href="./module-Universe-Universe.html" target="_blank">Universe classSettings</a>.
+	 **/
+	constructor(universeSettings = {}) {
+
+		universeSettings.continue = () => this.logUniverse2D();
+		super(universeSettings, {
+			
+			scales: { z: {}, },
+			orbitControls: { enableRotate: true, },
+			camera: { position: [ 0.4, 0.4, 2 ] },
+			
+		});
+
+	}
 
 	//base methods
 
@@ -33,7 +49,7 @@ class Universe2D extends Universe1D {
 
 			case latitudeId: planeGeometry(longitudeId); break;
 			case longitudeId: planeGeometry( latitudeId); break;
-			default: console.error(sUniverse2D + ': Update planes. Invalid changedAngleId = ' + changedAngleId);
+			default: console.error(sSphericalUniverse + ': Update planes. Invalid changedAngleId = ' + changedAngleId);
 				
 		}
 		
@@ -91,7 +107,7 @@ class Universe2D extends Universe1D {
 		
 		const lang = {
 
-			name: "2D universe",
+			name: "Spherical universe",
 
 		};
 
@@ -101,7 +117,7 @@ class Universe2D extends Universe1D {
 
 			case 'ru'://Russian language
 
-				lang.name = 'Двумерная вселенная';
+				lang.name = 'Сферическая вселенная';
 
 				break;
 
@@ -134,18 +150,5 @@ class Universe2D extends Universe1D {
 	get dimension() { return 3; }//space dimension
 	get verticesCountMin() { return 4; }
 
-	/**
-	 * 2 dimensional universe.
-	 * All the vertices of the Universe2D form a sphere.
-	 * @param {Options} options See <a href="../../../commonNodeJS/master/jsdoc/Options/Options.html" target="_blank">Options</a>.
-	 * @param {object} [classSettings] <b>Universe1D</b> class settings. See <a href="./module-Universe-Universe.html" target="_blank">Universe classSettings</a>.
-	 **/
-	constructor(options, classSettings) {
-
-		classSettings.continue = () => this.logUniverse2D();
-		super(options, classSettings);
-
-	}
-
 }
-export default Universe2D;
+export default SphericalUniverse;

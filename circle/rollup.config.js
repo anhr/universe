@@ -32,7 +32,7 @@ fs.mkdirSync( path.join( __dirname, 'build' ), { recursive: true, force: true } 
 
 export default {
 
-  input: 'circularUniverse.js',
+    input: 'circle/circularUniverse.js',
 
   output: [{
     // TODO: Remove default exports, and this line, in v0.8.0.

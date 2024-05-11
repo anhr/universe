@@ -30,8 +30,32 @@ import HuperSphere from '../../commonNodeJS/master/HuperSphere/huperSphere.js';
 class Universe// extends HuperSphere
 {
 
-	constructor(universeSettings = {}) {
+	constructor(universeSettings = {}, myThreeOptions = {}) {
 
+		myThreeOptions.scales ||= {};
+		myThreeOptions.scales.x ||= {};
+		myThreeOptions.scales.y ||= {};
+		myThreeOptions.scales.text ||= {};
+		myThreeOptions.scales.text.precision = myThreeOptions.scales.text.precision != undefined ? myThreeOptions.scales.text.precision : 1;
+		myThreeOptions.scales.text.rect ||= {};
+		myThreeOptions.scales.text.rect.displayRect = myThreeOptions.scales.text.rect.displayRect != undefined ? myThreeOptions.scales.text.rect.displayRect : false;
+		
+		myThreeOptions.orbitControls ||= {};
+		myThreeOptions.orbitControls.enableRotate = myThreeOptions.orbitControls.enableRotate != undefined ? myThreeOptions.orbitControls.enableRotate : false;
+		
+		myThreeOptions.camera ||= {};
+		if (myThreeOptions.camera.position) {
+
+			if (myThreeOptions.camera.position instanceof Array === true)
+				myThreeOptions.camera.position = new THREE.Vector3( myThreeOptions.camera.position[0], myThreeOptions.camera.position[1], myThreeOptions.camera.position[2] );
+		}
+		else myThreeOptions.camera.position = new THREE.Vector3( 0, 0, 2 );
+		
+//		myThreeOptions.stereoEffect = myThreeOptions.stereoEffect != undefined ? myThreeOptions.stereoEffect : false;
+		
+		myThreeOptions.canvas ||= {};
+		myThreeOptions.canvas.noButtonFullScreen = myThreeOptions.canvas.noButtonFullScreen != undefined ? myThreeOptions.canvas.noButtonFullScreen : true;
+		
 		new MyThree((scene, options) => {
 
 			universeSettings.projectParams ||= {};
@@ -39,12 +63,12 @@ class Universe// extends HuperSphere
 
 			universeSettings.settings ||= {};
 			universeSettings.settings.object ||= {};
-			universeSettings.settings.object.name ||= this.name(options);
+			universeSettings.settings.object.name ||= this.name(options.getLanguageCode);
 			
 			this.huperSphere = this.getHuperSphere(scene, options, universeSettings);
 			this.huperSphere.child = this;
 
-		}, {
+		}, myThreeOptions/*{
 
 			//axesHelper: false,
 			orbitControls: { enableRotate: false, },
@@ -57,6 +81,7 @@ class Universe// extends HuperSphere
 
 				x: {},
 				y: {},
+				z: undefined,//{},
 				//posAxesIntersection: new THREE.Vector3( -1, -1, 0 ),
 				text: { precision: 1, rect: { displayRect: false, }, }
 
@@ -74,7 +99,7 @@ class Universe// extends HuperSphere
 				
 			}
 			
-		});
+		}*/);
 		
 	}
 	name(options) {
