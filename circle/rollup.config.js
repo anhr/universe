@@ -31,18 +31,18 @@ fs.mkdirSync( path.join( __dirname, 'build' ), { recursive: true, force: true } 
 
 export default {
 
-  input: 'nD.js',
+    input: 'circularUniverse.js',
 
   output: [{
     // TODO: Remove default exports, and this line, in v0.8.0.
     exports: 'named',
-    file: './build/nD.js',
+      file: './build/circularUniverse.js',
     format: 'umd',
     name: 'ND',
     sourcemap: true,
     banner: banner
   }, {
-    file: './build/nD.module.js',
+      file: './build/circularUniverse.module.js',
     format: 'es',
     sourcemap: true,
     banner: banner
