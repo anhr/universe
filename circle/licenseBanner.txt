@@ -1,6 +1,6 @@
 /**
- * @module ND
- * @description N-dimensional graphics.
+ * @module CircularUniverse
+ * @description All the vertices of the Universe form a circle.
  *
  * @author [Andrej Hristoliubov]{@link https://anhr.github.io/AboutMe/}
  *
