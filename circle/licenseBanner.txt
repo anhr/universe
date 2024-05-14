@@ -1,6 +1,6 @@
 /**
  * @module CircularUniverse
- * @description All the vertices of the Universe form a circle.
+ * @description All vertices of the Universe form a circle.
  *
  * @author [Andrej Hristoliubov]{@link https://anhr.github.io/AboutMe/}
  *

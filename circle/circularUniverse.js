@@ -1,6 +1,6 @@
-﻿/**
+/**
  * @module CircularUniverse
- * @description All the vertices of the Universe form a circle.
+ * @description All vertices of the Universe form a circle.
  * All the vertices of the CircularUniverse form a circle.
  *
  * @author [Andrej Hristoliubov]{@link https://github.com/anhr}
@@ -22,7 +22,7 @@ class CircularUniverse extends Universe {
 
 	/**
 	 * CircularUniverse.
-	 * All the vertices of the CircularUniverse form a circle.
+	 * All vertices of the CircularUniverse form a circle.
 	 * @param {object} [universeSettings] <b>CircularUniverse</b> class settings. See <a href="./module-Universe-Universe.html" target="_blank">Universe classSettings</a>.
 	 **/
 	constructor(universeSettings = {}, myThreeOptions = {}) {

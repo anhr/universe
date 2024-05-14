@@ -13,8 +13,14 @@
  * http://www.apache.org/licenses/LICENSE-2.0
 */
 
-import * as THREE from '../../three.js/dev/src/Three.js';
-//import * as THREE from '../../three.js/dev/build/three.module.js';
+//РџРѕР»СѓС‡Р°СЋ РѕС€РёР±РєСѓ
+//[!] (cleanup plugin) SyntaxError: Unexpected token (88:9)
+//..\..\..\three.js\dev\src\Three.js(88: 9)
+//РџСЂРё РІС‹РїРѕР»РЅРµРЅРёРё "npm run build"
+//import * as THREE from '../../three.js/dev/src/Three.js';
+//////////////////////////////////////////
+
+import * as THREE from '../../three.js/dev/build/three.module.js';
 //import * as THREE from 'https://threejs.org/build/three.module.js';
 //import * as THREE from 'https://raw.githack.com/anhr/three.js/dev/build/three.module.js';
 
@@ -33,18 +39,19 @@ class Universe// extends HuperSphere
 
 	constructor(universeSettings = {}, myThreeOptions = {}) {
 
-		myThreeOptions.scales ||= {};
-		myThreeOptions.scales.x ||= {};
-		myThreeOptions.scales.y ||= {};
-		myThreeOptions.scales.text ||= {};
+		//myThreeOptions.scales ||= {};//Р­С‚Р° СЃС‚СЂРѕРєР° РІС‹РґР°РµС‚ РѕС€РёР±РєСѓ "[!] (cleanup plugin) SyntaxError: Unexpected token (36:26)" РїСЂРё РІС‹РїРѕР»РЅРµРЅРёРё РєРѕРјР°РЅРґС‹ "npm run build"
+		myThreeOptions.scales = myThreeOptions.scales || {};
+		myThreeOptions.scales.x = myThreeOptions.scales.x || {};
+		myThreeOptions.scales.y = myThreeOptions.scales.y || {};
+		myThreeOptions.scales.text = myThreeOptions.scales.text || {};
 		myThreeOptions.scales.text.precision = myThreeOptions.scales.text.precision != undefined ? myThreeOptions.scales.text.precision : 1;
-		myThreeOptions.scales.text.rect ||= {};
+		myThreeOptions.scales.text.rect = myThreeOptions.scales.text.rect || {};
 		myThreeOptions.scales.text.rect.displayRect = myThreeOptions.scales.text.rect.displayRect != undefined ? myThreeOptions.scales.text.rect.displayRect : false;
 
-		myThreeOptions.orbitControls ||= {};
+		myThreeOptions.orbitControls = myThreeOptions.orbitControls || {};
 		myThreeOptions.orbitControls.enableRotate = myThreeOptions.orbitControls.enableRotate != undefined ? myThreeOptions.orbitControls.enableRotate : false;
 
-		myThreeOptions.camera ||= {};
+		myThreeOptions.camera = myThreeOptions.camera || {};
 		if (myThreeOptions.camera.position) {
 
 			if (myThreeOptions.camera.position instanceof Array === true)
@@ -52,19 +59,20 @@ class Universe// extends HuperSphere
 		}
 		else myThreeOptions.camera.position = new THREE.Vector3(0, 0, 2);
 
-		//		myThreeOptions.stereoEffect = myThreeOptions.stereoEffect != undefined ? myThreeOptions.stereoEffect : false;
+//		myThreeOptions.stereoEffect = myThreeOptions.stereoEffect != undefined ? myThreeOptions.stereoEffect : false;
 
-		myThreeOptions.canvas ||= {};
+		myThreeOptions.canvas = myThreeOptions.canvas || {};
 		myThreeOptions.canvas.noButtonFullScreen = myThreeOptions.canvas.noButtonFullScreen != undefined ? myThreeOptions.canvas.noButtonFullScreen : true;
 
 		new MyThree((scene, options) => {
 
-			universeSettings.projectParams ||= {};
+			//universeSettings.projectParams ||= {};//Р­С‚Р° СЃС‚СЂРѕРєР° РІС‹РґР°РµС‚ РѕС€РёР±РєСѓ "[!] (cleanup plugin) SyntaxError: Unexpected token (63:36)" РїСЂРё РІС‹РїРѕР»РЅРµРЅРёРё РєРѕРјР°РЅРґС‹ "npm run build"
+			universeSettings.projectParams = universeSettings.projectParams || {};
 			universeSettings.projectParams.scene = scene;
 
-			universeSettings.settings ||= {};
-			universeSettings.settings.object ||= {};
-			universeSettings.settings.object.name ||= this.name(options.getLanguageCode);
+			universeSettings.settings = universeSettings.settings || {};
+			universeSettings.settings.object = universeSettings.settings.object || {};
+			universeSettings.settings.object.name = universeSettings.settings.object.name || this.name(options.getLanguageCode);
 
 			this.huperSphere = this.getHuperSphere(scene, options, universeSettings);
 			this.huperSphere.child = this;
@@ -117,7 +125,7 @@ class Universe// extends HuperSphere
 
 			case 'ru'://Russian language
 
-				lang.name = 'Вселенная';
+				lang.name = 'пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ';
 
 				break;
 
@@ -131,7 +139,7 @@ class Universe// extends HuperSphere
 		for (let i = 0; i < (aAngleControls.MAX_POINTS - 1); i++) arcEdges.push([i, i + 1]);
 		aAngleControls.arc = this.huperSphere.line({
 
-			cookieName: 'arc',//если не задать cookieName, то настройки дуги будут браться из настроек вселенной
+			cookieName: 'arc',//пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ cookieName, пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 			//edges: false,
 			object: {
 
