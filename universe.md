@@ -1,5 +1,5 @@
-# EgocentricUniverse.
+# Universe.
 
 Under construction.
 
-Egocentric universe.
+

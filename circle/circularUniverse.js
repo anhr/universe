@@ -1,7 +1,6 @@
 /**
  * @module CircularUniverse
- * @description All vertices of the Universe form a circle.
- * All the vertices of the CircularUniverse form a circle.
+ * @description All the vertices of the CircularUniverse form a circle.
  *
  * @author [Andrej Hristoliubov]{@link https://github.com/anhr}
  *
@@ -21,20 +20,16 @@ import Universe from '../universe.js';
 class CircularUniverse extends Universe {
 
 	/**
-	 * CircularUniverse.
 	 * All vertices of the CircularUniverse form a circle.
 	 * @param {object} [universeSettings] <b>CircularUniverse</b> class settings. See <a href="./module-Universe-Universe.html" target="_blank">Universe classSettings</a>.
+	 * @param {object} [myThreeOptions] <b>myThree<b> Options. See <a href="./module-Universe-Universe.html" target="_blank">Universe classSettings</a>.
 	 **/
 	constructor(universeSettings = {}, myThreeOptions = {}) {
 
 		super(universeSettings, myThreeOptions);
 
 	}
-	getHuperSphere(scene, options, universeSettings) {
-
-		return new Circle(options, universeSettings);
-
-	}
+	getHyperSphere(options, universeSettings) { return new Circle(options, universeSettings); }
 	name(getLanguageCode) {
 
 		//Localization
@@ -60,7 +55,7 @@ class CircularUniverse extends Universe {
 
 }
 
-import Circle from '../../../commonNodeJS/master/HuperSphere/circle.js'
+import Circle from '../../../commonNodeJS/master/HyperSphere/circle.js'
 CircularUniverse.ND = Circle.ND;
 CircularUniverse.edgesCreationMethod = Circle.edgesCreationMethod;
 export default CircularUniverse;

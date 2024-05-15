@@ -1,4 +1,4 @@
-﻿Building see in circle/URL.txt, sphere/URL.txt, hupersphere/URL.txt
+﻿Building see in circle/URL.txt, sphere/URL.txt, hypersphere/URL.txt
 --------------------------------
 jsdoc https://github.com/jsdoc/jsdoc
 Getting Started with JSDoc 3 https://jsdoc.app/about-getting-started.html
@@ -12,7 +12,7 @@ Generating a website:
 
 	//remove all files from "D:\My documents\MyProjects\webgl\three.js\GitHub\commonNodeJS\master\nD\jsdoc"
 
-	jsdoc -R "..\commonNodeJS\master\nD\nD.md" "..\commonNodeJS\master\nD\nD.js" -d "..\commonNodeJS\master\nD\jsdoc"
+	jsdoc -R "..\universe\main\universe.md" "..\universe\main\universe.js" "..\universe\main\circle\circularUniverse.js" "..\universe\main\sphere\sphericalUniverse.js" "..\universe\main\hyperSphere\hyperSphericalUniverse.js" -d "..\universe\main\jsdoc"
 
 	//Open "http://localhost/anhr/commonNodeJS/master/nD/jsdoc/index.html"
 

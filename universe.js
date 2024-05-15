@@ -32,11 +32,15 @@ import MyThree from '../../commonNodeJS/master/myThree/myThree.js';
 //import MyThree from 'https://raw.githack.com/anhr/commonNodeJS/master/myThree/build/myThree.module.min.js';
 MyThree.three.THREE = THREE;
 
-import HuperSphere from '../../commonNodeJS/master/HuperSphere/huperSphere.js';
+import HyperSphere from '../../commonNodeJS/master/HyperSphere/hyperSphere.js';
 
-class Universe// extends HuperSphere
+class Universe
 {
-
+	/**
+	 * Base class for n dimensional hypersphere universe.
+	 * @param {any} universeSettings See <a href="../../commonNodeJS/master/HyperSphere/jsdoc/module-HyperSphere-HyperSphere.html" target="_blank">HyperSphere classSettings</a> parameter.
+	 * @param {any} myThreeOptions
+	 */
 	constructor(universeSettings = {}, myThreeOptions = {}) {
 
 		//myThreeOptions.scales ||= {};//Эта строка выдает ошибку "[!] (cleanup plugin) SyntaxError: Unexpected token (36:26)" при выполнении команды "npm run build"
@@ -59,8 +63,6 @@ class Universe// extends HuperSphere
 		}
 		else myThreeOptions.camera.position = new THREE.Vector3(0, 0, 2);
 
-//		myThreeOptions.stereoEffect = myThreeOptions.stereoEffect != undefined ? myThreeOptions.stereoEffect : false;
-
 		myThreeOptions.canvas = myThreeOptions.canvas || {};
 		myThreeOptions.canvas.noButtonFullScreen = myThreeOptions.canvas.noButtonFullScreen != undefined ? myThreeOptions.canvas.noButtonFullScreen : true;
 
@@ -74,41 +76,10 @@ class Universe// extends HuperSphere
 			universeSettings.settings.object = universeSettings.settings.object || {};
 			universeSettings.settings.object.name = universeSettings.settings.object.name || this.name(options.getLanguageCode);
 
-			this.huperSphere = this.getHuperSphere(scene, options, universeSettings);
-			this.huperSphere.child = this;
+			this.hyperSphere = this.getHyperSphere(options, universeSettings);
+			this.hyperSphere.child = this;
 
-		}, myThreeOptions/*{
-
-			//axesHelper: false,
-			orbitControls: { enableRotate: false, },
-			dat: { guiSelectPoint: { point: (options, dat, fMesh) => { return new HuperSphere.ND.gui(options, dat, fMesh); }, }, },
-			//dat: false,
-			camera: { position: new THREE.Vector3( 0, 0, 2 ) },
-			stereoEffect: false,
-			//canvasMenu: false,
-			scales: {
-
-				x: {},
-				y: {},
-				z: undefined,//{},
-				//posAxesIntersection: new THREE.Vector3( -1, -1, 0 ),
-				text: { precision: 1, rect: { displayRect: false, }, }
-
-			},
-			canvas: {
-
-				noButtonFullScreen: true,
-
-			},
-			//point: { size: 0.0 },
-			playerOptions: {
-				
-				max: Infinity,
-				interval: 100,
-				
-			}
-			
-		}*/);
+		}, myThreeOptions);
 
 	}
 	name(options) {
@@ -125,7 +96,7 @@ class Universe// extends HuperSphere
 
 			case 'ru'://Russian language
 
-				lang.name = '���������';
+				lang.name = 'Вселенная';
 
 				break;
 
@@ -137,9 +108,9 @@ class Universe// extends HuperSphere
 
 		const arcEdges = [];
 		for (let i = 0; i < (aAngleControls.MAX_POINTS - 1); i++) arcEdges.push([i, i + 1]);
-		aAngleControls.arc = this.huperSphere.line({
+		aAngleControls.arc = this.hyperSphere.line({
 
-			cookieName: 'arc',//���� �� ������ cookieName, �� ��������� ���� ����� ������� �� �������� ���������
+			cookieName: 'arc',//если не задать cookieName, то настройки дуги будут браться из настроек вселенной
 			//edges: false,
 			object: {
 
