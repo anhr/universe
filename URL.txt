@@ -1,0 +1,18 @@
+﻿Building see in circle/URL.txt, sphere/URL.txt, hypersphere/URL.txt
+--------------------------------
+jsdoc https://github.com/jsdoc/jsdoc
+Getting Started with JSDoc 3 https://jsdoc.app/about-getting-started.html
+Generating a website:
+	Download https://github.com/jsdoc/jsdoc into D:\My documents\MyProjects\webgl\three.js\GitHub\jsdoc
+	Open "Node.js command prompt"
+
+	d:
+	cd "D:\My documents\MyProjects\webgl\three.js\GitHub\jsdoc"
+	npm install -g jsdoc
+
+	//remove all files from "D:\My documents\MyProjects\webgl\three.js\GitHub\commonNodeJS\master\nD\jsdoc"
+
+	jsdoc -R "..\universe\main\universe.md" "..\universe\main\universe.js" "..\universe\main\circle\circularUniverse.js" "..\universe\main\sphere\sphericalUniverse.js" "..\universe\main\hyperSphere\hyperSphericalUniverse.js" -d "..\universe\main\jsdoc"
+
+	//Open "http://localhost/anhr/commonNodeJS/master/nD/jsdoc/index.html"
+
