@@ -8,7 +8,14 @@
 	<meta name="author" content="Andrej Hristoliubov https://github.com/anhr">
 	<!--<link type="text/css" rel="stylesheet" href="https://threejs.org/examples/main.css">-->
 	<link type="text/css" rel="stylesheet" href="../../../../three.js/dev/examples/main.css">
-	
+
+	<!--
+	//Uncaught SyntaxError: Missing initializer in const declaration (at sphericalUniverse.js:47731:7)
+	//Похоже нельзя использовать символ π
+	<script src="../build/hyperSphericalUniverse.js"></script>
+
+	<script src="../build/hyperSphericalUniverse.min.js"></script>
+	-->
 </head>
 <body>
 	<script nomodule>alert('Fatal error: Your browser do not support modular JavaScript code.');</script>
@@ -20,6 +27,8 @@
 	<script type="module">
 
 		import HypersphericalUniverse from '../hyperSphericalUniverse.js';
+		//import HypersphericalUniverse from '../build/hyperSphericalUniverse.module.js';
+		//import HypersphericalUniverse from '../build/hyperSphericalUniverse.module.min.js';
 
 		new HypersphericalUniverse({
 

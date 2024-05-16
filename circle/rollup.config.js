@@ -39,25 +39,6 @@ fs.copyFile(path.join(__dirname, sGetShaderMaterialPointsSrc + '\\fragment.c'), 
 const textures = 'textures', sPointPng = 'point.png';
 fs.mkdirSync(path.join(__dirname, sBuild + '\\' + textures), { recursive: true, force: true });
 fs.copyFile(path.join(__dirname, sCommonNodeJS + sGetShaderMaterialPoints + '\\' + textures + '\\' + sPointPng), sBuild + '\\' + textures + '\\' + sPointPng, callback);
-/*
-const styles = 'styles';
-//fs.rmdirSync( path.join( __dirname, styles ), { recursive: true, force: true } );
-fs.mkdirSync(path.join(__dirname, styles), { recursive: true, force: true });
-const DropdownMenu = 'DropdownMenu';
-fs.copyFile(path.join(__dirname, '..\\' + DropdownMenu + '\\' + styles + '\\menu.css'), styles + '\\menu.css', callback);
-fs.copyFile(path.join(__dirname, '..\\' + DropdownMenu + '\\' + styles + '\\gui.css'), styles + '\\gui.css', callback);
-const Decorations = 'Decorations';
-fs.mkdirSync(path.join(__dirname, styles + '\\' + Decorations), { recursive: true, force: true });
-fs.copyFile(path.join(__dirname, '..\\' + DropdownMenu + '\\' + styles + '\\' + Decorations + '\\transparent.css'), styles + '\\' + Decorations + '\\transparent.css', callback);
-fs.copyFile(path.join(__dirname, '..\\' + DropdownMenu + '\\' + styles + '\\' + Decorations + '\\gradient.css'), styles + '\\' + Decorations + '\\gradient.css', callback);
-fs.mkdirSync(path.join(__dirname, DropdownMenu), { recursive: true, force: true });
-fs.mkdirSync(path.join(__dirname, DropdownMenu + '\\' + styles), { recursive: true, force: true });
-fs.copyFile(path.join(__dirname, '..\\' + DropdownMenu + '\\' + styles + '\\gui.css'), DropdownMenu + '\\' + styles + '\\gui.css', callback);
-fs.copyFile(path.join(__dirname, '..\\' + DropdownMenu + '\\' + styles + '\\menu.css'), DropdownMenu + '\\' + styles + '\\menu.css', callback);
-fs.mkdirSync(path.join(__dirname, 'build\\frustumPoints'), { recursive: true, force: true });
-fs.copyFile(path.join(__dirname, '..\\frustumPoints\\frustumPoints\\vertex.c'), 'build\\frustumPoints\\vertex.c', callback);
-fs.copyFile(path.join(__dirname, '..\\frustumPoints\\frustumPoints\\fragment.c'), 'build\\frustumPoints\\fragment.c', callback);
-*/
 export default {
 
     input: 'circularUniverse.js',

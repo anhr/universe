@@ -1,7 +1,7 @@
 /**
  * @module HypersphericalUniverse
  * @description Hyperspherical Universe.
- * All the vertices of the Universe3D form a [hypersphere]{@link https://en.wikipedia.org/wiki/N-sphere}.
+ * All the vertices of the Universe3D form a 3D [hypersphere]{@link https://en.wikipedia.org/wiki/N-sphere}.
  *
  * @author [Andrej Hristoliubov]{@link https://github.com/anhr}
  *

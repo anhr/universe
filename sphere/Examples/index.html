@@ -9,6 +9,13 @@
 	<!--<link type="text/css" rel="stylesheet" href="https://threejs.org/examples/main.css">-->
 	<link type="text/css" rel="stylesheet" href="../../../../three.js/dev/examples/main.css">
 
+	<!--
+	//Uncaught SyntaxError: Missing initializer in const declaration (at sphericalUniverse.js:47731:7)
+	//Похоже нельзя использовать символ π
+	<script src="../build/sphericalUniverse.js"></script>
+	
+	<script src="../build/sphericalUniverse.min.js"></script>
+	-->
 </head>
 <body>
 	<script nomodule>alert('Fatal error: Your browser do not support modular JavaScript code.');</script>
@@ -20,6 +27,8 @@
 	<script type="module">
 
 		import SphericalUniverse from '../sphericalUniverse.js';
+		//import SphericalUniverse from '../build/sphericalUniverse.module.js';
+		//import SphericalUniverse from '../build/sphericalUniverse.module.min.js';
 
 		new SphericalUniverse({
 
