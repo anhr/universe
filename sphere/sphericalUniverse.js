@@ -24,9 +24,8 @@ import Sphere from '../../../commonNodeJS/master/HyperSphere/sphere.js';
 class SphericalUniverse extends Universe {
 
 	/**
-	 * SphericalUniverse.
-	 * All the vertices of the SphericalUniverse form a sphere.
-	 * @param {object} [universeSettings] <b>SphericalUniverse</b> class settings. See <a href="./module-Universe-Universe.html" target="_blank">Universe classSettings</a>.
+	 * All the vertices of the <b>SphericalUniverse</b> form a sphere.
+	 * @param {object} [universeSettings={}] See <a href="../../../commonNodeJS/master/HyperSphere/jsdoc/module-HyperSphere-HyperSphere.html" target="_blank">HyperSphere classSettings</a> parameter.
 	 **/
 	constructor(universeSettings = {}) {
 

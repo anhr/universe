@@ -25,15 +25,12 @@ class HypersphericalUniverse extends SphericalUniverse {
 
 
 	/**
-	 * 3 dimensional universe.
-	 * All the vertices of the Universe3D form a [hypersphere]{@link https://en.wikipedia.org/wiki/N-sphere}.
-	 * @param {Options} options See <a href="../../../commonNodeJS/master/jsdoc/Options/Options.html" target="_blank">Options</a>.
-	 * @param {object} [classSettings] <b>Universe1D</b> class settings. See <a href="./module-Universe-Universe.html" target="_blank">Universe classSettings</a>.
+	 * All the vertices of the <b>HypersphericalUniverse</b> form a 3 dimensional [hypersphere]{@link https://en.wikipedia.org/wiki/N-sphere}.
+	 * @param {object} [universeSettings={}] See <a href="../../../commonNodeJS/master/HyperSphere/jsdoc/module-HyperSphere-HyperSphere.html" target="_blank">HyperSphere classSettings</a> parameter.
 	 **/
-	constructor(options, classSettings) {
+	constructor(universeSettings = {}) {
 
-		super(options, classSettings);
-//		this.logUniverse();
+		super(universeSettings);
 
 	}
 	getHyperSphere(options, universeSettings) { return new HyperSphere3D(options, universeSettings); }

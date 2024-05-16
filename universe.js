@@ -38,8 +38,8 @@ class Universe
 {
 	/**
 	 * Base class for n dimensional hypersphere universe.
-	 * @param {any} universeSettings See <a href="../../commonNodeJS/master/HyperSphere/jsdoc/module-HyperSphere-HyperSphere.html" target="_blank">HyperSphere classSettings</a> parameter.
-	 * @param {any} myThreeOptions
+	 * @param {object} [universeSettings={}] See <a href="../../../commonNodeJS/master/HyperSphere/jsdoc/module-HyperSphere-HyperSphere.html" target="_blank">HyperSphere classSettings</a> parameter.
+	 * @param {object} [myThreeOptions={}] See <a href="../../../commonNodeJS/master/myThree/jsdoc/module-MyThree-MyThree.html" target="_blank">MyThree optionss</a> parameter.
 	 */
 	constructor(universeSettings = {}, myThreeOptions = {}) {
 

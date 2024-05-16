@@ -20,9 +20,9 @@ import Universe from '../universe.js';
 class CircularUniverse extends Universe {
 
 	/**
-	 * All vertices of the CircularUniverse form a circle.
-	 * @param {object} [universeSettings] <b>CircularUniverse</b> class settings. See <a href="./module-Universe-Universe.html" target="_blank">Universe classSettings</a>.
-	 * @param {object} [myThreeOptions] <b>myThree<b> Options. See <a href="./module-Universe-Universe.html" target="_blank">Universe classSettings</a>.
+	 * All vertices of the <b>CircularUniverse</b> form a circle.
+	 * @param {object} [universeSettings={}] See <a href="../../../commonNodeJS/master/HyperSphere/jsdoc/module-HyperSphere-HyperSphere.html" target="_blank">HyperSphere classSettings</a> parameter.
+	 * @param {object} [myThreeOptions={}] See <a href="../../../commonNodeJS/master/myThree/jsdoc/module-MyThree-MyThree.html" target="_blank">MyThree optionss</a> parameter.
 	 **/
 	constructor(universeSettings = {}, myThreeOptions = {}) {
 
