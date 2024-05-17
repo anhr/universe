@@ -16,7 +16,7 @@
 
 
 import SphericalUniverse from '../sphere/sphericalUniverse.js';
-import HyperSphere3D from '../../../commonNodeJS/master/HyperSphere/HyperSphere3D.js';
+import HyperSphere3D from '../../../commonNodeJS/master/HyperSphere/hyperSphere3D.js';
 
 //const sHypersphericalUniverse = 'HypersphericalUniverse',
 //	π = Math.PI;
