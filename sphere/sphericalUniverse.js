@@ -1,6 +1,6 @@
 /**
  * @module SphericalUniverse
- * @description Spherical universe.
+ * @description Spherical Universe.
  * All the vertices of the SphericalUniverse form a sphere.
  *
  * @author [Andrej Hristoliubov]{@link https://github.com/anhr}

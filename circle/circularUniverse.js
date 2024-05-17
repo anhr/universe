@@ -1,6 +1,7 @@
 /**
  * @module CircularUniverse
- * @description All the vertices of the CircularUniverse form a circle.
+ * @description Circular Universe.
+ * All the vertices of the CircularUniverse form a circle.
  *
  * @author [Andrej Hristoliubov]{@link https://github.com/anhr}
  *
