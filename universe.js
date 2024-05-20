@@ -123,6 +123,17 @@ class Universe
 			});
 
 			this.hyperSphere = this.getHyperSphere(options, universeSettings);
+			{
+				
+				const onSelectScene = options.onSelectScene;
+				options.onSelectScene = (index, t) => {
+		
+					universeSettings.r = t;
+					onSelectScene(index, t);
+				
+				}
+
+			}
 			this.hyperSphere.child = this;
 
 		}, myThreeOptions);
