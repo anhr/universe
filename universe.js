@@ -80,6 +80,32 @@ class Universe
 			universeSettings.settings.object = universeSettings.settings.object || {};
 			universeSettings.settings.object.name = universeSettings.settings.object.name || this.name(options.getLanguageCode);
 		
+			{//Скрываю r
+				
+				let r = universeSettings.r;
+				Object.defineProperty(universeSettings, 'r', {
+					
+					get: () => {
+					
+						if (typeof r === "function") return r();
+						return r;
+				
+					},
+					set: (newR) => {
+	
+						if (r != newR) {
+							
+							r = newR;
+							this.hyperSphere.setPositionAttributeFromPoints(universeSettings.settings.object.geometry.angles, true);
+	
+						}
+					
+					}
+					
+				});
+	
+			}
+			
 			universeSettings.projectParams.scene.userData = new Proxy(universeSettings.projectParams.scene.userData, {
 	
 				set: (userData, name, value) => {
