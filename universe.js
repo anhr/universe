@@ -52,6 +52,10 @@ class Universe
 		myThreeOptions.scales.text.rect = myThreeOptions.scales.text.rect || {};
 		myThreeOptions.scales.text.rect.displayRect = myThreeOptions.scales.text.rect.displayRect != undefined ? myThreeOptions.scales.text.rect.displayRect : false;
 
+		myThreeOptions.playerOptions = myThreeOptions.playerOptions || {};
+		if (myThreeOptions.playerOptions.min === undefined) myThreeOptions.playerOptions.min = 0.1;
+		if (universeSettings.r === undefined) universeSettings.r = myThreeOptions.playerOptions.min;
+		
 		myThreeOptions.orbitControls = myThreeOptions.orbitControls || {};
 		myThreeOptions.orbitControls.enableRotate = myThreeOptions.orbitControls.enableRotate != undefined ? myThreeOptions.orbitControls.enableRotate : false;
 
@@ -75,6 +79,22 @@ class Universe
 			universeSettings.settings = universeSettings.settings || {};
 			universeSettings.settings.object = universeSettings.settings.object || {};
 			universeSettings.settings.object.name = universeSettings.settings.object.name || this.name(options.getLanguageCode);
+		
+			universeSettings.projectParams.scene.userData = new Proxy(universeSettings.projectParams.scene.userData, {
+	
+				set: (userData, name, value) => {
+	
+					switch (name) {
+	
+						case 't': universeSettings.r = value; break;
+							
+					}
+					userData[name] = value;
+					return true;
+	
+				}
+				
+			});
 
 			this.hyperSphere = this.getHyperSphere(options, universeSettings);
 			this.hyperSphere.child = this;
