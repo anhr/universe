@@ -123,7 +123,7 @@ class Universe
 			});
 
 			this.hyperSphere = this.getHyperSphere(options, universeSettings);
-			{
+			{//Скрыть onSelectScene
 				
 				const onSelectScene = options.onSelectScene;
 				options.onSelectScene = (index, t) => {
