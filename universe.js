@@ -33,6 +33,9 @@ import MyThree from '../../commonNodeJS/master/myThree/myThree.js';
 MyThree.three.THREE = THREE;
 
 import HyperSphere from '../../commonNodeJS/master/HyperSphere/hyperSphere.js';
+//import Player from '../../commonNodeJS/master/player/player.js'
+
+const sUniverse = 'Universe';
 
 class Universe
 {
@@ -53,8 +56,39 @@ class Universe
 		myThreeOptions.scales.text.rect.displayRect = myThreeOptions.scales.text.rect.displayRect != undefined ? myThreeOptions.scales.text.rect.displayRect : false;
 
 		myThreeOptions.playerOptions = myThreeOptions.playerOptions || {};
+		
 		if (myThreeOptions.playerOptions.min === undefined) myThreeOptions.playerOptions.min = 0.1;
+//		if (myThreeOptions.playerOptions.max === undefined) myThreeOptions.playerOptions.max = 1.0;
 		if (universeSettings.r === undefined) universeSettings.r = myThreeOptions.playerOptions.min;
+		universeSettings.rRange = universeSettings.rRange || {};
+		universeSettings.rRange = new Proxy(universeSettings.rRange, {
+
+			get: (rRange, name) => {
+				
+				switch (name) {
+
+					//цвета вершин зависит от текущего времени в проигрывателе
+					case 'min': return rRange.min != undefined ? rRange.min : myThreeOptions.playerOptions.min;
+					case 'max': return rRange.max != undefined ? rRange.max : myThreeOptions.playerOptions.max;
+					case 'isColorFromPositionW': return false;
+
+				}
+				console.error(sUniverse + ' get rRange: Invalid name: ' + name);
+				return rRange[name];
+				
+			},
+
+		});
+/*		
+		universeSettings.rRange.min
+
+			min: universeSettings.,
+			max: universeSettings.rRange.max != undefined ? universeSettings.rRange.max : myThreeOptions.playerOptions.max,
+			
+		};
+		if (universeSettings.rRange.min === undefined) universeSettings.rRange.min = -1;
+		if (universeSettings.rRange.max === undefined) universeSettings.rRange.max = 1;
+*/		
 		
 		myThreeOptions.orbitControls = myThreeOptions.orbitControls || {};
 		myThreeOptions.orbitControls.enableRotate = myThreeOptions.orbitControls.enableRotate != undefined ? myThreeOptions.orbitControls.enableRotate : false;
@@ -79,10 +113,25 @@ class Universe
 			universeSettings.settings = universeSettings.settings || {};
 			universeSettings.settings.object = universeSettings.settings.object || {};
 			universeSettings.settings.object.name = universeSettings.settings.object.name || this.name(options.getLanguageCode);
-		
+
+/*			
+			options.scales.w.min = options.playerOptions.min;
+			options.scales.w.max = options.playerOptions.max;
+*/			
+			if (universeSettings.settings.object.color === undefined) universeSettings.settings.object.color = () => { return options.player.getTime(); }
+			
 			{//Скрываю r
-				
+
 				let r = universeSettings.r;
+/*				
+				let r = {
+
+					r: universeSettings.r,
+					max: options.playerOptions.max,
+					min: options.playerOptions.min,
+					
+				}
+*/				
 				Object.defineProperty(universeSettings, 'r', {
 					
 					get: () => {
