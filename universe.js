@@ -70,7 +70,7 @@ class Universe
 					//цвета вершин зависит от текущего времени в проигрывателе
 					case 'min': return rRange.min != undefined ? rRange.min : myThreeOptions.playerOptions.min;
 					case 'max': return rRange.max != undefined ? rRange.max : myThreeOptions.playerOptions.max;
-					case 'isColorFromPositionW': return false;
+//					case 'isColorFromPositionW': return false;
 
 				}
 				console.error(sUniverse + ' get rRange: Invalid name: ' + name);
