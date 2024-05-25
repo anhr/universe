@@ -83,6 +83,8 @@ class Universe
 		});
 		
 		if (universeSettings.r === undefined) universeSettings.r = myThreeOptions.playerOptions.min;
+		universeSettings.rRange = universeSettings.rRange || myThreeOptions.scales.w;
+/*		
 		universeSettings.rRange = universeSettings.rRange || {};
 		universeSettings.rRange = new Proxy(universeSettings.rRange, {
 
@@ -102,7 +104,7 @@ class Universe
 			},
 
 		});
-		
+*/		
 		myThreeOptions.orbitControls = myThreeOptions.orbitControls || {};
 		myThreeOptions.orbitControls.enableRotate = myThreeOptions.orbitControls.enableRotate != undefined ? myThreeOptions.orbitControls.enableRotate : false;
 
