@@ -82,6 +82,11 @@ class Universe
 
 		});
 		
+		if (!universeSettings.onSelectScene) universeSettings.onSelectScene = (hyperSphere, index, t) => {
+			
+			if (hyperSphere.middleVertices) hyperSphere.middleVertices(index, t);
+
+		}
 		if (universeSettings.r === undefined) universeSettings.r = myThreeOptions.playerOptions.min;
 		universeSettings.rRange = universeSettings.rRange || myThreeOptions.scales.w;
 /*		
