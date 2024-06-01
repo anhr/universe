@@ -150,9 +150,11 @@ class Universe
 					set: (newR) => {
 	
 						if (r != newR) {
-							
+
+							this.hyperSphere.oldR = r;
 							r = newR;
-							this.hyperSphere.setPositionAttributeFromPoints(universeSettings.settings.object.geometry.angles, true);
+							if (universeSettings.onSelectScene) universeSettings.onSelectScene(this.hyperSphere, undefined, r);//время равно радиусу вселенной
+							else this.hyperSphere.setPositionAttributeFromPoints(universeSettings.settings.object.geometry.angles, true);
 	
 						}
 					
@@ -177,7 +179,9 @@ class Universe
 				}
 				
 			});
+			universeSettings.projectParams.scene.userData.endSelect = () => {}
 
+			universeSettings.settings.isSetPosition = true;//при выполнении шага в Player не надо вычислять позицию вершин в самом Player
 			this.hyperSphere = this.getHyperSphere(options, universeSettings);
 			{//Скрыть onSelectScene
 				
@@ -185,7 +189,7 @@ class Universe
 				options.onSelectScene = (index, t) => {
 		
 					universeSettings.r = t;
-					onSelectScene(index, t);
+					if (onSelectScene) onSelectScene(index, t);
 				
 				}
 
