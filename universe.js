@@ -182,6 +182,7 @@ class Universe
 			universeSettings.projectParams.scene.userData.endSelect = () => {}
 
 			universeSettings.settings.isSetPosition = true;//при выполнении шага в Player не надо вычислять позицию вершин в самом Player
+			universeSettings.settings.object.geometry.rCount = options.playerOptions.marks;//количество возможных радиусов вселенной
 			this.hyperSphere = this.getHyperSphere(options, universeSettings);
 			{//Скрыть onSelectScene
 				
