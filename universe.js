@@ -89,27 +89,6 @@ class Universe
 		}
 		if (universeSettings.r === undefined) universeSettings.r = myThreeOptions.playerOptions.min;
 		universeSettings.rRange = universeSettings.rRange || myThreeOptions.scales.w;
-/*		
-		universeSettings.rRange = universeSettings.rRange || {};
-		universeSettings.rRange = new Proxy(universeSettings.rRange, {
-
-			get: (rRange, name) => {
-				
-				switch (name) {
-
-					//цвета вершин зависит от текущего времени в проигрывателе
-					case 'min': return rRange.min != undefined ? rRange.min : myThreeOptions.playerOptions.min;
-					case 'max': return rRange.max != undefined ? rRange.max : myThreeOptions.playerOptions.max;
-//					case 'isColorFromPositionW': return false;
-
-				}
-				console.error(sUniverse + ' get rRange: Invalid name: ' + name);
-				return rRange[name];
-				
-			},
-
-		});
-*/		
 		myThreeOptions.orbitControls = myThreeOptions.orbitControls || {};
 		myThreeOptions.orbitControls.enableRotate = myThreeOptions.orbitControls.enableRotate != undefined ? myThreeOptions.orbitControls.enableRotate : false;
 
@@ -153,7 +132,7 @@ class Universe
 
 							this.hyperSphere.oldR = r;
 							r = newR;
-							if (universeSettings.onSelectScene) universeSettings.onSelectScene(this.hyperSphere, undefined, r);//время равно радиусу вселенной
+							if (universeSettings.onSelectScene) universeSettings.onSelectScene(this.hyperSphere, universeSettings.playerIndex, r);//время равно радиусу вселенной
 							else this.hyperSphere.setPositionAttributeFromPoints(universeSettings.settings.object.geometry.angles, true);
 	
 						}
@@ -163,6 +142,109 @@ class Universe
 				});
 	
 			}
+			universeSettings.projectParams.scene.userData.endSelect = () => {}
+
+			universeSettings.settings.isSetPosition = true;//при выполнении шага в Player не надо вычислять позицию вершин в самом Player
+			universeSettings.settings.object.geometry.rCount = options.playerOptions.marks;//количество возможных радиусов вселенной
+			universeSettings.settings.object.geometry.playerAngles = new Proxy([], {
+	
+				get: (playerAngles, name) => {
+
+					let playerAnglesId = parseInt(name);
+					if (!isNaN(playerAnglesId)) {
+
+						if (playerAnglesId === 0) return universeSettings.settings.object.geometry.position;
+
+						//В массиве playerAngles отсутствуют углы вершин для начального значения проигрывателя playerIndex = 0 потому что это есть в universeSettings.settings.object.geometry.position.angles
+						//Поэтому индекс массива углов вершин уменшаю на 1
+						playerAnglesId--;
+						
+						if (playerAnglesId >= playerAngles.length) {
+
+							const verticeAngles = new Proxy([], {
+
+								get: (angles, name) => {
+
+									const anglesId = parseInt(name);
+									if (!isNaN(anglesId)) {
+
+										return angles[anglesId];
+
+									}
+									/*								
+																	switch (name) {
+										
+																		case 'length': return _this.dimension - 1;
+																		case 'length': return _this.dimension - 1;
+										
+																	}
+									*/
+									return angles[name];
+
+								},
+								set: (angles, name, value) => {
+
+									const verticeId = parseInt(name);
+									if (!isNaN(verticeId)) {
+
+										const ranges = universeSettings.settings.object.geometry.angles.ranges;
+										for (let angleId = 0; angleId < value.length; angleId++) {
+
+											let angle = angles[angleId];
+											if (angle === undefined) angles.push(value[angleId]);
+											else angles[angleId] = value[angleId];
+											angle = angles[angleId];
+											const range = ranges[angleId];
+											if ((angle < range.min) || (angle > range.max)) 
+												console.error(sUniverse + ': Set angle[' + angleId + '] = ' + angle + ' of the vertice ' + verticeId + ' is out of range from ' + range.min + ' to ' + range.max);
+
+										}
+										this.hyperSphere.setPositionAttributeFromPoint(verticeId);//обновляем geometry.attributes
+
+									} else angles[name] = value;
+									return true;
+
+								}
+
+							});
+							playerAngles.push(verticeAngles);
+
+						}
+						return playerAngles[playerAnglesId];
+
+					}
+/*					
+					switch (name) {
+	
+						//цвета вершин зависит от текущего времени в проигрывателе
+						case 'min': return rRange.min != undefined ? rRange.min : myThreeOptions.playerOptions.min;
+						case 'max': return rRange.max != undefined ? rRange.max : myThreeOptions.playerOptions.max;
+						case 'isColor': return false;
+	
+					}
+*/
+					return playerAngles[name];
+					
+				},
+				set: (playerAngles, name, value) => {
+
+/*					
+					switch (name) {
+	
+						case 't':
+							universeSettings.playerIndex = userData.index;
+							universeSettings.r = value;
+							break;
+							
+					}
+*/					
+					playerAngles[name] = value;
+					return true;
+	
+				}
+				
+			});
+			this.hyperSphere = this.getHyperSphere(options, universeSettings);
 			
 			universeSettings.projectParams.scene.userData = new Proxy(universeSettings.projectParams.scene.userData, {
 	
@@ -170,7 +252,10 @@ class Universe
 	
 					switch (name) {
 	
-						case 't': universeSettings.r = value; break;
+						case 't':
+							universeSettings.playerIndex = userData.index;
+							universeSettings.r = value;
+							break;
 							
 					}
 					userData[name] = value;
@@ -179,11 +264,6 @@ class Universe
 				}
 				
 			});
-			universeSettings.projectParams.scene.userData.endSelect = () => {}
-
-			universeSettings.settings.isSetPosition = true;//при выполнении шага в Player не надо вычислять позицию вершин в самом Player
-			universeSettings.settings.object.geometry.rCount = options.playerOptions.marks;//количество возможных радиусов вселенной
-			this.hyperSphere = this.getHyperSphere(options, universeSettings);
 			{//Скрыть onSelectScene
 				
 				const onSelectScene = options.onSelectScene;
