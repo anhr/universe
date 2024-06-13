@@ -82,7 +82,7 @@
 
 						//Tesseract https://en.wikipedia.org/wiki/Tesseract
 						//Please set indices.edges for tesseract
-						angles: [
+						angles2: [
 							//cube 1
 							[Math.PI / 2, Math.PI * 1 / 4,   Math.PI * 1 / 4],
 							[Math.PI / 2, Math.PI * 1 / 4,   Math.PI * 3 / 4],
@@ -104,7 +104,7 @@
 						],
 						
 						//test for angles range
-						angles: [
+						angles2: [
 							//vertice 0
 							[
 								0,//Altitude
@@ -156,7 +156,16 @@
 						],
 						
 						//pentahedroid https://en.wikipedia.org/wiki/5-cell
-						angles: [
+						playerAngles://не забыть поставить дополнительные квадратные скобки
+							[
+								//Player index is 0 is hyperpyramid
+								[[], [Math.PI / 2, Math.PI / 2], [Math.PI / 2, - Math.PI / 6, Math.PI * 0,], [Math.PI / 2, - Math.PI / 6, Math.PI * 2 * 1 / 3],[Math.PI / 2, - Math.PI / 6, - Math.PI * 2 * 1 / 3], ],
+								//Player index is 1
+								//[[], [Math.PI / 2, Math.PI / 2], [Math.PI / 2, - Math.PI / 6, Math.PI * 0,], [Math.PI / 2, - Math.PI / 6, Math.PI * 2 * 1 / 3],[Math.PI / 2, - Math.PI / 6, - Math.PI * 2 * 1 / 3], ]
+							],
+						//hyperpyramid
+						angles2:
+						[
 							[],//vertice[0] = [0,0,0,1] angles = [0,0,0] edges = [0]
 							[Math.PI / 2, Math.PI / 2],//vertice[1] = [0,1,0,6.123233995736766e-17] angles = [1.5707963267948966,1.5707963267948966,0] edges = [0,1,6]
 							[
