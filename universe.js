@@ -167,11 +167,11 @@ class Universe
 								if (playerAngles.length != playerIndex) console.error(sUniverse + ': get playerAngles[' + playerIndex + '] failed. Invalid playerIndex = ' + playerIndex);
 								playerAngles[playerIndex] = new Proxy([], {
 									
-									set: (verticeAngles, name, value) => {
+									set: (timeAngles, name, value) => {
 					
-										verticeAngles[name] = value;
-										const verticeAnglesId = parseInt(name);
-										if (!isNaN(verticeAnglesId)) this.hyperSphere.setPositionAttributeFromPoint(verticeAnglesId, undefined, playerIndex);
+										timeAngles[name] = value;
+										const timeAnglesId = parseInt(name);
+										if (!isNaN(timeAnglesId)) this.hyperSphere.setPositionAttributeFromPoint(timeAnglesId, undefined, playerIndex);
 										return true;
 										
 									},
@@ -237,12 +237,11 @@ class Universe
 
 //													const angles = universeSettings.settings.object.geometry.playerAngles[playerIndex];
 //													const vertice = this.hypersphere.bufferGeometry.userData.position[playerIndexItemId];
-console.log(playerIndex);
 													const userData = universeSettings.settings.bufferGeometry.userData;
-														userData.playerIndex = playerIndex;
+//														userData.playerIndex = playerIndex;
 													const vertice = userData.position[playerIndexItemId];
-													userData.playerIndex = undefined;
-													console.log(vertice);
+//													userData.playerIndex = undefined;
+													return vertice;
 													
 												}
 												return playerPositionItem[name];
@@ -315,7 +314,8 @@ console.log(playerIndex);
 					switch (name) {
 	
 						case 't':
-							universeSettings.playerIndex = userData.index;
+//universeSettings.playerIndex = userData.index;//deprecated
+							universeSettings.settings.bufferGeometry.userData.playerIndex = userData.index;
 							universeSettings.r = value;
 							universeSettings.settings.object.geometry.playerAngles[userData.index].player = {
 
@@ -346,6 +346,20 @@ console.log(playerIndex);
 			this.hyperSphere.child = this;
 
 		}, myThreeOptions);
+		this.onSelectScene = {
+
+			copyAngles: (playerIndex, t) => {
+
+				if (playerIndex === 0) return;
+				const geometry = universeSettings.settings.object.geometry, playerAngles = geometry.playerAngles,
+					timeAnglesSrc  = playerAngles[playerIndex - 1],
+					timeAnglesDest = playerAngles[playerIndex];
+				timeAnglesSrc.forEach((timeAngles, i) => { timeAnglesDest[i] = timeAngles; });
+				this.hyperSphere.bufferGeometry.attributes.position.needsUpdate = true;
+				
+			},
+			
+		}
 
 	}
 	name(options) {
