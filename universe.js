@@ -133,11 +133,7 @@ class Universe
 
 							this.hyperSphere.oldR = r;
 							r = newR;
-							if (!universeSettings.onSelectScene) this.hyperSphere.setPositionAttributeFromPoints(universeSettings.settings.object.geometry.angles, true);
-/*							
-							if (universeSettings.onSelectScene) universeSettings.onSelectScene(this.hyperSphere, universeSettings.playerIndex, r);//время равно радиусу вселенной
-							else this.hyperSphere.setPositionAttributeFromPoints(universeSettings.settings.object.geometry.angles, true);
-*/							
+//							if (!universeSettings.onSelectScene) this.hyperSphere.setPositionAttributeFromPoints(universeSettings.settings.object.geometry.angles, true);
 	
 						}
 					
@@ -322,30 +318,167 @@ class Universe
 				},
 				
 			});
-/*			
-			universeSettings.settings.object.geometry.playerAngles = new Proxy(universeSettings.settings.object.geometry.playerAngles || [], {
-	
-				get: (playerAngles, name) => {
+			universeSettings.settings.guiPoints = {
 
-					let playerAnglesId = parseInt(name);
-					if (!isNaN(playerAnglesId)) {
 
-						//if ((playerAnglesId === 0) && !playerAngles[playerAnglesId]) playerAngles[playerAnglesId] = this.defaultAngles();
-						return playerAngles[playerAnglesId];
+				seletedIndex: (guiIndexStr) => {
 
-					}
-					return playerAngles[name];
-					
-				},
-				set: (playerAngles, name, value) => {
-
-					playerAngles[name] = value;
-					return true;
-	
-				}
+					let guiIndex = parseInt(guiIndexStr);
+					if (isNaN(guiIndex)) return guiIndexStr;
+					const anglesLength = universeSettings.settings.object.geometry.playerAngles[0].length;
+					while (guiIndex > anglesLength) guiIndex -= anglesLength;
+					return guiIndex;
 				
-			});
-*/			
+				},
+				create: (cPoints) => {
+
+					let pointId = 0;//Порядковый номер вершины в universeSettings.settings.bufferGeometry.attributes.position
+					//const drawRange = universeSettings.settings.bufferGeometry.drawRange,
+					const appendChild = (name, pointId) => {
+						
+						const opt = document.createElement('option');
+						opt.innerHTML = name;
+						if (pointId != undefined) opt.setAttribute('value', pointId);
+						cPoints.__select.appendChild(opt);
+						return opt;
+						
+					}
+					universeSettings.settings.object.geometry.playerAngles.forEach(timeAngles => {
+
+/*						
+						const elButton = document.createElement('input');
+						elButton.innerHTML = '►';
+*/						
+/*						
+						const optPlayer = document.createElement('optgroup');
+						const elButton = document.createElement('input');
+						elButton.innerHTML = '►';
+						optPlayer.label = elButton;
+//						optPlayer.label = 't = ' + timeAngles.player.t;
+*/
+/*						
+						optPlayer.addEventListener("click", function (event) {
+							
+							console.log('optPlayer.click');
+							
+						}, false);
+						cPoints.__select.appendChild(optPlayer);
+*/						
+						const optPlayer = appendChild('t = ' + timeAngles.player.t);
+/*						
+						const elButton = document.createElement('span');
+						elButton.addEventListener("mousedown", function (event) {
+							
+							console.log(mousedown)
+							
+						}, { capture: true, });
+*/						
+/*					
+						elButton.onmousedown = () => {
+
+							console.log('elButton.onmousedown')
+							
+						};
+						elButton.onmouseup = () => {
+
+							console.log('elButton.onmouseup')
+							
+						};
+*/
+/*						
+						elButton.innerHTML = '►';
+*/						
+/*						
+						elButton.onclick = () => {
+
+							console.log('elButton.onclick')
+						}
+*/
+/*						
+						elButton.addEventListener("click", function (event) {
+							
+							console.log('elButton.click');
+							
+						}, false);
+						optPlayer.appendChild(elButton);
+*/						
+/*						
+						optPlayer.setAttribute('value', () => {
+
+							console.log('Attribute')
+						});
+*/
+						let timeAnglesStatus = {};
+						optPlayer.onchange = () => {
+
+							if (!timeAnglesStatus.isCreated) {
+
+								//https://stackoverflow.com/a/4793630/5175935
+								const  insertAfter = (referenceNode, newNode) => {
+									
+									referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+									
+								}
+								let referenceNode = optPlayer;
+								timeAngles.forEach((verticeAngles, verticeId) => {
+			
+//									appendChild(verticeId, pointId);
+									
+									const opt = document.createElement('option');
+									opt.innerHTML = verticeId;
+									opt.setAttribute('value', pointId);
+//									optPlayer.appendChild(opt);
+//									cPoints.__select.appendChild(opt);
+									insertAfter(referenceNode, opt);
+									referenceNode = opt;
+									
+									pointId++;
+									
+								});
+								timeAnglesStatus.isCreated = true;
+								
+							}else if (!timeAnglesStatus.isHide) {
+
+								timeAnglesStatus.isHide = true;
+								
+							} else {
+								
+								timeAnglesStatus.isHide = false;
+								
+							}
+							
+						};
+/*						
+						timeAngles.forEach((verticeAngles, verticeId) => {
+	
+							appendChild(verticeId, pointId);
+							
+//							const opt = document.createElement('option');
+//							opt.innerHTML = verticeId;
+//							opt.setAttribute('value', pointId);
+//							optPlayer.appendChild(opt);
+							
+							pointId++;
+							
+						});
+*/						
+						
+					});
+	/*				
+					for ( var iPosition = drawRange.start; iPosition < drawRange.count; iPosition++ ) {
+		
+						const opt = document.createElement( 'option' );
+	//						name = mesh.userData.player && mesh.userData.player.arrayFuncs ? mesh.userData.player.arrayFuncs[iPosition].name : '';
+						opt.innerHTML = iPosition + ( name === undefined ? '' : ' ' + name );
+						opt.setAttribute( 'value', iPosition );//Эта строка нужна в случае когда пользователь отменил выбор точки. Иначе при движении камеры будут появляться пунктирные линии, указвающие на несуществующую точку
+						cPoints.__select.appendChild( opt );
+		
+					}
+	*/				
+					
+				}
+
+			}
 			this.hyperSphere = this.getHyperSphere(options, universeSettings);
 			
 			universeSettings.projectParams.scene.userData = new Proxy(universeSettings.projectParams.scene.userData, {
@@ -364,6 +497,7 @@ class Universe
 								t: value,
 								
 							}
+							if (!universeSettings.onSelectScene) this.onSelectScene.copyAngles(universeSettings.settings.bufferGeometry.userData.playerIndex, value);
 							break;
 							
 					}
