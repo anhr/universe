@@ -44,8 +44,8 @@
 			*/
 			onSelectScene: (hyperSphere, playerIndex, t) => {
 				
-				if (hyperSphere.middleVertices) hyperSphere.middleVertices(playerIndex, t);
-				//hyperSphere.child.onSelectScene.copyAngles(playerIndex, t);
+				//if (hyperSphere.middleVertices) hyperSphere.middleVertices(playerIndex, t);
+				hyperSphere.child.onSelectScene.copyAngles(playerIndex, t);
 	
 			},
 			edges: {
@@ -68,7 +68,7 @@
 
 				probabilityDensity: false,
 				//middleVertice: false,
-				log: false,
+				//log: false,
 				
 			},
 			//debug: false,

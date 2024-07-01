@@ -32,8 +32,9 @@ import MyThree from '../../commonNodeJS/master/myThree/myThree.js';
 //import MyThree from 'https://raw.githack.com/anhr/commonNodeJS/master/myThree/build/myThree.module.min.js';
 MyThree.three.THREE = THREE;
 
-import HyperSphere from '../../commonNodeJS/master/HyperSphere/hyperSphere.js';
+//import HyperSphere from '../../commonNodeJS/master/HyperSphere/hyperSphere.js';
 //import Player from '../../commonNodeJS/master/player/player.js'
+import { dat } from '../../commonNodeJS/master/dat/dat.module.js';
 
 const sUniverse = 'Universe';
 
@@ -330,8 +331,70 @@ class Universe
 					return guiIndex;
 				
 				},
-				create: (cPoints) => {
+				create: (fPoints, cPoints) => {
 
+					//Localization
+
+					const lang = {
+
+						notSelected: 'Not selected',
+						time: 'Time',
+						timeTitle: 'Position of vertices at selected time',
+
+					};
+
+					const options = universeSettings.settings.options;
+					switch (options.getLanguageCode()) {
+
+						case 'ru'://Russian language
+							lang.notSelected = 'Не выбран';
+							lang.time = 'Время';
+							lang.timeTitle = 'Выбрать список вершин в выбранное время';
+							break;
+
+					}
+					
+					const cTimes = fPoints.add({ Points: lang.notSelected }, 'Points', { [lang.notSelected]: -1 });
+					dat.controllerNameAndTitle(cTimes, lang.time, lang.timeTitle);
+
+					//Переместить список Time вверх
+					const elBefore = fPoints.__ul.children[1], elLast = fPoints.__ul.children[fPoints.__ul.children.length - 1];
+					fPoints.__ul.removeChild(elLast);
+					fPoints.__ul.insertBefore(elLast, elBefore);
+
+					const playerAngles = universeSettings.settings.object.geometry.playerAngles;
+					cTimes.onChange((playerIndex) => {
+
+						const selectPoints = cPoints.__select;
+						options.guiSelectPoint.selectPoint(-1);
+						while (selectPoints.length > 1) selectPoints.removeChild(selectPoints.lastChild);
+						playerIndex = parseInt(playerIndex);
+						if (isNaN(playerIndex)) {
+
+							console.error(sUniverse + ': cTimes.onChange. Invalid playerIndex = ' + playerIndex);
+							return;
+							
+						}
+						universeSettings.settings.guiPoints.timeAngles = playerAngles[playerIndex];
+//						let referenceNode = optPlayer;
+						universeSettings.settings.guiPoints.timeAngles.forEach((verticeAngles, verticeId) => {
+
+							const opt = document.createElement('option');
+							opt.innerHTML = verticeId;
+							opt.setAttribute('value', verticeId);
+							selectPoints.appendChild(opt);
+
+						});
+						let positionOffset = 0;
+						for (let i = 0; i < playerIndex; i++) {
+
+							const timeAngles = playerAngles[i];
+							positionOffset += timeAngles.length;
+							
+						}
+						universeSettings.settings.guiPoints.positionOffset = positionOffset;// * universeSettings.settings.bufferGeometry.attributes.position.itemSize;
+
+					});
 					let pointId = 0;//Порядковый номер вершины в universeSettings.settings.bufferGeometry.attributes.position
 					//const drawRange = universeSettings.settings.bufferGeometry.drawRange,
 					const appendChild = (name, pointId) => {
@@ -339,142 +402,15 @@ class Universe
 						const opt = document.createElement('option');
 						opt.innerHTML = name;
 						if (pointId != undefined) opt.setAttribute('value', pointId);
-						cPoints.__select.appendChild(opt);
+						cTimes.__select.appendChild(opt);
 						return opt;
 						
 					}
-					universeSettings.settings.object.geometry.playerAngles.forEach(timeAngles => {
+					playerAngles.forEach((timeAngles, playerIndex) => {
 
-/*						
-						const elButton = document.createElement('input');
-						elButton.innerHTML = '►';
-*/						
-/*						
-						const optPlayer = document.createElement('optgroup');
-						const elButton = document.createElement('input');
-						elButton.innerHTML = '►';
-						optPlayer.label = elButton;
-//						optPlayer.label = 't = ' + timeAngles.player.t;
-*/
-/*						
-						optPlayer.addEventListener("click", function (event) {
-							
-							console.log('optPlayer.click');
-							
-						}, false);
-						cPoints.__select.appendChild(optPlayer);
-*/						
-						const optPlayer = appendChild('t = ' + timeAngles.player.t);
-/*						
-						const elButton = document.createElement('span');
-						elButton.addEventListener("mousedown", function (event) {
-							
-							console.log(mousedown)
-							
-						}, { capture: true, });
-*/						
-/*					
-						elButton.onmousedown = () => {
-
-							console.log('elButton.onmousedown')
-							
-						};
-						elButton.onmouseup = () => {
-
-							console.log('elButton.onmouseup')
-							
-						};
-*/
-/*						
-						elButton.innerHTML = '►';
-*/						
-/*						
-						elButton.onclick = () => {
-
-							console.log('elButton.onclick')
-						}
-*/
-/*						
-						elButton.addEventListener("click", function (event) {
-							
-							console.log('elButton.click');
-							
-						}, false);
-						optPlayer.appendChild(elButton);
-*/						
-/*						
-						optPlayer.setAttribute('value', () => {
-
-							console.log('Attribute')
-						});
-*/
-						let timeAnglesStatus = {};
-						optPlayer.onchange = () => {
-
-							if (!timeAnglesStatus.isCreated) {
-
-								//https://stackoverflow.com/a/4793630/5175935
-								const  insertAfter = (referenceNode, newNode) => {
-									
-									referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
-									
-								}
-								let referenceNode = optPlayer;
-								timeAngles.forEach((verticeAngles, verticeId) => {
-			
-//									appendChild(verticeId, pointId);
-									
-									const opt = document.createElement('option');
-									opt.innerHTML = verticeId;
-									opt.setAttribute('value', pointId);
-//									optPlayer.appendChild(opt);
-//									cPoints.__select.appendChild(opt);
-									insertAfter(referenceNode, opt);
-									referenceNode = opt;
-									
-									pointId++;
-									
-								});
-								timeAnglesStatus.isCreated = true;
-								
-							}else if (!timeAnglesStatus.isHide) {
-
-								timeAnglesStatus.isHide = true;
-								
-							} else {
-								
-								timeAnglesStatus.isHide = false;
-								
-							}
-							
-						};
-/*						
-						timeAngles.forEach((verticeAngles, verticeId) => {
-	
-							appendChild(verticeId, pointId);
-							
-//							const opt = document.createElement('option');
-//							opt.innerHTML = verticeId;
-//							opt.setAttribute('value', pointId);
-//							optPlayer.appendChild(opt);
-							
-							pointId++;
-							
-						});
-*/						
+						appendChild(timeAngles.player.t, playerIndex);
 						
 					});
-	/*				
-					for ( var iPosition = drawRange.start; iPosition < drawRange.count; iPosition++ ) {
-		
-						const opt = document.createElement( 'option' );
-	//						name = mesh.userData.player && mesh.userData.player.arrayFuncs ? mesh.userData.player.arrayFuncs[iPosition].name : '';
-						opt.innerHTML = iPosition + ( name === undefined ? '' : ' ' + name );
-						opt.setAttribute( 'value', iPosition );//Эта строка нужна в случае когда пользователь отменил выбор точки. Иначе при движении камеры будут появляться пунктирные линии, указвающие на несуществующую точку
-						cPoints.__select.appendChild( opt );
-		
-					}
-	*/				
 					
 				}
 
@@ -528,8 +464,23 @@ class Universe
 				if (playerIndex === 0) return;
 				const geometry = universeSettings.settings.object.geometry, playerAngles = geometry.playerAngles,
 					timeAnglesSrc  = playerAngles[playerIndex - 1],
-					timeAnglesDest = playerAngles[playerIndex];
-				timeAnglesSrc.forEach((timeAngles, i) => { timeAnglesDest[i] = timeAngles; });
+					timeAnglesDest = playerAngles[playerIndex],
+					boLog = universeSettings.debug && (universeSettings.debug != false);
+				if (boLog) console.log('playerIndex = ' + universeSettings.settings.bufferGeometry.userData.playerIndex + ' t = ' + t);
+				timeAnglesSrc.forEach((timeAngles, i) => {
+					
+					timeAnglesDest[i] = timeAngles;
+					if (boLog){
+
+						let vertice = universeSettings.settings.bufferGeometry.userData.position[i];
+						const timeAnglesDestItem = timeAnglesDest[i];
+						console.log(' timeVertices[' + i + '] = ' + JSON.stringify(vertice) +
+									' angles = ' + JSON.stringify(timeAnglesDestItem) +
+									' edges = ' + JSON.stringify(timeAnglesDestItem.edges))
+						
+					}
+				
+				});
 				this.hyperSphere.bufferGeometry.attributes.position.needsUpdate = true;
 				
 			},
