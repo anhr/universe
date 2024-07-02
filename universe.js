@@ -412,7 +412,9 @@ class Universe
 						
 					});
 					
-				}
+				},
+				getValue: (cPoints) => { return cPoints.getValue(); },
+
 
 			}
 			this.hyperSphere = this.getHyperSphere(options, universeSettings);
