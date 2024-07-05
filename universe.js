@@ -47,6 +47,7 @@ class Universe
 	 */
 	constructor(universeSettings = {}, myThreeOptions = {}) {
 
+		const _this = this;
 		//myThreeOptions.scales ||= {};//Эта строка выдает ошибку "[!] (cleanup plugin) SyntaxError: Unexpected token (36:26)" при выполнении команды "npm run build"
 		myThreeOptions.scales = myThreeOptions.scales || {};
 		myThreeOptions.scales.x = myThreeOptions.scales.x || {};
@@ -392,7 +393,17 @@ class Universe
 							positionOffset += timeAngles.length;
 							
 						}
-						universeSettings.settings.guiPoints.positionOffset = positionOffset;// * universeSettings.settings.bufferGeometry.attributes.position.itemSize;
+						
+						universeSettings.settings.guiPoints.positionOffset = positionOffset;
+
+						universeSettings.settings.guiPoints.onChangeAngle = (verticeId, angleId, angle) => {
+
+							const verticeAngles = playerAngles[playerIndex][verticeId];
+							if (verticeAngles[angleId] === angle) return;
+							verticeAngles[angleId] = angle;
+							_this.hyperSphere.setPositionAttributeFromPoint(verticeId, undefined, playerIndex);
+							
+						}
 
 					});
 					let pointId = 0;//Порядковый номер вершины в universeSettings.settings.bufferGeometry.attributes.position
