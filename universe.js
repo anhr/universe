@@ -395,7 +395,8 @@ class Universe
 						}
 						
 						universeSettings.settings.guiPoints.positionOffset = positionOffset;
-
+						universeSettings.settings.guiPoints.playerIndex = playerIndex;
+/*
 						universeSettings.settings.guiPoints.onChangeAngle = (verticeId, angleId, angle) => {
 
 							const verticeAngles = playerAngles[playerIndex][verticeId];
@@ -404,6 +405,7 @@ class Universe
 							_this.hyperSphere.setPositionAttributeFromPoint(verticeId, undefined, playerIndex);
 							
 						}
+*/						
 
 					});
 					let pointId = 0;//Порядковый номер вершины в universeSettings.settings.bufferGeometry.attributes.position
