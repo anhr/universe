@@ -432,6 +432,17 @@ class Universe
 			}
 			this.hyperSphere = this.getHyperSphere(options, universeSettings);
 			
+			universeSettings.settings.object.geometry.angles = new Proxy(universeSettings.settings.object.geometry.angles, {
+				
+				get: (angles, name) => {
+
+					return angles[name];
+					
+				},
+				
+			});
+			this.hyperSphere.angles = universeSettings.settings.object.geometry.angles;
+			
 			universeSettings.projectParams.scene.userData = new Proxy(universeSettings.projectParams.scene.userData, {
 	
 				set: (userData, name, value) => {
