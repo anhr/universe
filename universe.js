@@ -242,9 +242,40 @@ class Universe
 					switch (name) {
 
 						case 'angles': 
-//								if (!geometry.playerAngles) geometry.playerAngles = [];
-//								return geometry.playerAngles[0] || geometryAngles;
-							return geometry.playerAngles[0];
+//							return geometry.playerAngles[0];
+							const playerIndex = universeSettings.settings.guiPoints.playerIndex;
+							const angles0 = geometry.playerAngles[0];
+							return new Proxy(geometry.playerAngles[playerIndex === undefined ? 0 : playerIndex], {
+								
+								get: (angles, name) => {
+
+									switch (name) {
+
+										case 'ranges': {
+
+//											return universeSettings.settings.object.geometry.playerAngles[0].ranges;
+//											return geometry.playerAngles[0].ranges;
+											return angles0[name];
+
+										}
+										case 'count':
+										case 'length':
+										case 'forEach':
+										case 'guiLength':
+										case 'arguments':
+										case 'player':
+											break;
+										default: if (isNaN(name)) console.error(sUniverse + ': get geometry.angles. Invalid name: ' + name);
+											
+									}
+//									return angles[name];
+									const playerIndex = universeSettings.settings.guiPoints.playerIndex;
+									if (playerIndex === undefined) return angles[name];
+									return geometry.playerAngles[playerIndex][name];
+									
+								},
+								
+							});
 						case 'position': 
 							if (!geometry.playerPosition) geometry.playerPosition = new Proxy([], {
 
@@ -327,7 +358,8 @@ class Universe
 
 					let guiIndex = parseInt(guiIndexStr);
 					if (isNaN(guiIndex)) return guiIndexStr;
-					const anglesLength = universeSettings.settings.object.geometry.playerAngles[0].length;
+//					const anglesLength = universeSettings.settings.object.geometry.playerAngles[0].length;
+					const anglesLength = universeSettings.settings.object.geometry.angles.length;
 					while (guiIndex > anglesLength) guiIndex -= anglesLength;
 					return guiIndex;
 				
@@ -431,7 +463,8 @@ class Universe
 
 			}
 			this.hyperSphere = this.getHyperSphere(options, universeSettings);
-			
+
+/*			
 			universeSettings.settings.object.geometry.angles = new Proxy(universeSettings.settings.object.geometry.angles, {
 				
 				get: (angles, name) => {
@@ -441,6 +474,7 @@ class Universe
 				},
 				
 			});
+*/			
 			this.hyperSphere.angles = universeSettings.settings.object.geometry.angles;
 			
 			universeSettings.projectParams.scene.userData = new Proxy(universeSettings.projectParams.scene.userData, {
