@@ -264,6 +264,8 @@ class Universe
 										case 'guiLength':
 										case 'arguments':
 										case 'player':
+										case 'pushRandomAngle':
+										case 'push':
 											break;
 										default: if (isNaN(name)) console.error(sUniverse + ': get geometry.angles. Invalid name: ' + name);
 											
@@ -293,7 +295,8 @@ class Universe
 													case 'length': {
 
 														const length = playerPosition[0].length;
-														if (universeSettings.debug && (length != universeSettings.settings.object.geometry.playerAngles[0].length))
+//														if (universeSettings.debug && (length != universeSettings.settings.object.geometry.playerAngles[0].length))
+														if (universeSettings.debug && (length != universeSettings.settings.object.geometry.angles.length))
 															console.error(sUniverse + ': get player position item failed! Invalid length = ' + length);
 														return length;
 
@@ -475,7 +478,7 @@ class Universe
 				
 			});
 */			
-			this.hyperSphere.angles = universeSettings.settings.object.geometry.angles;
+//			this.hyperSphere.angles = universeSettings.settings.object.geometry.angles;
 			
 			universeSettings.projectParams.scene.userData = new Proxy(universeSettings.projectParams.scene.userData, {
 	
