@@ -42,12 +42,12 @@ class Universe
 {
 	/**
 	 * Base class for n dimensional hypersphere universe.
-	 * @param {object} [universeSettings={}] See <a href="../../../commonNodeJS/master/HyperSphere/jsdoc/module-HyperSphere-HyperSphere.html" target="_blank">HyperSphere classSettings</a> parameter.
-	 * @param {Array} [universeSettings.settings.object.geometry.playerAngles] Array of vertices angles for different time of the <a href="../../../commonNodeJS/master/player/jsdoc/" target="_blank">player</a>.
+	 * @param {object} [classSettings={}] See <a href="../../../commonNodeJS/master/HyperSphere/jsdoc/module-HyperSphere-HyperSphere.html" target="_blank">HyperSphere classSettings</a> parameter.
+	 * @param {Array} [classSettings.settings.object.geometry.playerAngles] Array of vertices angles for different time of the <a href="../../../commonNodeJS/master/player/jsdoc/" target="_blank">player</a>.
 	 * Every item of the <b>playerAngles</b> array is array of the vertices angles. See <b>classSettings.settings.object.geometry.angles</b> of the <a href="../../../commonNodeJS/master/HyperSphere/jsdoc/module-HyperSphere-HyperSphere.html" target="_blank">HyperSphere</a> for details
 	 * @param {object} [myThreeOptions={}] See <a href="../../../commonNodeJS/master/myThree/jsdoc/module-MyThree-MyThree.html" target="_blank">MyThree optionss</a> parameter.
 	 */
-	constructor(universeSettings = {}, myThreeOptions = {}) {
+	constructor(classSettings = {}, myThreeOptions = {}) {
 
 		const _this = this;
 		//myThreeOptions.scales ||= {};//Эта строка выдает ошибку "[!] (cleanup plugin) SyntaxError: Unexpected token (36:26)" при выполнении команды "npm run build"
@@ -86,14 +86,14 @@ class Universe
 
 		});
 /*		
-		if (!universeSettings.onSelectScene) universeSettings.onSelectScene = (hyperSphere, index, t) => {
+		if (!classSettings.onSelectScene) classSettings.onSelectScene = (hyperSphere, index, t) => {
 			
 			if (hyperSphere.middleVertices) hyperSphere.middleVertices(index, t);
 
 		}
 */		
-		if (universeSettings.r === undefined) universeSettings.r = myThreeOptions.playerOptions.min;
-		universeSettings.rRange = universeSettings.rRange || myThreeOptions.scales.w;
+		if (classSettings.r === undefined) classSettings.r = myThreeOptions.playerOptions.min;
+		classSettings.rRange = classSettings.rRange || myThreeOptions.scales.w;
 		myThreeOptions.orbitControls = myThreeOptions.orbitControls || {};
 		myThreeOptions.orbitControls.enableRotate = myThreeOptions.orbitControls.enableRotate != undefined ? myThreeOptions.orbitControls.enableRotate : false;
 
@@ -110,20 +110,20 @@ class Universe
 
 		new MyThree((scene, options) => {
 
-			//universeSettings.projectParams ||= {};//Эта строка выдает ошибку "[!] (cleanup plugin) SyntaxError: Unexpected token (63:36)" при выполнении команды "npm run build"
-			universeSettings.projectParams = universeSettings.projectParams || {};
-			universeSettings.projectParams.scene = scene;
+			//classSettings.projectParams ||= {};//Эта строка выдает ошибку "[!] (cleanup plugin) SyntaxError: Unexpected token (63:36)" при выполнении команды "npm run build"
+			classSettings.projectParams = classSettings.projectParams || {};
+			classSettings.projectParams.scene = scene;
 
-			universeSettings.settings = universeSettings.settings || {};
-			universeSettings.settings.object = universeSettings.settings.object || {};
-			universeSettings.settings.object.name = universeSettings.settings.object.name || this.name(options.getLanguageCode);
+			classSettings.settings = classSettings.settings || {};
+			classSettings.settings.object = classSettings.settings.object || {};
+			classSettings.settings.object.name = classSettings.settings.object.name || this.name(options.getLanguageCode);
 
-			if (universeSettings.settings.object.color === undefined) universeSettings.settings.object.color = () => { return options.player.getTime(); }
+			if (classSettings.settings.object.color === undefined) classSettings.settings.object.color = () => { return options.player.getTime(); }
 			
 			{//hide r
 
-				let r = universeSettings.r;
-				Object.defineProperty(universeSettings, 'r', {
+				let r = classSettings.r;
+				Object.defineProperty(classSettings, 'r', {
 					
 					get: () => {
 					
@@ -137,7 +137,7 @@ class Universe
 
 							this.hyperSphere.oldR = r;
 							r = newR;
-//							if (!universeSettings.onSelectScene) this.hyperSphere.setPositionAttributeFromPoints(universeSettings.settings.object.geometry.angles, true);
+//							if (!classSettings.onSelectScene) this.hyperSphere.setPositionAttributeFromPoints(classSettings.settings.object.geometry.angles, true);
 	
 						}
 					
@@ -146,17 +146,17 @@ class Universe
 				});
 	
 			}
-			universeSettings.projectParams.scene.userData.endSelect = () => {}
+			classSettings.projectParams.scene.userData.endSelect = () => {}
 
-			universeSettings.settings.isSetPosition = true;//при выполнении шага в Player не надо вычислять позицию вершин в самом Player
-			universeSettings.settings.object.geometry.rCount = options.playerOptions.marks;//количество возможных радиусов вселенной
+			classSettings.settings.isSetPosition = true;//при выполнении шага в Player не надо вычислять позицию вершин в самом Player
+			classSettings.settings.object.geometry.rCount = options.playerOptions.marks;//количество возможных радиусов вселенной
 			{//hide playerAnglesLength
 				
-				const playerAngles = universeSettings.settings.object.geometry.playerAngles;
+				const playerAngles = classSettings.settings.object.geometry.playerAngles;
 				if (playerAngles) {
 					
 					const playerAnglesLength = playerAngles.length;
-					if (playerAnglesLength > 0 )universeSettings.settings.object.geometry.playerAnglesLength = playerAnglesLength;
+					if (playerAnglesLength > 0 )classSettings.settings.object.geometry.playerAnglesLength = playerAnglesLength;
 
 				}
 
@@ -164,8 +164,8 @@ class Universe
 
 			{//hide geometryAngles
 
-				const geometryAngles = universeSettings.settings.object.geometry.angles;
-				universeSettings.settings.object.geometry.playerAngles = new Proxy(universeSettings.settings.object.geometry.playerAngles || [], {
+				const geometryAngles = classSettings.settings.object.geometry.angles;
+				classSettings.settings.object.geometry.playerAngles = new Proxy(classSettings.settings.object.geometry.playerAngles || [], {
 		
 					get: (playerAngles, name) => {
 	
@@ -192,8 +192,8 @@ class Universe
 														case 'middleVertice': return (oppositeVerticesId, index) => {
 
 /*															
-//															const angles = universeSettings.settings.object.geometry.playerPosition[0].angles,
-															const angles = universeSettings.settings.object.geometry.position.angles,
+//															const angles = classSettings.settings.object.geometry.playerPosition[0].angles,
+															const angles = classSettings.settings.object.geometry.position.angles,
 																shift = angles.length * playerIndex,
 																startOppositeVerticesId = angles[verticeId].oppositeVerticesId;
 															oppositeVerticesId = [];
@@ -201,7 +201,7 @@ class Universe
 															//playerPosition[playerIndex - 1].angles[verticeId]
 															return angles[verticeId].middleVertice(oppositeVerticesId, playerIndex + 1);
 */															
-															const vertice = universeSettings.settings.object.geometry.position.angles[verticeId];
+															const vertice = classSettings.settings.object.geometry.position.angles[verticeId];
 															return vertice.middleVertice(vertice.oppositeVerticesId, playerIndex + 1);
 															
 														}
@@ -254,7 +254,7 @@ class Universe
 			
 												switch (name) {
 			
-													case 't': return universeSettings.settings.options.player.getTime(playerIndex);
+													case 't': return classSettings.settings.options.player.getTime(playerIndex);
 														
 												}
 												return player[name];
@@ -310,7 +310,7 @@ class Universe
 				});
 
 			}
-			universeSettings.settings.object.geometry = new Proxy(universeSettings.settings.object.geometry, {
+			classSettings.settings.object.geometry = new Proxy(classSettings.settings.object.geometry, {
 
 				get: (geometry, name) => {
 
@@ -320,7 +320,7 @@ class Universe
 //							return geometry.playerAngles[0];
 							const playerAngles = geometry.playerAngles;
 							if (playerAngles.length === 0) return;
-							const playerIndex = universeSettings.settings.guiPoints.playerIndex, angles0 = playerAngles[0];
+							const playerIndex = classSettings.settings.guiPoints.playerIndex, angles0 = playerAngles[0];
 							let angles = playerAngles[playerIndex === undefined ? 0 : playerIndex];
 							
 							if (!(angles instanceof Array)) {
@@ -339,7 +339,7 @@ class Universe
 
 										case 'ranges': {
 
-//											return universeSettings.settings.object.geometry.playerAngles[0].ranges;
+//											return classSettings.settings.object.geometry.playerAngles[0].ranges;
 //											return geometry.playerAngles[0].ranges;
 											return angles0[name];
 
@@ -367,7 +367,7 @@ class Universe
 									}
 									return angles[name];
 /*									
-									const playerIndex = universeSettings.settings.guiPoints.playerIndex;
+									const playerIndex = classSettings.settings.guiPoints.playerIndex;
 									if (playerIndex === undefined) return angles[name];
 									return playerAngles[playerIndex][name];
 */									
@@ -404,22 +404,22 @@ class Universe
 													case 'length': {
 
 														const length = playerPosition[0].length;
-//														if (universeSettings.debug && (length != universeSettings.settings.object.geometry.playerAngles[0].length))
-														if (universeSettings.debug && (length != universeSettings.settings.object.geometry.angles.length))
+//														if (classSettings.debug && (length != classSettings.settings.object.geometry.playerAngles[0].length))
+														if (classSettings.debug && (length != classSettings.settings.object.geometry.angles.length))
 															console.error(sUniverse + ': get player position item failed! Invalid length = ' + length);
 														return length;
 
 													}
-//													case 'angles': return universeSettings.settings.object.geometry.playerAngles[universeSettings.playerIndex];
-													case 'angles': return universeSettings.settings.object.geometry.playerAngles[playerIndex];
+//													case 'angles': return classSettings.settings.object.geometry.playerAngles[classSettings.playerIndex];
+													case 'angles': return classSettings.settings.object.geometry.playerAngles[playerIndex];
 														
 												}
 												const playerIndexItemId = parseInt(name);
 												if (!isNaN(playerIndexItemId)) {
 
-//													const angles = universeSettings.settings.object.geometry.playerAngles[playerIndex];
+//													const angles = classSettings.settings.object.geometry.playerAngles[playerIndex];
 //													const vertice = this.hypersphere.bufferGeometry.userData.position[playerIndexItemId];
-													const userData = universeSettings.settings.bufferGeometry.userData, playerIndexOld = userData.playerIndex;
+													const userData = classSettings.settings.bufferGeometry.userData, playerIndexOld = userData.playerIndex;
 													userData.playerIndex = playerIndex;
 													const vertice = userData.position[playerIndexItemId];
 													userData.playerIndex = playerIndexOld;
@@ -463,15 +463,15 @@ class Universe
 				},
 				
 			});
-			universeSettings.settings.guiPoints = {
+			classSettings.settings.guiPoints = {
 
 
 				seletedIndex: (guiIndexStr) => {
 
 					let guiIndex = parseInt(guiIndexStr);
 					if (isNaN(guiIndex)) return guiIndexStr;
-//					const anglesLength = universeSettings.settings.object.geometry.playerAngles[0].length;
-					const anglesLength = universeSettings.settings.object.geometry.angles.length;
+//					const anglesLength = classSettings.settings.object.geometry.playerAngles[0].length;
+					const anglesLength = classSettings.settings.object.geometry.angles.length;
 					while (guiIndex > anglesLength) guiIndex -= anglesLength;
 					return guiIndex;
 				
@@ -488,7 +488,7 @@ class Universe
 
 					};
 
-					const options = universeSettings.settings.options;
+					const options = classSettings.settings.options;
 					switch (options.getLanguageCode()) {
 
 						case 'ru'://Russian language
@@ -507,7 +507,7 @@ class Universe
 					fPoints.__ul.removeChild(elLast);
 					fPoints.__ul.insertBefore(elLast, elBefore);
 
-					const playerAngles = universeSettings.settings.object.geometry.playerAngles;
+					const playerAngles = classSettings.settings.object.geometry.playerAngles;
 					cTimes.onChange((playerIndex) => {
 
 						const selectPoints = cPoints.__select;
@@ -520,9 +520,9 @@ class Universe
 							return;
 							
 						}
-						universeSettings.settings.guiPoints.timeAngles = playerAngles[playerIndex];
-						universeSettings.settings.guiPoints.timeAngles.forEach((verticeAngles, verticeId) =>
-//						for (let verticeId = 0; verticeId < universeSettings.settings.guiPoints.timeAngles.length; verticeId++)
+						classSettings.settings.guiPoints.timeAngles = playerAngles[playerIndex];
+						classSettings.settings.guiPoints.timeAngles.forEach((verticeAngles, verticeId) =>
+//						for (let verticeId = 0; verticeId < classSettings.settings.guiPoints.timeAngles.length; verticeId++)
 						{
 
 							const opt = document.createElement('option');
@@ -539,10 +539,10 @@ class Universe
 							
 						}
 						
-						universeSettings.settings.guiPoints.positionOffset = positionOffset;
-						universeSettings.settings.guiPoints.playerIndex = playerIndex;
+						classSettings.settings.guiPoints.positionOffset = positionOffset;
+						classSettings.settings.guiPoints.playerIndex = playerIndex;
 /*
-						universeSettings.settings.guiPoints.onChangeAngle = (verticeId, angleId, angle) => {
+						classSettings.settings.guiPoints.onChangeAngle = (verticeId, angleId, angle) => {
 
 							const verticeAngles = playerAngles[playerIndex][verticeId];
 							if (verticeAngles[angleId] === angle) return;
@@ -553,8 +553,8 @@ class Universe
 */						
 
 					});
-					let pointId = 0;//Порядковый номер вершины в universeSettings.settings.bufferGeometry.attributes.position
-					//const drawRange = universeSettings.settings.bufferGeometry.drawRange,
+					let pointId = 0;//Порядковый номер вершины в classSettings.settings.bufferGeometry.attributes.position
+					//const drawRange = classSettings.settings.bufferGeometry.drawRange,
 					const appendChild = (name, pointId) => {
 						
 						const opt = document.createElement('option');
@@ -575,10 +575,10 @@ class Universe
 
 
 			}
-			universeSettings.anglesObject2Array = () => {
+			classSettings.anglesObject2Array = () => {
 
-				const settings = universeSettings.settings, playerAngles = settings.object.geometry.playerAngles;
-				if (playerAngles.length > settings.options.playerOptions.marks) console.warn(sUniverse +': anglesObject2Array. Invalid universeSettings.settings.object.geometry.playerAngles.length = ' + playerAngles.length);
+				const settings = classSettings.settings, playerAngles = settings.object.geometry.playerAngles;
+				if (playerAngles.length > settings.options.playerOptions.marks) console.warn(sUniverse +': anglesObject2Array. Invalid classSettings.settings.object.geometry.playerAngles.length = ' + playerAngles.length);
 				playerAngles.forEach((geometryAngles, playerIndex) => {
 
 					if (geometryAngles instanceof Array) {
@@ -587,7 +587,7 @@ class Universe
 						return;
 
 					}
-					if ((playerIndex > 0) && (geometryAngles.count != undefined)) console.warn(sUniverse +': anglesObject2Array. universeSettings.settings.object.geometry.playerAngles[' + playerIndex + '].count = ' + geometryAngles.count + ' is ignore.');
+					if ((playerIndex > 0) && (geometryAngles.count != undefined)) console.warn(sUniverse +': anglesObject2Array. classSettings.settings.object.geometry.playerAngles[' + playerIndex + '].count = ' + geometryAngles.count + ' is ignore.');
 					const angles = [];
 					Object.keys(geometryAngles).forEach((key) => angles[key] = geometryAngles[key]);
 					playerAngles[playerIndex] = angles;
@@ -595,10 +595,10 @@ class Universe
 				});
 				
 			}
-			this.hyperSphere = this.getHyperSphere(options, universeSettings);
+			this.hyperSphere = this.getHyperSphere(options, classSettings);
 
 /*			
-			universeSettings.settings.object.geometry.angles = new Proxy(universeSettings.settings.object.geometry.angles, {
+			classSettings.settings.object.geometry.angles = new Proxy(classSettings.settings.object.geometry.angles, {
 				
 				get: (angles, name) => {
 
@@ -608,27 +608,27 @@ class Universe
 				
 			});
 */			
-//			this.hyperSphere.angles = universeSettings.settings.object.geometry.angles;
+//			this.hyperSphere.angles = classSettings.settings.object.geometry.angles;
 			
-			universeSettings.projectParams.scene.userData = new Proxy(universeSettings.projectParams.scene.userData, {
+			classSettings.projectParams.scene.userData = new Proxy(classSettings.projectParams.scene.userData, {
 	
 				set: (userData, name, value) => {
 	
 					switch (name) {
 	
 						case 't':
-//universeSettings.playerIndex = userData.index;//deprecated
-							universeSettings.settings.bufferGeometry.userData.playerIndex = userData.index;
-//							universeSettings.r = value;
+//classSettings.playerIndex = userData.index;//deprecated
+							classSettings.settings.bufferGeometry.userData.playerIndex = userData.index;
+//							classSettings.r = value;
 /*							
-							universeSettings.settings.object.geometry.playerAngles[userData.index].player = {
+							classSettings.settings.object.geometry.playerAngles[userData.index].player = {
 
 //								index: userData.index,
 								t: value,
 								
 							}
 */							
-							if (!universeSettings.onSelectScene) this.onSelectScene.copyAngles(universeSettings.settings.bufferGeometry.userData.playerIndex, value);
+							if (!classSettings.onSelectScene) this.onSelectScene.copyAngles(classSettings.settings.bufferGeometry.userData.playerIndex, value);
 							break;
 							
 					}
@@ -643,7 +643,7 @@ class Universe
 				const onSelectScene = options.onSelectScene;
 				options.onSelectScene = (index, t) => {
 		
-					universeSettings.r = t;
+					classSettings.r = t;
 					if (onSelectScene) onSelectScene(index, t);
 				
 				}
@@ -657,17 +657,17 @@ class Universe
 			copyAngles: (playerIndex, t) => {
 
 				if (playerIndex === 0) return;
-				const geometry = universeSettings.settings.object.geometry, playerAngles = geometry.playerAngles,
+				const geometry = classSettings.settings.object.geometry, playerAngles = geometry.playerAngles,
 					timeAnglesSrc  = playerAngles[playerIndex - 1],
 					timeAnglesDest = playerAngles[playerIndex],
-					boLog = universeSettings.debug && (universeSettings.debug != false);
-				if (boLog) console.log('playerIndex = ' + universeSettings.settings.bufferGeometry.userData.playerIndex + ' t = ' + t);
+					boLog = classSettings.debug && (classSettings.debug != false);
+				if (boLog) console.log('playerIndex = ' + classSettings.settings.bufferGeometry.userData.playerIndex + ' t = ' + t);
 				timeAnglesSrc.forEach((timeAngles, i) => {
 					
 					timeAnglesDest[i] = timeAngles;
 					if (boLog){
 
-						let vertice = universeSettings.settings.bufferGeometry.userData.position[i];
+						let vertice = classSettings.settings.bufferGeometry.userData.position[i];
 						const timeAnglesDestItem = timeAnglesDest[i];
 						console.log(' timeVertices[' + i + '] = ' + JSON.stringify(vertice) +
 									' angles = ' + JSON.stringify(timeAnglesDestItem) +

@@ -22,15 +22,15 @@ class CircularUniverse extends Universe {
 
 	/**
 	 * All vertices of the <b>CircularUniverse</b> form a circle.
-	 * @param {object} [universeSettings={}] See <a href="../../../commonNodeJS/master/HyperSphere/jsdoc/module-HyperSphere-HyperSphere.html" target="_blank">HyperSphere classSettings</a> parameter.
+	 * @param {object} [classSettings={}] See <a href="../../../commonNodeJS/master/HyperSphere/jsdoc/module-HyperSphere-HyperSphere.html" target="_blank">HyperSphere classSettings</a> parameter.
 	 * @param {object} [myThreeOptions={}] See <a href="../../../commonNodeJS/master/myThree/jsdoc/module-MyThree-MyThree.html" target="_blank">MyThree optionss</a> parameter.
 	 **/
-	constructor(universeSettings = {}, myThreeOptions = {}) {
+	constructor(classSettings = {}, myThreeOptions = {}) {
 
-		super(universeSettings, myThreeOptions);
+		super(classSettings, myThreeOptions);
 
 	}
-	getHyperSphere(options, universeSettings) { return new Circle(options, universeSettings); }
+	getHyperSphere(options, classSettings) { return new Circle(options, classSettings); }
 	name(getLanguageCode) {
 
 		//Localization

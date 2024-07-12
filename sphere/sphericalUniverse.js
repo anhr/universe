@@ -25,15 +25,15 @@ class SphericalUniverse extends Universe {
 
 	/**
 	 * All the vertices of the <b>SphericalUniverse</b> form a sphere.
-	 * @param {object} [universeSettings={}] See <a href="../../../commonNodeJS/master/HyperSphere/jsdoc/module-HyperSphere-HyperSphere.html" target="_blank">HyperSphere classSettings</a> parameter.
+	 * @param {object} [classSettings={}] See <a href="../../../commonNodeJS/master/HyperSphere/jsdoc/module-HyperSphere-HyperSphere.html" target="_blank">HyperSphere classSettings</a> parameter.
 	 **/
-	constructor(universeSettings = {}, myThreeOptions={}) {
+	constructor(classSettings = {}, myThreeOptions={}) {
 
-		universeSettings.continue = () => this.logUniverse2D();
+		classSettings.continue = () => this.logUniverse2D();
 		myThreeOptions.scales = myThreeOptions.scales || { z: {}, };
 		myThreeOptions.orbitControls = myThreeOptions.orbitControls || { enableRotate: true, };
 		myThreeOptions.camera = myThreeOptions.camera || { position: [ 0.4, 0.4, 2 ] };
-		super(universeSettings, myThreeOptions
+		super(classSettings, myThreeOptions
 /*			  
 		{
 			
@@ -46,7 +46,7 @@ class SphericalUniverse extends Universe {
 		);
 
 	}
-	getHyperSphere(options, universeSettings) { return new Sphere(options, universeSettings); }
+	getHyperSphere(options, classSettings) { return new Sphere(options, classSettings); }
 	name( getLanguageCode ) {
 
 		//Localization

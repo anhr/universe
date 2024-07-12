@@ -26,14 +26,14 @@ class HypersphericalUniverse extends SphericalUniverse {
 
 	/**
 	 * All the vertices of the <b>HypersphericalUniverse</b> form a 3 dimensional [hypersphere]{@link https://en.wikipedia.org/wiki/N-sphere}.
-	 * @param {object} [universeSettings={}] See <a href="../../../commonNodeJS/master/HyperSphere/jsdoc/module-HyperSphere-HyperSphere.html" target="_blank">HyperSphere classSettings</a> parameter.
+	 * @param {object} [classSettings={}] See <a href="../../../commonNodeJS/master/HyperSphere/jsdoc/module-HyperSphere-HyperSphere.html" target="_blank">HyperSphere classSettings</a> parameter.
 	 **/
-	constructor(universeSettings = {}, myThreeOptions) {
+	constructor(classSettings = {}, myThreeOptions) {
 
-		super(universeSettings, myThreeOptions);
+		super(classSettings, myThreeOptions);
 
 	}
-	getHyperSphere(options, universeSettings) { return new HyperSphere3D(options, universeSettings); }
+	getHyperSphere(options, classSettings) { return new HyperSphere3D(options, classSettings); }
 	name(getLanguageCode) {
 
 		//Localization
