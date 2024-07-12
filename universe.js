@@ -150,6 +150,17 @@ class Universe
 
 			universeSettings.settings.isSetPosition = true;//при выполнении шага в Player не надо вычислять позицию вершин в самом Player
 			universeSettings.settings.object.geometry.rCount = options.playerOptions.marks;//количество возможных радиусов вселенной
+			{//hide playerAnglesLength
+				
+				const playerAngles = universeSettings.settings.object.geometry.playerAngles;
+				if (playerAngles) {
+					
+					const playerAnglesLength = playerAngles.length;
+					if (playerAnglesLength > 0 )universeSettings.settings.object.geometry.playerAnglesLength = playerAnglesLength;
+
+				}
+
+			}
 
 			{//hide geometryAngles
 
@@ -231,7 +242,7 @@ class Universe
 						if (!isNaN(playerIndex)) {
 
 							const timeAngles0 = playerAngles[0];
-							playerAngles[name] = new Proxy(value, {
+							playerAngles[playerIndex] = new Proxy(value, {
 
 								get: (timeAngles, name) => {
 
@@ -566,11 +577,17 @@ class Universe
 			}
 			universeSettings.anglesObject2Array = () => {
 
-				const playerAngles = universeSettings.settings.object.geometry.playerAngles;
+				const settings = universeSettings.settings, playerAngles = settings.object.geometry.playerAngles;
+				if (playerAngles.length > settings.options.playerOptions.marks) console.warn(sUniverse +': anglesObject2Array. Invalid universeSettings.settings.object.geometry.playerAngles.length = ' + playerAngles.length);
 				playerAngles.forEach((geometryAngles, playerIndex) => {
 
-					if (geometryAngles instanceof Array) return;
-					if ((playerIndex > 0) && (geometryAngles.count != undefined)) console.warn(sUniverse +': anglesObject2Array. universeSettings.settings.object.geometry.playerAngles[' + playerIndex + '].count = ' + geometryAngles.count + ' is ignore.')
+					if (geometryAngles instanceof Array) {
+
+						if (playerIndex > 0) playerAngles[playerIndex] = playerAngles[playerIndex];
+						return;
+
+					}
+					if ((playerIndex > 0) && (geometryAngles.count != undefined)) console.warn(sUniverse +': anglesObject2Array. universeSettings.settings.object.geometry.playerAngles[' + playerIndex + '].count = ' + geometryAngles.count + ' is ignore.');
 					const angles = [];
 					Object.keys(geometryAngles).forEach((key) => angles[key] = geometryAngles[key]);
 					playerAngles[playerIndex] = angles;
