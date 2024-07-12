@@ -215,6 +215,11 @@ class Universe
 											return vertice;
 
 										}
+										switch (name) {
+	
+											case 'player': return this.hyperSphere.anglesPlayer(playerIndex);
+												
+										}
 										return timeAngles[name];
 										
 									},
@@ -233,6 +238,12 @@ class Universe
 							return playerAngles[playerIndex];
 	
 						}
+						switch (name) {
+
+							case 'length': if (playerAngles.length === 0) return 1;
+								break;
+								
+						}
 						return playerAngles[name];
 						
 					},
@@ -248,7 +259,9 @@ class Universe
 
 									switch (name) {
 
-										case 'player': return timeAngles.player ? timeAngles.player : new Proxy(value, {
+										case 'player': return this.hyperSphere.anglesPlayer(playerIndex);
+/*											
+											return timeAngles.player ? timeAngles.player : new Proxy(value, {
 											
 											get: (player, name) => {
 			
@@ -262,6 +275,7 @@ class Universe
 											},
 											
 										});
+*/											
 										case 'forEach': return (item) => {
 										
 											for (let verticeId = 0; verticeId < timeAngles0.length; verticeId++) {
@@ -320,6 +334,7 @@ class Universe
 //							return geometry.playerAngles[0];
 							const playerAngles = geometry.playerAngles;
 							if (playerAngles.length === 0) return;
+							else if (playerAngles.length === 1) return playerAngles[0];
 							const playerIndex = classSettings.settings.guiPoints.playerIndex, angles0 = playerAngles[0];
 							let angles = playerAngles[playerIndex === undefined ? 0 : playerIndex];
 							
