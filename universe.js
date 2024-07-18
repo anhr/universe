@@ -611,6 +611,17 @@ class Universe
 				
 			}
 			this.hyperSphere = this.getHyperSphere(options, classSettings);
+			{
+				
+				let playerIndex;
+				Object.defineProperty(classSettings.settings.bufferGeometry.userData, 'playerIndex', {
+					
+					get: () => { return playerIndex != undefined ? playerIndex : settings.options.playerOptions.selectSceneIndex; },
+					set: (playerIndexNew) => { playerIndex = playerIndexNew; },
+					
+				});
+				
+			}
 
 /*			
 			classSettings.settings.object.geometry.angles = new Proxy(classSettings.settings.object.geometry.angles, {
@@ -633,7 +644,7 @@ class Universe
 	
 						case 't':
 //classSettings.playerIndex = userData.index;//deprecated
-							classSettings.settings.bufferGeometry.userData.playerIndex = userData.index;
+//							classSettings.settings.bufferGeometry.userData.playerIndex = userData.index;
 //							classSettings.r = value;
 /*							
 							classSettings.settings.object.geometry.playerAngles[userData.index].player = {
