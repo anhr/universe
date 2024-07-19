@@ -193,16 +193,6 @@ class Universe
 								
 														case 'middleVertice': return (oppositeVerticesId, index) => {
 
-/*															
-//															const angles = classSettings.settings.object.geometry.playerPosition[0].angles,
-															const angles = classSettings.settings.object.geometry.position.angles,
-																shift = angles.length * playerIndex,
-																startOppositeVerticesId = angles[verticeId].oppositeVerticesId;
-															oppositeVerticesId = [];
-															for (let i = 0; i < startOppositeVerticesId.length; i++) oppositeVerticesId.push(startOppositeVerticesId[i] + shift);
-															//playerPosition[playerIndex - 1].angles[verticeId]
-															return angles[verticeId].middleVertice(oppositeVerticesId, playerIndex + 1);
-*/															
 															const vertice = classSettings.settings.object.geometry.position.angles[verticeId];
 															return vertice.middleVertice(vertice.oppositeVerticesId, playerIndex + 1);
 															
@@ -254,13 +244,15 @@ class Universe
 						const playerIndex = parseInt(name);
 						if (!isNaN(playerIndex)) {
 
-							const timeAngles0 = playerAngles[0];
-							playerAngles[playerIndex] = new Proxy(value, {
+							const timeAngles0 = playerAngles[0];/*, timeAngles = playerAngles[playerIndex];
+							if (timeAngles && timeAngles.isTimeAnglesProxy) console.error(sUniverse + ': duplicate set playerAngles[' + playerIndex + ']');
+							else */playerAngles[playerIndex] = new Proxy(value, {
 
 								get: (timeAngles, name) => {
 
 									switch (name) {
 
+										case 'isTimeAnglesProxy': return true;
 										case 'player': 
 											if (!this.hyperSphere) return;
 											return this.hyperSphere.anglesPlayer(playerIndex);
