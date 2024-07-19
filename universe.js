@@ -92,7 +92,7 @@ class Universe
 
 		}
 */		
-		if (classSettings.r === undefined) classSettings.r = myThreeOptions.playerOptions.min;
+//		if (classSettings.r === undefined) classSettings.r = myThreeOptions.playerOptions.min;
 		classSettings.rRange = classSettings.rRange || myThreeOptions.scales.w;
 		myThreeOptions.orbitControls = myThreeOptions.orbitControls || {};
 		myThreeOptions.orbitControls.enableRotate = myThreeOptions.orbitControls.enableRotate != undefined ? myThreeOptions.orbitControls.enableRotate : false;
@@ -119,7 +119,8 @@ class Universe
 			classSettings.settings.object.name = classSettings.settings.object.name || this.name(options.getLanguageCode);
 
 			if (classSettings.settings.object.color === undefined) classSettings.settings.object.color = () => { return options.player.getTime(); }
-			
+
+/*			
 			{//hide r
 
 				let r = classSettings.r;
@@ -146,6 +147,7 @@ class Universe
 				});
 	
 			}
+*/			
 			classSettings.projectParams.scene.userData.endSelect = () => {}
 
 			classSettings.settings.isSetPosition = true;//при выполнении шага в Player не надо вычислять позицию вершин в самом Player
@@ -172,7 +174,7 @@ class Universe
 						const playerIndex = parseInt(name);
 						if (!isNaN(playerIndex)) {
 	
-							if (playerIndex === 0) return playerAngles[playerIndex] || geometryAngles;
+//							if (playerIndex === 0) return playerAngles[playerIndex] || geometryAngles;
 							if (!playerAngles[playerIndex]) {
 
 								if (playerAngles.length != playerIndex) console.error(sUniverse + ': get playerAngles[' + playerIndex + '] failed. Invalid playerIndex = ' + playerIndex);
@@ -259,23 +261,9 @@ class Universe
 
 									switch (name) {
 
-										case 'player': return this.hyperSphere.anglesPlayer(playerIndex);
-/*											
-											return timeAngles.player ? timeAngles.player : new Proxy(value, {
-											
-											get: (player, name) => {
-			
-												switch (name) {
-			
-													case 't': return classSettings.settings.options.player.getTime(playerIndex);
-														
-												}
-												return player[name];
-												
-											},
-											
-										});
-*/											
+										case 'player': 
+											if (!this.hyperSphere) return;
+											return this.hyperSphere.anglesPlayer(playerIndex);
 										case 'forEach': return (item) => {
 										
 											for (let verticeId = 0; verticeId < timeAngles0.length; verticeId++) {
@@ -669,7 +657,7 @@ class Universe
 				const onSelectScene = options.onSelectScene;
 				options.onSelectScene = (index, t) => {
 		
-					classSettings.r = t;
+//					classSettings.r = t;
 					if (onSelectScene) onSelectScene(index, t);
 				
 				}
