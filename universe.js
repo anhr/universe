@@ -174,7 +174,7 @@ class Universe
 						const playerIndex = parseInt(name);
 						if (!isNaN(playerIndex)) {
 	
-//							if (playerIndex === 0) return playerAngles[playerIndex] || geometryAngles;
+							if (playerIndex === 0) return playerAngles[playerIndex] || geometryAngles;
 							if (!playerAngles[playerIndex]) {
 
 								if (playerAngles.length != playerIndex) console.error(sUniverse + ': get playerAngles[' + playerIndex + '] failed. Invalid playerIndex = ' + playerIndex);
