@@ -254,7 +254,19 @@ class Universe
 
 										case 'isTimeAnglesProxy': return true;
 										case 'player': 
-											if (!this.hyperSphere) return;
+											if (!this.hyperSphere) {
+
+												if (playerIndex != 0) console.error(sUniverse + ': set playerAngles, get player. Invalid playerIndex = ' + playerIndex);
+												const t = classSettings.settings.options.player.getTime(playerIndex);
+												return {
+
+													id: playerIndex,
+													t: t,
+													r: t * classSettings.r,
+														
+												}
+												
+											};
 											return this.hyperSphere.anglesPlayer(playerIndex);
 										case 'forEach': return (item) => {
 										
@@ -634,6 +646,7 @@ class Universe
 								
 							}
 */							
+							this.hyperSphere.oldR = userData.t;
 							if (!classSettings.onSelectScene) this.onSelectScene.copyAngles(classSettings.settings.bufferGeometry.userData.playerIndex, value);
 							break;
 							
