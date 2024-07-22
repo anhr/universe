@@ -370,6 +370,7 @@ class Universe
 										case 'player':
 										case 'pushRandomAngle':
 										case 'push':
+										case 'isTimeAnglesProxy':
 											break;
 										default: if (isNaN(name)) console.error(sUniverse + ': get geometry.angles. Invalid name: ' + name);
 											
@@ -397,57 +398,63 @@ class Universe
 								
 							});
 						case 'position': 
-							if (!geometry.playerPosition) geometry.playerPosition = new Proxy([], {
-
-								get: (playerPosition, name) => {
-
-									const playerIndex = parseInt(name);
-									if (!isNaN(playerIndex)) {
-
-										if ((playerIndex != 0) && !playerPosition[playerIndex]) return new Proxy([], {
-
-											get: (playerPositionItem, name) => {
-
-												switch (name) {
-
-													case 'length': {
-
-														const length = playerPosition[0].length;
-//														if (classSettings.debug && (length != classSettings.settings.object.geometry.playerAngles[0].length))
-														if (classSettings.debug && (length != classSettings.settings.object.geometry.angles.length))
-															console.error(sUniverse + ': get player position item failed! Invalid length = ' + length);
-														return length;
-
-													}
-//													case 'angles': return classSettings.settings.object.geometry.playerAngles[classSettings.playerIndex];
-													case 'angles': return classSettings.settings.object.geometry.playerAngles[playerIndex];
-														
-												}
-												const playerIndexItemId = parseInt(name);
-												if (!isNaN(playerIndexItemId)) {
-
-//													const angles = classSettings.settings.object.geometry.playerAngles[playerIndex];
-//													const vertice = this.hypersphere.bufferGeometry.userData.position[playerIndexItemId];
-													const userData = classSettings.settings.bufferGeometry.userData, playerIndexOld = userData.playerIndex;
-													userData.playerIndex = playerIndex;
-													const vertice = userData.position[playerIndexItemId];
-													userData.playerIndex = playerIndexOld;
-													return vertice;
-													
-												}
-												return playerPositionItem[name];
-												
-											},
-											
-										});
-										return playerPosition[playerIndex];
-				
-									}
-									return playerPosition[name];
-									
-								},
+							if (!geometry.playerPosition) {
 								
-							});
+								geometry.playerPosition = new Proxy([], {
+	
+									get: (playerPosition, name) => {
+	
+										const playerIndex = parseInt(name);
+										if (!isNaN(playerIndex)) {
+	
+											if ((playerIndex != 0) && !playerPosition[playerIndex]) return new Proxy([], {
+	
+												get: (playerPositionItem, name) => {
+	
+													switch (name) {
+	
+														case 'length': {
+	
+															const length = playerPosition[0].length;
+	//														if (classSettings.debug && (length != classSettings.settings.object.geometry.playerAngles[0].length))
+															if (classSettings.debug && (length != classSettings.settings.object.geometry.angles.length))
+																console.error(sUniverse + ': get player position item failed! Invalid length = ' + length);
+															return length;
+	
+														}
+	//													case 'angles': return classSettings.settings.object.geometry.playerAngles[classSettings.playerIndex];
+														case 'angles': return classSettings.settings.object.geometry.playerAngles[playerIndex];
+															
+													}
+													const playerIndexItemId = parseInt(name);
+													if (!isNaN(playerIndexItemId)) {
+	
+	//													const angles = classSettings.settings.object.geometry.playerAngles[playerIndex];
+	//													const vertice = this.hypersphere.bufferGeometry.userData.position[playerIndexItemId];
+														const userData = classSettings.settings.bufferGeometry.userData, playerIndexOld = userData.playerIndex;
+														userData.playerIndex = playerIndex;
+														const vertice = userData.position[playerIndexItemId];
+														userData.playerIndex = playerIndexOld;
+														return vertice;
+														
+													}
+													return playerPositionItem[name];
+													
+												},
+												
+											});
+											return playerPosition[playerIndex];
+					
+										}
+										return playerPosition[name];
+										
+									},
+									
+								});
+								classSettings.overriddenProperties ||= {};
+								classSettings.overriddenProperties.oppositeVertice = (oppositeAngleId, playerIndex) => { return geometry.playerPosition[playerIndex - 1][oppositeAngleId]; }
+
+							}
 							return geometry.playerPosition[classSettings.settings.options.player.getTimeId()];
 //							return geometry.playerPosition[0];
 
@@ -591,6 +598,7 @@ class Universe
 				if (playerAngles.length > settings.options.playerOptions.marks) console.warn(sUniverse +': anglesObject2Array. Invalid classSettings.settings.object.geometry.playerAngles.length = ' + playerAngles.length);
 				playerAngles.forEach((geometryAngles, playerIndex) => {
 
+					if (geometryAngles.isTimeAnglesProxy) return;
 					if (geometryAngles instanceof Array) {
 
 						if (playerIndex > 0) playerAngles[playerIndex] = playerAngles[playerIndex];
