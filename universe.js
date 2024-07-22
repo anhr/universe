@@ -378,6 +378,7 @@ class Universe
 								classSettings.overriddenProperties ||= {};
 								classSettings.overriddenProperties.oppositeVertice = (oppositeAngleId, playerIndex) => { return geometry.playerPosition[playerIndex - 1][oppositeAngleId]; }
 								Object.defineProperty(classSettings.overriddenProperties, 'position', { get: () => { return geometry.playerPosition[classSettings.settings.bufferGeometry.userData.playerIndex]; }, });
+								Object.defineProperty(classSettings.overriddenProperties, 'position0', { get: () => { return geometry.playerPosition[0]; }, });
 
 							}
 							return geometry.playerPosition[classSettings.settings.options.player.getTimeId()];
