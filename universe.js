@@ -188,7 +188,8 @@ class Universe
 											const vertice = new Proxy(timeAngles[verticeId], {
 											
 												get: (verticeAngles, name) => {
-													
+
+/*													
 													switch (name) {
 								
 														case 'middleVertice': return (oppositeVerticesId, index) => {
@@ -199,6 +200,7 @@ class Universe
 														}
 	
 													}
+*/													
 													return verticeAngles[name];
 													
 												},
@@ -446,7 +448,8 @@ class Universe
 								},
 								
 							});
-							return geometry.playerPosition[0];
+							return geometry.playerPosition[classSettings.settings.options.player.getTimeId()];
+//							return geometry.playerPosition[0];
 
 					}
 					return geometry[name];
