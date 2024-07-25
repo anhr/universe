@@ -376,11 +376,17 @@ class Universe
 									
 								});
 								classSettings.overriddenProperties ||= {};
-								classSettings.overriddenProperties.oppositeVertice = (oppositeAngleId, playerIndex) => { return geometry.playerPosition[playerIndex - 1][oppositeAngleId]; }
-								Object.defineProperty(classSettings.overriddenProperties, 'position', { get: () => { return geometry.playerPosition[classSettings.settings.bufferGeometry.userData.playerIndex]; }, });
-								Object.defineProperty(classSettings.overriddenProperties, 'position0', { get: () => { return geometry.playerPosition[0]; }, });
+								classSettings.overriddenProperties.oppositeVertice ||= (oppositeAngleId, playerIndex) => { return geometry.playerPosition[playerIndex - 1][oppositeAngleId]; }
+								if (!classSettings.overriddenProperties.position) Object.defineProperty(classSettings.overriddenProperties, 'position', { get: () => { return geometry.playerPosition[classSettings.settings.bufferGeometry.userData.playerIndex]; }, });
+								if (!classSettings.overriddenProperties.position0) Object.defineProperty(classSettings.overriddenProperties, 'position0', { get: () => { return geometry.playerPosition[0]; }, });
 								classSettings.overriddenProperties.updateVertices ||= (vertices) => { this.hyperSphere.bufferGeometry.attributes.position.needsUpdate = true; }
 								classSettings.overriddenProperties.vertices ||= () => {}
+//								if (!classSettings.overriddenProperties.r) Object.defineProperty(classSettings.overriddenProperties, 'r', { get: () => { return classSettings.settings.object.geometry.angles.player.r; }, });
+//								if (!classSettings.overriddenProperties.r) Object.defineProperty(classSettings.overriddenProperties, 'r', { get: () => { return classSettings.settings.object.geometry.playerAngles[0].player.r; }, });
+								classSettings.overriddenProperties.r ||= (playerIndex) => { return classSettings.settings.object.geometry.playerAngles[playerIndex != undefined ? playerIndex : 0].player.r; }
+								classSettings.overriddenProperties.timeR ||= (playerIndex) => { return classSettings.settings.object.geometry.playerAngles[playerIndex].player.r; }
+								classSettings.overriddenProperties.pushMiddleVertice ||= (playerIndex, middleVertice) => { geometry.playerAngles[playerIndex].push(middleVertice); }
+								classSettings.overriddenProperties.angles ||= (anglesId, playerIndex) => { return classSettings.settings.object.geometry.playerAngles[playerIndex][anglesId]; }
 
 							}
 							return geometry.playerPosition[classSettings.settings.options.player.getTimeId()];
