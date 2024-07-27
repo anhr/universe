@@ -479,12 +479,15 @@ class Universe
 
 						});
 						let positionOffset = 0;
+/*						
 						for (let i = 0; i < timeId; i++) {
 
 							const timeAngles = timeAngles[i];
 							positionOffset += timeAngles.length;
 							
 						}
+*/						
+						for (let i = 0; i < timeId; i++) positionOffset += timeAngles[i].length;
 						
 						classSettings.settings.guiPoints.positionOffset = positionOffset;
 						classSettings.settings.guiPoints.timeId = timeId;
