@@ -384,7 +384,7 @@ class Universe
 //								if (!classSettings.overriddenProperties.r) Object.defineProperty(classSettings.overriddenProperties, 'r', { get: () => { return classSettings.settings.object.geometry.angles.player.r; }, });
 //								if (!classSettings.overriddenProperties.r) Object.defineProperty(classSettings.overriddenProperties, 'r', { get: () => { return classSettings.settings.object.geometry.playerAngles[0].player.r; }, });
 								classSettings.overriddenProperties.r ||= (playerIndex) => { return classSettings.settings.object.geometry.playerAngles[playerIndex != undefined ? playerIndex : 0].player.r; }
-								classSettings.overriddenProperties.timeR ||= (playerIndex) => { return classSettings.settings.object.geometry.playerAngles[playerIndex].player.r; }
+//								classSettings.overriddenProperties.timeR ||= (playerIndex) => { return classSettings.settings.object.geometry.playerAngles[playerIndex].player.r; }
 								classSettings.overriddenProperties.pushMiddleVertice ||= (playerIndex, middleVertice) => { geometry.playerAngles[playerIndex].push(middleVertice); }
 								classSettings.overriddenProperties.angles ||= (anglesId, playerIndex) => { return classSettings.settings.object.geometry.playerAngles[playerIndex][anglesId]; }
 
