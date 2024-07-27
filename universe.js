@@ -129,14 +129,14 @@ class Universe
 		
 					get: (playerAngles, name) => {
 	
-						const playerIndex = parseInt(name);
-						if (!isNaN(playerIndex)) {
+						const timeId = parseInt(name);
+						if (!isNaN(timeId)) {
 	
-							if (playerIndex === 0) return playerAngles[playerIndex] || geometryAngles;
-							if (!playerAngles[playerIndex]) {
+							if (timeId === 0) return playerAngles[timeId] || geometryAngles;
+							if (!playerAngles[timeId]) {
 
-								if (playerAngles.length != playerIndex) console.error(sUniverse + ': get playerAngles[' + playerIndex + '] failed. Invalid playerIndex = ' + playerIndex);
-								playerAngles[playerIndex] = new Proxy([], {
+								if (playerAngles.length != timeId) console.error(sUniverse + ': get playerAngles[' + timeId + '] failed. Invalid timeId = ' + timeId);
+								playerAngles[timeId] = new Proxy([], {
 
 									get: (timeAngles, name) => {
 										
@@ -160,7 +160,7 @@ class Universe
 										}
 										switch (name) {
 	
-											case 'player': return this.hyperSphere.anglesPlayer(playerIndex);
+											case 'player': return this.hyperSphere.anglesPlayer(timeId);
 												
 										}
 										return timeAngles[name];
@@ -170,7 +170,7 @@ class Universe
 					
 										timeAngles[name] = value;
 										const timeAnglesId = parseInt(name);
-										if (!isNaN(timeAnglesId)) this.hyperSphere.setPositionAttributeFromPoint(timeAnglesId, undefined, playerIndex);
+										if (!isNaN(timeAnglesId)) this.hyperSphere.setPositionAttributeFromPoint(timeAnglesId, undefined, timeId);
 										return true;
 										
 									},
@@ -178,7 +178,7 @@ class Universe
 								});
 
 							}
-							return playerAngles[playerIndex];
+							return playerAngles[timeId];
 	
 						}
 						switch (name) {
@@ -192,11 +192,11 @@ class Universe
 					},
 					set: (playerAngles, name, value) => {
 
-						const playerIndex = parseInt(name);
-						if (!isNaN(playerIndex)) {
+						const timeId = parseInt(name);
+						if (!isNaN(timeId)) {
 
 							const timeAngles0 = playerAngles[0];
-							playerAngles[playerIndex] = new Proxy(value, {
+							playerAngles[timeId] = new Proxy(value, {
 
 								get: (timeAngles, name) => {
 
@@ -206,18 +206,18 @@ class Universe
 										case 'player': 
 											if (!this.hyperSphere) {
 
-												if (playerIndex != 0) console.error(sUniverse + ': set playerAngles, get player. Invalid playerIndex = ' + playerIndex);
-												const t = classSettings.settings.options.player.getTime(playerIndex);
+												if (timeId != 0) console.error(sUniverse + ': set playerAngles, get player. Invalid timeId = ' + timeId);
+												const t = classSettings.settings.options.player.getTime(timeId);
 												return {
 
-													id: playerIndex,
+													id: timeId,
 													t: t,
 													r: t * classSettings.r,
 														
 												}
 												
 											};
-											return this.hyperSphere.anglesPlayer(playerIndex);
+											return this.hyperSphere.anglesPlayer(timeId);
 										case 'forEach': return (item) => {
 										
 											for (let verticeId = 0; verticeId < timeAngles0.length; verticeId++) {
@@ -229,7 +229,7 @@ class Universe
 											
 										}
 										case 'length':
-											if (playerIndex > 0) return timeAngles0.length;
+											if (timeId > 0) return timeAngles0.length;
 											return timeAngles.length;
 											
 									}
@@ -239,13 +239,13 @@ class Universe
 										let verticeAngles = timeAngles[verticeId];
 										if (!verticeAngles) {
 
-											if (playerIndex === 0) {
+											if (timeId === 0) {
 												
-												console.error(sUniverse + ': get vertice angles failed. Invalid playerIndex = ' + playerIndex);
+												console.error(sUniverse + ': get vertice angles failed. Invalid timeId = ' + timeId);
 												return;
 
 											}
-											verticeAngles = playerAngles[playerIndex - 1][verticeId];
+											verticeAngles = playerAngles[timeId - 1][verticeId];
 										}
 										return verticeAngles;
 
@@ -275,8 +275,8 @@ class Universe
 							const playerAngles = geometry.playerAngles;
 							if (playerAngles.length === 0) return;
 							else if (playerAngles.length === 1) return playerAngles[0];
-							const playerIndex = classSettings.settings.guiPoints.playerIndex, angles0 = playerAngles[0];
-							let angles = playerAngles[playerIndex === undefined ? 0 : playerIndex];
+							const timeId = classSettings.settings.guiPoints.timeId, angles0 = playerAngles[0];
+							let angles = playerAngles[timeId === undefined ? 0 : timeId];
 							
 							if (!(angles instanceof Array)) {
 								
@@ -332,10 +332,10 @@ class Universe
 	
 									get: (playerPosition, name) => {
 	
-										const playerIndex = parseInt(name);
-										if (!isNaN(playerIndex)) {
+										const timeId = parseInt(name);
+										if (!isNaN(timeId)) {
 	
-											if ((playerIndex != 0) && !playerPosition[playerIndex]) return new Proxy([], {
+											if ((timeId != 0) && !playerPosition[timeId]) return new Proxy([], {
 	
 												get: (playerPositionItem, name) => {
 	
@@ -349,16 +349,16 @@ class Universe
 															return length;
 	
 														}
-														case 'angles': return classSettings.settings.object.geometry.playerAngles[playerIndex];
+														case 'angles': return classSettings.settings.object.geometry.playerAngles[timeId];
 															
 													}
 													const playerIndexItemId = parseInt(name);
 													if (!isNaN(playerIndexItemId)) {
 	
-														const userData = classSettings.settings.bufferGeometry.userData, playerIndexOld = userData.playerIndex;
-														userData.playerIndex = playerIndex;
+														const userData = classSettings.settings.bufferGeometry.userData, playerIndexOld = userData.timeId;
+														userData.timeId = timeId;
 														const vertice = userData.position[playerIndexItemId];
-														userData.playerIndex = playerIndexOld;
+														userData.timeId = playerIndexOld;
 														return vertice;
 														
 													}
@@ -367,7 +367,7 @@ class Universe
 												},
 												
 											});
-											return playerPosition[playerIndex];
+											return playerPosition[timeId];
 					
 										}
 										return playerPosition[name];
@@ -376,17 +376,17 @@ class Universe
 									
 								});
 								classSettings.overriddenProperties ||= {};
-								classSettings.overriddenProperties.oppositeVertice ||= (oppositeAngleId, playerIndex) => { return geometry.playerPosition[playerIndex - 1][oppositeAngleId]; }
-								if (!classSettings.overriddenProperties.position) Object.defineProperty(classSettings.overriddenProperties, 'position', { get: () => { return geometry.playerPosition[classSettings.settings.bufferGeometry.userData.playerIndex]; }, });
+								classSettings.overriddenProperties.oppositeVertice ||= (oppositeAngleId, timeId) => { return geometry.playerPosition[timeId - 1][oppositeAngleId]; }
+								if (!classSettings.overriddenProperties.position) Object.defineProperty(classSettings.overriddenProperties, 'position', { get: () => { return geometry.playerPosition[classSettings.settings.bufferGeometry.userData.timeId]; }, });
 								if (!classSettings.overriddenProperties.position0) Object.defineProperty(classSettings.overriddenProperties, 'position0', { get: () => { return geometry.playerPosition[0]; }, });
 								classSettings.overriddenProperties.updateVertices ||= (vertices) => { this.hyperSphere.bufferGeometry.attributes.position.needsUpdate = true; }
 								classSettings.overriddenProperties.vertices ||= () => {}
 //								if (!classSettings.overriddenProperties.r) Object.defineProperty(classSettings.overriddenProperties, 'r', { get: () => { return classSettings.settings.object.geometry.angles.player.r; }, });
 //								if (!classSettings.overriddenProperties.r) Object.defineProperty(classSettings.overriddenProperties, 'r', { get: () => { return classSettings.settings.object.geometry.playerAngles[0].player.r; }, });
-								classSettings.overriddenProperties.r ||= (playerIndex) => { return classSettings.settings.object.geometry.playerAngles[playerIndex != undefined ? playerIndex : 0].player.r; }
-//								classSettings.overriddenProperties.timeR ||= (playerIndex) => { return classSettings.settings.object.geometry.playerAngles[playerIndex].player.r; }
-								classSettings.overriddenProperties.pushMiddleVertice ||= (playerIndex, middleVertice) => { geometry.playerAngles[playerIndex].push(middleVertice); }
-								classSettings.overriddenProperties.angles ||= (anglesId, playerIndex) => { return classSettings.settings.object.geometry.playerAngles[playerIndex][anglesId]; }
+								classSettings.overriddenProperties.r ||= (timeId) => { return classSettings.settings.object.geometry.playerAngles[timeId != undefined ? timeId : 0].player.r; }
+//								classSettings.overriddenProperties.timeR ||= (timeId) => { return classSettings.settings.object.geometry.playerAngles[timeId].player.r; }
+								classSettings.overriddenProperties.pushMiddleVertice ||= (timeId, middleVertice) => { geometry.playerAngles[timeId].push(middleVertice); }
+								classSettings.overriddenProperties.angles ||= (anglesId, timeId) => { return classSettings.settings.object.geometry.playerAngles[timeId][anglesId]; }
 
 							}
 							return geometry.playerPosition[classSettings.settings.options.player.getTimeId()];
@@ -457,19 +457,19 @@ class Universe
 					fPoints.__ul.insertBefore(elLast, elBefore);
 
 					const playerAngles = classSettings.settings.object.geometry.playerAngles;
-					cTimes.onChange((playerIndex) => {
+					cTimes.onChange((timeId) => {
 
 						const selectPoints = cPoints.__select;
 						options.guiSelectPoint.selectPoint(-1);
 						while (selectPoints.length > 1) selectPoints.removeChild(selectPoints.lastChild);
-						playerIndex = parseInt(playerIndex);
-						if (isNaN(playerIndex)) {
+						timeId = parseInt(timeId);
+						if (isNaN(timeId)) {
 
-							console.error(sUniverse + ': cTimes.onChange. Invalid playerIndex = ' + playerIndex);
+							console.error(sUniverse + ': cTimes.onChange. Invalid timeId = ' + timeId);
 							return;
 							
 						}
-						classSettings.settings.guiPoints.timeAngles = playerAngles[playerIndex];
+						classSettings.settings.guiPoints.timeAngles = playerAngles[timeId];
 						classSettings.settings.guiPoints.timeAngles.forEach((verticeAngles, verticeId) => {
 
 							const opt = document.createElement('option');
@@ -479,7 +479,7 @@ class Universe
 
 						});
 						let positionOffset = 0;
-						for (let i = 0; i < playerIndex; i++) {
+						for (let i = 0; i < timeId; i++) {
 
 							const timeAngles = playerAngles[i];
 							positionOffset += timeAngles.length;
@@ -487,7 +487,7 @@ class Universe
 						}
 						
 						classSettings.settings.guiPoints.positionOffset = positionOffset;
-						classSettings.settings.guiPoints.playerIndex = playerIndex;
+						classSettings.settings.guiPoints.timeId = timeId;
 
 					});
 					let pointId = 0;//Порядковый номер вершины в classSettings.settings.bufferGeometry.attributes.position
@@ -500,9 +500,9 @@ class Universe
 						return opt;
 						
 					}
-					playerAngles.forEach((timeAngles, playerIndex) => {
+					playerAngles.forEach((timeAngles, timeId) => {
 
-						appendChild(timeAngles.player.t, playerIndex);
+						appendChild(timeAngles.player.t, timeId);
 						
 					});
 					
@@ -515,19 +515,19 @@ class Universe
 
 				const settings = classSettings.settings, playerAngles = settings.object.geometry.playerAngles;
 				if (playerAngles.length > settings.options.playerOptions.marks) console.warn(sUniverse +': anglesObject2Array. Invalid classSettings.settings.object.geometry.playerAngles.length = ' + playerAngles.length);
-				playerAngles.forEach((geometryAngles, playerIndex) => {
+				playerAngles.forEach((geometryAngles, timeId) => {
 
 					if (geometryAngles.isTimeAnglesProxy) return;
 					if (geometryAngles instanceof Array) {
 
-						if (playerIndex > 0) playerAngles[playerIndex] = playerAngles[playerIndex];
+						if (timeId > 0) playerAngles[timeId] = playerAngles[timeId];
 						return;
 
 					}
-					if ((playerIndex > 0) && (geometryAngles.count != undefined)) console.warn(sUniverse +': anglesObject2Array. classSettings.settings.object.geometry.playerAngles[' + playerIndex + '].count = ' + geometryAngles.count + ' is ignore.');
+					if ((timeId > 0) && (geometryAngles.count != undefined)) console.warn(sUniverse +': anglesObject2Array. classSettings.settings.object.geometry.playerAngles[' + timeId + '].count = ' + geometryAngles.count + ' is ignore.');
 					const angles = [];
 					Object.keys(geometryAngles).forEach((key) => angles[key] = geometryAngles[key]);
-					playerAngles[playerIndex] = angles;
+					playerAngles[timeId] = angles;
 							
 				});
 				
@@ -543,11 +543,11 @@ class Universe
 
 				});
 /*
-				let playerIndex;
-				Object.defineProperty(classSettings.settings.bufferGeometry.userData, 'playerIndex', {
+				let timeId;
+				Object.defineProperty(classSettings.settings.bufferGeometry.userData, 'timeId', {
 					
-					get: () => { return playerIndex != undefined ? playerIndex : settings.options.playerOptions.selectSceneIndex; },
-					set: (playerIndexNew) => { playerIndex = playerIndexNew; },
+					get: () => { return timeId != undefined ? timeId : settings.options.playerOptions.selectSceneIndex; },
+					set: (playerIndexNew) => { timeId = playerIndexNew; },
 					
 				});
 */
@@ -562,7 +562,7 @@ class Universe
 	
 						case 't':
 							this.hyperSphere.oldR = userData.t;
-							if (!classSettings.onSelectScene) this.onSelectScene.copyAngles(classSettings.settings.bufferGeometry.userData.playerIndex, value);
+							if (!classSettings.onSelectScene) this.onSelectScene.copyAngles(classSettings.settings.bufferGeometry.userData.timeId, value);
 							break;
 							
 					}
@@ -587,14 +587,14 @@ class Universe
 		}, myThreeOptions);
 		this.onSelectScene = {
 
-			copyAngles: (playerIndex, t) => {
+			copyAngles: (timeId, t) => {
 
-				if (playerIndex === 0) return;
+				if (timeId === 0) return;
 				const geometry = classSettings.settings.object.geometry, playerAngles = geometry.playerAngles,
-					timeAnglesSrc  = playerAngles[playerIndex - 1],
-					timeAnglesDest = playerAngles[playerIndex],
+					timeAnglesSrc  = playerAngles[timeId - 1],
+					timeAnglesDest = playerAngles[timeId],
 					boLog = classSettings.debug && (classSettings.debug != false);
-				if (boLog) console.log('playerIndex = ' + classSettings.settings.bufferGeometry.userData.playerIndex + ' t = ' + t);
+				if (boLog) console.log('timeId = ' + classSettings.settings.bufferGeometry.userData.timeId + ' t = ' + t);
 				timeAnglesSrc.forEach((timeAngles, i) => {
 					
 					timeAnglesDest[i] = timeAngles;
