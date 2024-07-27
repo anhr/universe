@@ -42,10 +42,10 @@
 				
 			},
 			*/
-			onSelectScene: (hyperSphere, playerIndex, t) => {
+			onSelectScene: (hyperSphere, timeId, t) => {
 				
-				if (hyperSphere.middleVertices) hyperSphere.middleVertices(playerIndex, t);
-				//hyperSphere.child.onSelectScene.copyAngles(playerIndex, t);
+				if (hyperSphere.middleVertices) hyperSphere.middleVertices(timeId, t);
+				//hyperSphere.child.onSelectScene.copyAngles(timeId, t);
 	
 			},
 			edges: {

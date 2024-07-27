@@ -534,7 +534,15 @@ class Universe
 			}
 			this.hyperSphere = this.getHyperSphere(options, classSettings);
 			{
-				
+
+				let timeId;
+				Object.defineProperty(classSettings.settings.bufferGeometry.userData, 'timeId', {
+
+					get: () => { return timeId != undefined ? timeId : settings.options.playerOptions.selectSceneIndex; },
+					set: (playerIndexNew) => { timeId = playerIndexNew; },
+
+				});
+/*
 				let playerIndex;
 				Object.defineProperty(classSettings.settings.bufferGeometry.userData, 'playerIndex', {
 					
@@ -542,6 +550,7 @@ class Universe
 					set: (playerIndexNew) => { playerIndex = playerIndexNew; },
 					
 				});
+*/
 				
 			}
 
