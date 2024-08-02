@@ -408,7 +408,8 @@ class Universe
 										
 									}
 */
-									return classSettings.settings.guiPoints.timeAngles[classSettings.settings.guiPoints.verticeId];
+									const guiPoints = classSettings.settings.guiPoints;
+									return guiPoints.timeAngles[guiPoints.verticeId != undefined ? guiPoints.verticeId : verticeId];
 									
 								}
 
