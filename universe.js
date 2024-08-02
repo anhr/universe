@@ -387,6 +387,30 @@ class Universe
 //								classSettings.overriddenProperties.timeR ||= (timeId) => { return classSettings.settings.object.geometry.timeAngles[timeId].player.r; }
 								classSettings.overriddenProperties.pushMiddleVertice ||= (timeId, middleVertice) => { geometry.timeAngles[timeId].push(middleVertice); }
 								classSettings.overriddenProperties.angles ||= (anglesId, timeId) => { return classSettings.settings.object.geometry.timeAngles[timeId][anglesId]; }
+								classSettings.overriddenProperties.verticeAngles ||= (anglesCur, verticeId) => {
+
+/*									
+									const timeAngles = classSettings.settings.object.geometry.timeAngles;
+									let anglesCount = 0;
+//									timeAngles.forEach((timeAngles, timeId) =>
+									for (let timeId = 0; timeId < timeAngles.length; timeId++) {
+
+										const timeAnglesItem = timeAngles[timeId];
+//										const opt = appendChild(timeAngles.player.t, timeId);
+										const anglesCountOld = anglesCount;
+										anglesCount += timeAnglesItem.length;
+										if((verticeId >= anglesCountOld) && (verticeId < anglesCount)) {
+
+											classSettings.settings.guiPoints.timeAngles = timeAnglesItem;
+											return timeAnglesItem[verticeId - anglesCountOld];
+
+										}
+										
+									}
+*/
+									return classSettings.settings.guiPoints.timeAngles[classSettings.settings.guiPoints.verticeId];
+									
+								}
 
 							}
 							return geometry.playerPosition[classSettings.settings.options.player.getTimeId()];
@@ -425,7 +449,7 @@ class Universe
 					return guiIndex;
 				
 				},
-				create: (fPoints, cPoints) => {
+				create: (fPoints, cPoints, count, intersectionSelected) => {
 
 					//Localization
 
@@ -493,7 +517,7 @@ class Universe
 						classSettings.settings.guiPoints.timeId = timeId;
 
 					});
-					let pointId = 0;//Порядковый номер вершины в classSettings.settings.bufferGeometry.attributes.position
+//					let pointId = 0;//Порядковый номер вершины в classSettings.settings.bufferGeometry.attributes.position
 					const appendChild = (name, pointId) => {
 						
 						const opt = document.createElement('option');
@@ -503,11 +527,34 @@ class Universe
 						return opt;
 						
 					}
+					let anglesCount = 0, timeIdSelected;
+					const index = intersectionSelected ? intersectionSelected.index : undefined;
 					timeAngles.forEach((timeAngles, timeId) => {
 
+//						const opt = appendChild(timeAngles.player.t, timeId);
 						appendChild(timeAngles.player.t, timeId);
+						if (index === undefined) return;
+						const anglesCountOld = anglesCount;
+						anglesCount += timeAngles.length;
+						if((index >= anglesCountOld) && (index < anglesCount)) {
+
+/*							
+							opt.selected = true;
+							classSettings.settings.guiPoints.positionOffset = anglesCountOld;
+							classSettings.settings.guiPoints.timeId = timeId;
+							intersectionSelected.index -= anglesCountOld;
+*/							
+							timeIdSelected = timeId;
+							classSettings.settings.guiPoints.verticeId = index - anglesCountOld;
+
+						}
 						
 					});
+/*					
+					if (timeIdSelected === undefined) console.error(sUniverse + ': classSettings.settings.guiPoints.create. Invalid timeIdSelected = ' + timeIdSelected);
+					else cTimes.__onChange(timeIdSelected);
+*/					
+					if (timeIdSelected != undefined) cTimes.__onChange(timeIdSelected);
 					
 				},
 				getValue: (cPoints) => { return cPoints.getValue(); },
