@@ -558,7 +558,13 @@ class Universe
 					if (timeIdSelected != undefined) cTimes.__onChange(timeIdSelected);
 					
 				},
-				getValue: (cPoints) => { return cPoints.getValue(); },
+				getValue: (cPoints) => {
+
+					const value = cPoints.getValue();
+					if (isNaN(value)) return -1;//точка не выбрана
+					return value;
+				
+				},
 
 
 			}
