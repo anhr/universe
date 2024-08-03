@@ -41,7 +41,7 @@ class Universe
 	/**
 	 * Base class for n dimensional hypersphere universe.
 	 * @param {object} [classSettings={}] See <a href="../../../commonNodeJS/master/HyperSphere/jsdoc/module-HyperSphere-HyperSphere.html" target="_blank">HyperSphere classSettings</a> parameter.
-	 * @param {Array} [classSettings.settings.object.geometry.timeAngles] Array of vertices angles for different time of the <a href="../../../commonNodeJS/master/player/jsdoc/" target="_blank">player</a>.
+	 * @param {Array} [classSettings.settings.object.geometry.timesAngles] Array of vertices angles for different time of the <a href="../../../commonNodeJS/master/player/jsdoc/" target="_blank">player</a>.
 	 * Every item of the <b>timeAngles</b> array is array of the vertices angles. See <b>classSettings.settings.object.geometry.angles</b> of the <a href="../../../commonNodeJS/master/HyperSphere/jsdoc/module-HyperSphere-HyperSphere.html" target="_blank">HyperSphere</a> for details
 	 * @param {object} [myThreeOptions={}] See <a href="../../../commonNodeJS/master/myThree/jsdoc/module-MyThree-MyThree.html" target="_blank">MyThree optionss</a> parameter.
 	 */
@@ -112,7 +112,7 @@ class Universe
 			classSettings.settings.object.geometry.rCount = options.playerOptions.marks;//количество возможных радиусов вселенной
 			{//hide timeAngles
 				
-				const timeAngles = classSettings.settings.object.geometry.timeAngles;
+				const timeAngles = classSettings.settings.object.geometry.timesAngles;
 				if (timeAngles) {
 					
 					const timeAnglesLength = timeAngles.length;
@@ -125,7 +125,7 @@ class Universe
 			{//hide geometryAngles
 
 				const geometryAngles = classSettings.settings.object.geometry.angles;
-				classSettings.settings.object.geometry.timeAngles = new Proxy(classSettings.settings.object.geometry.timeAngles || [], {
+				classSettings.settings.object.geometry.timesAngles = new Proxy(classSettings.settings.object.geometry.timesAngles || [], {
 		
 					get: (timeAngles, name) => {
 	
@@ -272,7 +272,7 @@ class Universe
 					switch (name) {
 
 						case 'angles': 
-							const timeAngles = geometry.timeAngles;
+							const timeAngles = geometry.timesAngles;
 							if (timeAngles.length === 0) return;
 							else if (timeAngles.length === 1) return timeAngles[0];
 							const timeId = classSettings.settings.guiPoints.timeId, angles0 = timeAngles[0];
@@ -349,7 +349,7 @@ class Universe
 															return length;
 	
 														}
-														case 'angles': return classSettings.settings.object.geometry.timeAngles[timeId];
+														case 'angles': return classSettings.settings.object.geometry.timesAngles[timeId];
 															
 													}
 													const playerIndexItemId = parseInt(name);
@@ -382,15 +382,15 @@ class Universe
 								classSettings.overriddenProperties.updateVertices ||= (vertices) => { this.hyperSphere.bufferGeometry.attributes.position.needsUpdate = true; }
 								classSettings.overriddenProperties.vertices ||= () => {}
 //								if (!classSettings.overriddenProperties.r) Object.defineProperty(classSettings.overriddenProperties, 'r', { get: () => { return classSettings.settings.object.geometry.angles.player.r; }, });
-//								if (!classSettings.overriddenProperties.r) Object.defineProperty(classSettings.overriddenProperties, 'r', { get: () => { return classSettings.settings.object.geometry.timeAngles[0].player.r; }, });
-								classSettings.overriddenProperties.r ||= (timeId) => { return classSettings.settings.object.geometry.timeAngles[timeId != undefined ? timeId : 0].player.r; }
-//								classSettings.overriddenProperties.timeR ||= (timeId) => { return classSettings.settings.object.geometry.timeAngles[timeId].player.r; }
-								classSettings.overriddenProperties.pushMiddleVertice ||= (timeId, middleVertice) => { geometry.timeAngles[timeId].push(middleVertice); }
-								classSettings.overriddenProperties.angles ||= (anglesId, timeId) => { return classSettings.settings.object.geometry.timeAngles[timeId][anglesId]; }
+//								if (!classSettings.overriddenProperties.r) Object.defineProperty(classSettings.overriddenProperties, 'r', { get: () => { return classSettings.settings.object.geometry.timesAngles[0].player.r; }, });
+								classSettings.overriddenProperties.r ||= (timeId) => { return classSettings.settings.object.geometry.timesAngles[timeId != undefined ? timeId : 0].player.r; }
+//								classSettings.overriddenProperties.timeR ||= (timeId) => { return classSettings.settings.object.geometry.timesAngles[timeId].player.r; }
+								classSettings.overriddenProperties.pushMiddleVertice ||= (timeId, middleVertice) => { geometry.timesAngles[timeId].push(middleVertice); }
+								classSettings.overriddenProperties.angles ||= (anglesId, timeId) => { return classSettings.settings.object.geometry.timesAngles[timeId][anglesId]; }
 								classSettings.overriddenProperties.verticeAngles ||= (anglesCur, verticeId) => {
 
 /*									
-									const timeAngles = classSettings.settings.object.geometry.timeAngles;
+									const timeAngles = classSettings.settings.object.geometry.timesAngles;
 									let anglesCount = 0;
 //									timeAngles.forEach((timeAngles, timeId) =>
 									for (let timeId = 0; timeId < timeAngles.length; timeId++) {
@@ -425,7 +425,7 @@ class Universe
 					switch (name) {
 
 						case 'angles':
-							geometry.timeAngles[0] = value;
+							geometry.timesAngles[0] = value;
 							return true;
 						case 'position':
 							geometry.playerPosition[0] = value;
@@ -481,7 +481,7 @@ class Universe
 					fPoints.__ul.removeChild(elLast);
 					fPoints.__ul.insertBefore(elLast, elBefore);
 
-					const timeAngles = classSettings.settings.object.geometry.timeAngles;
+					const timeAngles = classSettings.settings.object.geometry.timesAngles;
 					cTimes.onChange((timeId) => {
 
 						const selectPoints = cPoints.__select;
@@ -570,8 +570,8 @@ class Universe
 			}
 			classSettings.anglesObject2Array = () => {
 
-				const settings = classSettings.settings, timeAngles = settings.object.geometry.timeAngles;
-				if (timeAngles.length > settings.options.playerOptions.marks) console.warn(sUniverse +': anglesObject2Array. Invalid classSettings.settings.object.geometry.timeAngles.length = ' + timeAngles.length);
+				const settings = classSettings.settings, timeAngles = settings.object.geometry.timesAngles;
+				if (timeAngles.length > settings.options.playerOptions.marks) console.warn(sUniverse +': anglesObject2Array. Invalid classSettings.settings.object.geometry.timesAngles.length = ' + timeAngles.length);
 				timeAngles.forEach((geometryAngles, timeId) => {
 
 					if (geometryAngles.isTimeAnglesProxy) return;
@@ -581,7 +581,7 @@ class Universe
 						return;
 
 					}
-					if ((timeId > 0) && (geometryAngles.count != undefined)) console.warn(sUniverse +': anglesObject2Array. classSettings.settings.object.geometry.timeAngles[' + timeId + '].count = ' + geometryAngles.count + ' is ignore.');
+					if ((timeId > 0) && (geometryAngles.count != undefined)) console.warn(sUniverse +': anglesObject2Array. classSettings.settings.object.geometry.timesAngles[' + timeId + '].count = ' + geometryAngles.count + ' is ignore.');
 					const angles = [];
 					Object.keys(geometryAngles).forEach((key) => angles[key] = geometryAngles[key]);
 					timeAngles[timeId] = angles;
@@ -647,7 +647,7 @@ class Universe
 			copyAngles: (timeId, t) => {
 
 				if (timeId === 0) return;
-				const geometry = classSettings.settings.object.geometry, timeAngles = geometry.timeAngles,
+				const geometry = classSettings.settings.object.geometry, timeAngles = geometry.timesAngles,
 					timeAnglesSrc  = timeAngles[timeId - 1],
 					timeAnglesDest = timeAngles[timeId],
 					boLog = classSettings.debug && (classSettings.debug != false);
