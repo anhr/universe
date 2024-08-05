@@ -590,7 +590,48 @@ class Universe
 				
 			}
 			this.hyperSphere = this.getHyperSphere(options, classSettings);
-			{
+			{//hide geometry
+
+				const geometry = classSettings.settings.object.geometry;
+				geometry.position = new Proxy(geometry.position, {
+		
+					get: (positions, name) => {
+	
+						switch (name) {
+		
+							case 'intersection': return (i) => {
+								
+								const timesAngles = geometry.timesAngles;
+								if (timesAngles) {
+			
+									let timeAnglesId = 0, positionId = timesAngles[timeAnglesId].length;
+									while(i >= positionId) {
+			
+										timeAnglesId++;
+										positionId += timesAngles[timeAnglesId].length;
+										
+									}
+									const anglesOld = geometry.angles;
+									geometry.angles = timesAngles[timeAnglesId];
+									i -= positionId - geometry.angles.length;
+									const position = positions[i];
+									geometry.angles = anglesOld;
+									return position;
+									
+								}
+								return positions[i];
+							
+							}
+		
+						}
+						return positions[name];
+						
+					},
+					
+				});
+	
+			}
+			{//hide timeId
 
 				let timeId;
 				Object.defineProperty(classSettings.settings.bufferGeometry.userData, 'timeId', {
@@ -599,15 +640,6 @@ class Universe
 					set: (playerIndexNew) => { timeId = playerIndexNew; },
 
 				});
-/*
-				let timeId;
-				Object.defineProperty(classSettings.settings.bufferGeometry.userData, 'timeId', {
-					
-					get: () => { return timeId != undefined ? timeId : settings.options.playerOptions.selectSceneIndex; },
-					set: (playerIndexNew) => { timeId = playerIndexNew; },
-					
-				});
-*/
 				
 			}
 
