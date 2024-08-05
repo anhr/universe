@@ -611,11 +611,16 @@ class Universe
 										positionId += timesAngles[timeAnglesId].length;
 										
 									}
+									const guiPoints = classSettings.settings.guiPoints, timeIdOld = guiPoints.timeId;
+									guiPoints.timeId = timeAnglesId;
+/*									
 									const anglesOld = geometry.angles;
 									geometry.angles = timesAngles[timeAnglesId];
+*/									
 									i -= positionId - geometry.angles.length;
 									const position = positions[i];
-									geometry.angles = anglesOld;
+//									geometry.angles = anglesOld;
+									guiPoints.timeId = timeIdOld;
 									return position;
 									
 								}
