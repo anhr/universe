@@ -381,36 +381,48 @@ class Universe
 								if (!classSettings.overriddenProperties.position0) Object.defineProperty(classSettings.overriddenProperties, 'position0', { get: () => { return geometry.playerPosition[0]; }, });
 								classSettings.overriddenProperties.updateVertices ||= (vertices) => { this.hyperSphere.bufferGeometry.attributes.position.needsUpdate = true; }
 								classSettings.overriddenProperties.vertices ||= () => {}
-//								if (!classSettings.overriddenProperties.r) Object.defineProperty(classSettings.overriddenProperties, 'r', { get: () => { return classSettings.settings.object.geometry.angles.player.r; }, });
-//								if (!classSettings.overriddenProperties.r) Object.defineProperty(classSettings.overriddenProperties, 'r', { get: () => { return classSettings.settings.object.geometry.timesAngles[0].player.r; }, });
 								classSettings.overriddenProperties.r ||= (timeId) => { return classSettings.settings.object.geometry.timesAngles[timeId != undefined ? timeId : 0].player.r; }
-//								classSettings.overriddenProperties.timeR ||= (timeId) => { return classSettings.settings.object.geometry.timesAngles[timeId].player.r; }
 								classSettings.overriddenProperties.pushMiddleVertice ||= (timeId, middleVertice) => { geometry.timesAngles[timeId].push(middleVertice); }
 								classSettings.overriddenProperties.angles ||= (anglesId, timeId) => { return classSettings.settings.object.geometry.timesAngles[timeId][anglesId]; }
 								classSettings.overriddenProperties.verticeAngles ||= (anglesCur, verticeId) => {
 
-/*									
-									const timesAngles = classSettings.settings.object.geometry.timesAngles;
-									let anglesCount = 0;
-//									timesAngles.forEach((timeAngles, timeId) =>
-									for (let timeId = 0; timeId < timeAngles.length; timeId++) {
-
-										const timeAnglesItem = timeAngles[timeId];
-//										const opt = appendChild(timeAngles.player.t, timeId);
-										const anglesCountOld = anglesCount;
-										anglesCount += timeAnglesItem.length;
-										if((verticeId >= anglesCountOld) && (verticeId < anglesCount)) {
-
-											classSettings.settings.guiPoints.timeAngles = timeAnglesItem;
-											return timeAnglesItem[verticeId - anglesCountOld];
-
-										}
-										
-									}
-*/
 									const guiPoints = classSettings.settings.guiPoints;
 									return guiPoints.timeAngles[guiPoints.verticeId != undefined ? guiPoints.verticeId : verticeId];
 									
+								}
+								classSettings.overriddenProperties.verticeText ||= (intersection, text) => {
+
+									const timesAngles = classSettings.settings.object.geometry.timesAngles;
+									let index = 0;
+									for (let i = 0; i < timesAngles.length; i++) {
+
+										const timeAngles = timesAngles[i];
+										index += timeAngles.length;
+										if (index > intersection.index) {
+
+//												index -= intersection.index - 1;
+											index = intersection.index - index + timeAngles.length;
+/*											
+											const vertice = timeAngles[index], tab = '  ';
+											let text = '\n' + lang.angles + ':'
+												+ classSettings.overriddenProperties.text(tab, timeAngles, lang)
+												+ '\n' + tab + 'vertice Id: ' + index
+											vertice.forEach((axisAngle, angleId) => { text += '\n' + tab + this.axisName(angleId) + ': ' + axisAngle})
+											return text;
+*/											
+											return text(timeAngles, index);
+											
+										}
+										
+									}
+									
+								}
+								classSettings.overriddenProperties.text ||= (tab, timeAngles, lang) => {
+									
+									return '\n' + tab + 'time Id: ' + timeAngles.player.id
+										+ '\n' + tab + 't: ' + timeAngles.player.t
+										+ '\n' + tab + lang.radius + ': ' + timeAngles.player.r;
+								
 								}
 
 							}
