@@ -493,7 +493,7 @@ class Universe
 					fPoints.__ul.removeChild(elLast);
 					fPoints.__ul.insertBefore(elLast, elBefore);
 
-					const timesAngles = classSettings.settings.object.geometry.timesAngles;
+					const timesAngles = classSettings.settings.object.geometry.timesAngles, guiPoints = classSettings.settings.guiPoints;
 					cTimes.onChange((timeId) => {
 
 						const selectPoints = cPoints.__select;
@@ -506,8 +506,8 @@ class Universe
 							return;
 							
 						}
-						classSettings.settings.guiPoints.timeAngles = timesAngles[timeId];
-						classSettings.settings.guiPoints.timeAngles.forEach((verticeAngles, verticeId) => {
+						guiPoints.timeAngles = timesAngles[timeId];
+						guiPoints.timeAngles.forEach((verticeAngles, verticeId) => {
 
 							const opt = document.createElement('option');
 							opt.innerHTML = verticeId;
@@ -516,21 +516,12 @@ class Universe
 
 						});
 						let positionOffset = 0;
-/*						
-						for (let i = 0; i < timeId; i++) {
-
-							const timeAngles = timesAngles[i];
-							positionOffset += timeAngles.length;
-							
-						}
-*/						
 						for (let i = 0; i < timeId; i++) positionOffset += timesAngles[i].length;
 						
-						classSettings.settings.guiPoints.positionOffset = positionOffset;
-						classSettings.settings.guiPoints.timeId = timeId;
+						guiPoints.positionOffset = positionOffset;
+						guiPoints.timeId = timeId;
 
 					});
-//					let pointId = 0;//Порядковый номер вершины в classSettings.settings.bufferGeometry.attributes.position
 					const appendChild = (name, pointId) => {
 						
 						const opt = document.createElement('option');
@@ -544,30 +535,25 @@ class Universe
 					const index = intersectionSelected ? intersectionSelected.index : undefined;
 					timesAngles.forEach((timeAngles, timeId) => {
 
-//						const opt = appendChild(timeAngles.player.t, timeId);
 						appendChild(timeAngles.player.t, timeId);
 						if (index === undefined) return;
 						const anglesCountOld = anglesCount;
 						anglesCount += timeAngles.length;
 						if((index >= anglesCountOld) && (index < anglesCount)) {
 
-/*							
-							opt.selected = true;
-							classSettings.settings.guiPoints.positionOffset = anglesCountOld;
-							classSettings.settings.guiPoints.timeId = timeId;
-							intersectionSelected.index -= anglesCountOld;
-*/							
 							timeIdSelected = timeId;
-							classSettings.settings.guiPoints.verticeId = index - anglesCountOld;
+							guiPoints.verticeId = index - anglesCountOld;
 
 						}
 						
 					});
-/*					
-					if (timeIdSelected === undefined) console.error(sUniverse + ': classSettings.settings.guiPoints.create. Invalid timeIdSelected = ' + timeIdSelected);
-					else cTimes.__onChange(timeIdSelected);
-*/					
-					if (timeIdSelected != undefined) cTimes.__onChange(timeIdSelected);
+					if (timeIdSelected != undefined) {
+						
+						cTimes.__onChange(timeIdSelected);
+						cTimes.__select[timeIdSelected + 1].selected = true;
+						cPoints.__select[guiPoints.verticeId + 1].selected = true;
+
+					}
 					
 				},
 				getValue: (cPoints) => {
