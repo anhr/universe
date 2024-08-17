@@ -551,6 +551,7 @@ class Universe
 						
 						cTimes.__onChange(timeIdSelected);
 						cTimes.__select[timeIdSelected + 1].selected = true;
+						cPoints.__onChange(guiPoints.verticeId);
 						cPoints.__select[guiPoints.verticeId + 1].selected = true;
 
 					}
