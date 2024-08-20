@@ -640,7 +640,19 @@ class Universe
 				let timeId;
 				Object.defineProperty(classSettings.settings.bufferGeometry.userData, 'timeId', {
 
-					get: () => { return timeId != undefined ? timeId : settings.options.playerOptions.selectSceneIndex; },
+					get: () => {
+
+						if (timeId === undefined) {
+
+							//Кажется мне сюда на должно попадать
+							console.error(sUniverse + ': classSettings.settings.bufferGeometry.userData get timeId. Invalid timeId = ' + timeId);
+							timeId = classSettings.settings.options.playerOptions.selectSceneIndex;
+							
+						}
+						return timeId;
+//						return timeId != undefined ? timeId : classSettings.settings.options.playerOptions.selectSceneIndex;
+					
+					},
 					set: (playerIndexNew) => { timeId = playerIndexNew; },
 
 				});
@@ -650,7 +662,11 @@ class Universe
 			classSettings.projectParams.scene.userData = new Proxy(classSettings.projectParams.scene.userData, {
 	
 				set: (userData, name, value) => {
-	
+
+					//сначала надо установить время
+					userData[name] = value;
+
+					//а потом выполнять какие то действия
 					switch (name) {
 	
 						case 't':
@@ -659,7 +675,6 @@ class Universe
 							break;
 							
 					}
-					userData[name] = value;
 					return true;
 	
 				}
