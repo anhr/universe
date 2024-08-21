@@ -230,7 +230,7 @@ class Universe
 										}
 										case 'length':
 											if (timeId > 0) return timeAngles0.length;
-											return timeAngles.length;
+											return timeAngles.length != undefined ? timeAngles.length : 0;
 											
 									}
 									const verticeId = parseInt(name);
