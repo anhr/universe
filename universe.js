@@ -573,7 +573,9 @@ class Universe
 				if (timesAngles.length > settings.options.playerOptions.marks) console.warn(sUniverse +': anglesObject2Array. Invalid classSettings.settings.object.geometry.timesAngles.length = ' + timesAngles.length);
 				timesAngles.forEach((geometryAngles, timeId) => {
 
-					if (geometryAngles.isTimeAnglesProxy) return;
+					//Непонятно зачем эта проверка
+//					if (geometryAngles.isTimeAnglesProxy) return;
+					
 					if (geometryAngles instanceof Array) {
 
 						if (timeId > 0) timesAngles[timeId] = timesAngles[timeId];
