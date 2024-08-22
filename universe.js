@@ -684,10 +684,12 @@ class Universe
 			});
 			{//hide onSelectScene
 				
-				const onSelectScene = options.onSelectScene;
+//				const onSelectScene = options.onSelectScene;
 				options.onSelectScene = (index, t) => {
 		
-					if (onSelectScene) onSelectScene(index, t);
+//					if (onSelectScene) onSelectScene(index, t);
+					if (classSettings.onSelectScene) classSettings.onSelectScene(this.hyperSphere, index, t);
+					return true;//Сдедующий шаг проигрывателя выполняется только после посторения всех вершин без временной задержки
 				
 				}
 
