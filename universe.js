@@ -695,7 +695,7 @@ class Universe
 					
 				} else {
 					
-					if (classSettings.onSelectScene) classSettings.onSelectScene(this.hyperSphere, index, t);
+					if (classSettings.onSelectScene) return classSettings.onSelectScene(this.hyperSphere, index, t);
 					else return this.onSelectScene.copyAngles(index, t);
 
 				}
@@ -730,6 +730,7 @@ class Universe
 				
 				});
 				this.hyperSphere.bufferGeometry.attributes.position.needsUpdate = true;
+				classSettings.settings.options.player.continue();
 				return false;//Немедленно выпоняется следующий шаг проигрывателя потому что copyAngles выполняется синхронно
 				
 			},
