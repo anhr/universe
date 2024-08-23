@@ -682,18 +682,25 @@ class Universe
 				}
 				
 			});
-			{//hide onSelectScene
-				
-//				const onSelectScene = options.onSelectScene;
-				options.onSelectScene = (index, t) => {
-		
-//					if (onSelectScene) onSelectScene(index, t);
+			options.onSelectScene = (index, t) => {
+
+				const timesAngles = classSettings.settings.object.geometry.timesAngles, length = timesAngles.length;
+				if ((length > 1) && (length > index)) {
+
+					//пользователь передвинул проигрыватель назад
+					const bufferGeometry = classSettings.settings.bufferGeometry;//, timeAnglesLength = timesAngles[0].length,
+//						position = bufferGeometry.attributes.position, itemSize = position.itemSize;
+					bufferGeometry.setDrawRange(bufferGeometry.drawRange.start,  timesAngles[0].length * (index + 1));
+//					position.needsUpdate = true;
+					
+				} else {
+					
 					if (classSettings.onSelectScene) classSettings.onSelectScene(this.hyperSphere, index, t);
 					else return this.onSelectScene.copyAngles(index, t);
-					return true;//Сдедующий шаг проигрывателя выполняется только после посторения всех вершин без временной задержки
-				
-				}
 
+				}
+				return true;//Сдедующий шаг проигрывателя выполняется только после посторения всех вершин без временной задержки
+			
 			}
 			this.hyperSphere.child = this;
 
