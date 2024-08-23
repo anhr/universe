@@ -673,7 +673,7 @@ class Universe
 	
 						case 't':
 							this.hyperSphere.oldR = userData.t;
-							if (!classSettings.onSelectScene) this.onSelectScene.copyAngles(classSettings.settings.bufferGeometry.userData.timeId, value);
+//							if (!classSettings.onSelectScene) this.onSelectScene.copyAngles(classSettings.settings.bufferGeometry.userData.timeId, value);
 							break;
 							
 					}
@@ -689,6 +689,7 @@ class Universe
 		
 //					if (onSelectScene) onSelectScene(index, t);
 					if (classSettings.onSelectScene) classSettings.onSelectScene(this.hyperSphere, index, t);
+					else return this.onSelectScene.copyAngles(index, t);
 					return true;//Сдедующий шаг проигрывателя выполняется только после посторения всех вершин без временной задержки
 				
 				}
@@ -722,6 +723,7 @@ class Universe
 				
 				});
 				this.hyperSphere.bufferGeometry.attributes.position.needsUpdate = true;
+				return false;//Немедленно выпоняется следующий шаг проигрывателя потому что copyAngles выполняется синхронно
 				
 			},
 			
