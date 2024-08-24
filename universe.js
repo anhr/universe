@@ -104,7 +104,7 @@ class Universe
 			classSettings.settings.object = classSettings.settings.object || {};
 			classSettings.settings.object.name = classSettings.settings.object.name || this.name(options.getLanguageCode);
 
-			if (classSettings.settings.object.color === undefined) classSettings.settings.object.color = () => { return options.player.getTime(); }
+			if (classSettings.settings.object.color === undefined) classSettings.settings.object.color = (timeId) => { return options.player.getTime(timeId); }
 
 			classSettings.projectParams.scene.userData.endSelect = () => {}
 
@@ -692,13 +692,12 @@ class Universe
 //						position = bufferGeometry.attributes.position, itemSize = position.itemSize;
 					bufferGeometry.setDrawRange(bufferGeometry.drawRange.start,  timesAngles[0].length * (index + 1));
 //					position.needsUpdate = true;
+					return false;//Сдедующий шаг проигрывателя выполняется немедленно
 					
-				} else {
-					
-					if (classSettings.onSelectScene) return classSettings.onSelectScene(this.hyperSphere, index, t);
-					else return this.onSelectScene.copyAngles(index, t);
-
 				}
+					
+				if (classSettings.onSelectScene) return classSettings.onSelectScene(this.hyperSphere, index, t);
+				else return this.onSelectScene.copyAngles(index, t);
 				return true;//Сдедующий шаг проигрывателя выполняется только после посторения всех вершин без временной задержки
 			
 			}
