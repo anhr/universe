@@ -48,6 +48,8 @@ class Universe
 	constructor(classSettings = {}, myThreeOptions = {}) {
 
 		const _this = this;
+		myThreeOptions.playerOptions ||= {};
+		myThreeOptions.playerOptions.interval = myThreeOptions.playerOptions.interval != undefined ? myThreeOptions.playerOptions.interval : Infinity;
 		myThreeOptions.scales = myThreeOptions.scales || {};
 		myThreeOptions.scales.x = myThreeOptions.scales.x || {};
 		myThreeOptions.scales.y = myThreeOptions.scales.y || {};
@@ -58,7 +60,6 @@ class Universe
 		myThreeOptions.scales.text.rect.displayRect = myThreeOptions.scales.text.rect.displayRect != undefined ? myThreeOptions.scales.text.rect.displayRect : false;
 
 		myThreeOptions.playerOptions = myThreeOptions.playerOptions || {};
-		
 		if (myThreeOptions.playerOptions.min === undefined) myThreeOptions.playerOptions.min = 0.1;
 
 		//w
