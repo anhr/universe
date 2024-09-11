@@ -33,17 +33,7 @@ class SphericalUniverse extends Universe {
 		myThreeOptions.scales = myThreeOptions.scales || { z: {}, };
 		myThreeOptions.orbitControls = myThreeOptions.orbitControls || { enableRotate: true, };
 		myThreeOptions.camera = myThreeOptions.camera || { position: [ 0.4, 0.4, 2 ] };
-		super(classSettings, myThreeOptions
-/*			  
-		{
-			
-			scales: { z: {}, },
-			orbitControls: { enableRotate: true, },
-			camera: { position: [ 0.4, 0.4, 2 ] },
-			
-		}
-*/		
-		);
+		super(classSettings, myThreeOptions);
 
 	}
 	getHyperSphere(options, classSettings) { return new Sphere(options, classSettings); }
