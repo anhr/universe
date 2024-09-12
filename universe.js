@@ -633,7 +633,7 @@ class Universe
 					fPoints.__ul.removeChild(elLast);
 					fPoints.__ul.insertBefore(elLast, elBefore);
 
-					const timesAngles = classSettings.settings.object.geometry.timesAngles, guiPoints = classSettings.settings.guiPoints;
+					const times = classSettings.settings.object.geometry.times, guiPoints = classSettings.settings.guiPoints;
 					cTimes.onChange((timeId) => {
 
 						const selectPoints = cPoints.__select;
@@ -646,7 +646,7 @@ class Universe
 							return;
 							
 						}
-						guiPoints.timeAngles = timesAngles[timeId];
+						guiPoints.timeAngles = times[timeId];
 						guiPoints.timeAngles.forEach((verticeAngles, verticeId) => {
 
 							const opt = document.createElement('option');
@@ -656,7 +656,7 @@ class Universe
 
 						});
 						let positionOffset = 0;
-						for (let i = 0; i < timeId; i++) positionOffset += timesAngles[i].length;
+						for (let i = 0; i < timeId; i++) positionOffset += times[i].length;
 						
 						guiPoints.positionOffset = positionOffset;
 						guiPoints.timeId = timeId;
@@ -673,7 +673,7 @@ class Universe
 					}
 					let anglesCount = 0, timeIdSelected;
 					const index = intersectionSelected ? intersectionSelected.index : undefined;
-					timesAngles.forEach((timeAngles, timeId) => {
+					times.forEach((timeAngles, timeId) => {
 
 						appendChild(timeAngles.player.t, timeId);
 						if (index === undefined) return;
