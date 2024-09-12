@@ -258,7 +258,9 @@ class Universe
 										case 'player':
 											if (!this.hyperSphere) {
 
-												if (timeId != 0) console.error(sUniverse + ': set timeAngles, get player. Invalid timeId = ' + timeId);
+//не помню зачем эта строка
+//												if (timeId != 0) console.error(sUniverse + ': set timeAngles, get player. Invalid timeId = ' + timeId);
+												
 												const t = classSettings.settings.options.player.getTime(timeId);
 												return {
 
@@ -297,7 +299,9 @@ class Universe
 												return;
 
 											}
-											verticeAngles = timeAngles[timeId - 1][verticeId];
+											//похоже если вершины для данного timeId нет, то берется вершина из предыдущего timeId
+//											verticeAngles = timeAngles[timeId - 1][verticeId];
+											verticeAngles = times[timeId - 1][verticeId];
 										}
 										return verticeAngles;
 
