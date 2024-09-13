@@ -291,7 +291,9 @@ class Universe
 									if (!isNaN(verticeId)) {
 
 										let verticeAngles = timeAngles[verticeId];
-										if (!verticeAngles) {
+										if (!verticeAngles || ((verticeAngles[verticeId] === undefined) && timeId > 0))
+//										if (!verticeAngles)
+										{
 
 											if (timeId === 0) {
 
@@ -303,7 +305,50 @@ class Universe
 //											verticeAngles = timeAngles[timeId - 1][verticeId];
 											verticeAngles = times[timeId - 1][verticeId];
 										}
-										return verticeAngles;
+//										const verticeAnglesLength = timeId > 0 ? times[0][0].length : undefined;
+										return new Proxy(verticeAngles, {
+
+											get: (verticeAngles, name) => {
+
+												const angleId = parseInt(name);
+												if (!isNaN(angleId)) {
+
+/*													
+													if (classSettings.debug) {
+
+														const maxAngles = classSettings.dimension - 1;
+														if (verticeAngles.length > maxAngles) console.error(sUniverse + ': Invalid classSettings.settings.object.geometry.times[' + timeId + '][' + verticeId + '].length = ' + verticeAngles.length + '. Every vertice is limited to ' + maxAngles + ' angles.');
+
+													}
+*/													
+													const angle = verticeAngles[angleId];
+													if (angle === undefined) {
+
+														if (timeId === 0) return 0;
+														else return times[timeId - 1][verticeId][angleId];
+														
+													}
+													return angle;
+													
+												}
+												switch (name) {
+
+													case 'length': 
+														const maxAngles = classSettings.dimension - 1;
+														if (classSettings.debug && (verticeAngles.length > maxAngles)) console.error(sUniverse + ': Invalid classSettings.settings.object.geometry.times[' + timeId + '][' + verticeId + '].length = ' + verticeAngles.length + '. Every vertice is limited to ' + maxAngles + ' angles.');
+														return maxAngles;
+//														return classSettings.dimension - 1;
+														//if (verticeAnglesLength != undefined) return verticeAnglesLength;
+														//_this.dimension - 1;
+														//if (timeId > 0) return times[0][0].length;
+														//break;
+														
+												}
+												return verticeAngles[name];
+												
+											},
+											
+										});
 
 									}
 									return timeAngles[name];
