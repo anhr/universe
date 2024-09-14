@@ -807,7 +807,26 @@ class Universe
 						switch (name) {
 		
 							case 'intersection': return (i) => {
-								
+
+								const times = geometry.times;
+								if (times) {
+			
+									let timeAnglesId = 0, positionId = times[timeAnglesId].length;
+									while(i >= positionId) {
+			
+										timeAnglesId++;
+										positionId += times[timeAnglesId].length;
+										
+									}
+									const guiPoints = classSettings.settings.guiPoints, timeIdOld = guiPoints.timeId;
+									guiPoints.timeId = timeAnglesId;
+									i -= positionId - geometry.angles.length;
+									const position = positions[i];
+									guiPoints.timeId = timeIdOld;
+									return position;
+									
+								}
+/*								
 								const timesAngles = geometry.timesAngles;
 								if (timesAngles) {
 			
@@ -820,17 +839,13 @@ class Universe
 									}
 									const guiPoints = classSettings.settings.guiPoints, timeIdOld = guiPoints.timeId;
 									guiPoints.timeId = timeAnglesId;
-/*									
-									const anglesOld = geometry.angles;
-									geometry.angles = timesAngles[timeAnglesId];
-*/									
 									i -= positionId - geometry.angles.length;
 									const position = positions[i];
-//									geometry.angles = anglesOld;
 									guiPoints.timeId = timeIdOld;
 									return position;
 									
 								}
+*/								
 								return positions[i];
 							
 							}
