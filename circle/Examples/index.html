@@ -27,6 +27,12 @@
 
 		new CircularUniverse({
 
+			onSelectScene: (hyperSphere, timeId, t) => {
+				
+				if (hyperSphere.middleVertices) return hyperSphere.middleVertices(timeId, t);
+				//if (hyperSphere.child) return hyperSphere.child.onSelectScene.copyAngles(timeId, t);
+	
+			},
 			edges: {
 
 				//creationMethod: CircularUniverse.edgesCreationMethod.Random,
@@ -62,7 +68,7 @@
 							[Math.PI * 1 / 4],
 							[Math.PI * 3 / 4], [- Math.PI * 3 / 4], [- Math.PI * 1 / 4],],//Square
 						//angles: angles,
-						angles: { count: 30, },
+						angles: { count: 1000, },
 
 						//opacity: [1, 0.5],
 						//indices: {
@@ -79,6 +85,25 @@
 			},
 
 
+		}, {
+
+			playerOptions: {
+				
+				marks: 100,
+				min: 0.1,
+				//max: 1.5,
+				//interval: 30,
+				/*
+				intervalOptions: {
+					
+					//min: 0,
+					max: 10,//Infinity,
+					
+				},
+				*/
+			
+			}
+			
 		});
 
     </script>

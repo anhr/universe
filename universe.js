@@ -543,29 +543,27 @@ class Universe
 									},
 									
 								});
-								classSettings.overriddenProperties ||= {};
-								classSettings.overriddenProperties.oppositeVertice ||= (oppositeAngleId, timeId) => { return geometry.playerPosition[timeId - 1][oppositeAngleId]; }
-								if (!classSettings.overriddenProperties.position) Object.defineProperty(classSettings.overriddenProperties, 'position', { get: () => { return geometry.playerPosition[classSettings.settings.bufferGeometry.userData.timeId]; }, });
-								if (!classSettings.overriddenProperties.position0) Object.defineProperty(classSettings.overriddenProperties, 'position0', { get: () => { return geometry.playerPosition[0]; }, });
-								classSettings.overriddenProperties.updateVertices ||= (vertices) => { this.hyperSphere.bufferGeometry.attributes.position.needsUpdate = true; }
-								classSettings.overriddenProperties.vertices ||= () => {}
-								classSettings.overriddenProperties.r ||= (timeId) => { return classSettings.settings.object.geometry.times[timeId != undefined ? timeId : 0].player.r; }
-								classSettings.overriddenProperties.pushMiddleVertice ||= (timeId, middleVertice) => { geometry.times[timeId].push(middleVertice); }
-								classSettings.overriddenProperties.angles ||= (anglesId, timeId) => { return classSettings.settings.object.geometry.times[timeId][anglesId]; }
-/*								
-								classSettings.overriddenProperties.r ||= (timeId) => { return classSettings.settings.object.geometry.timesAngles[timeId != undefined ? timeId : 0].player.r; }
-								classSettings.overriddenProperties.pushMiddleVertice ||= (timeId, middleVertice) => { geometry.timesAngles[timeId].push(middleVertice); }
-								classSettings.overriddenProperties.angles ||= (anglesId, timeId) => { return classSettings.settings.object.geometry.timesAngles[timeId][anglesId]; }
-*/								
-								classSettings.overriddenProperties.verticeAngles ||= (anglesCur, verticeId) => {
 
-									const guiPoints = classSettings.settings.guiPoints;
+								//иммитация наследования классов
+								classSettings.overriddenProperties ||= {};
+								const overriddenProperties = classSettings.overriddenProperties, settings = classSettings.settings;
+								overriddenProperties.oppositeVertice ||= (oppositeAngleId, timeId) => { return geometry.playerPosition[timeId - 1][oppositeAngleId]; }
+								if (!overriddenProperties.position) Object.defineProperty(overriddenProperties, 'position', { get: () => { return geometry.playerPosition[settings.bufferGeometry.userData.timeId]; }, });
+								if (!overriddenProperties.position0) Object.defineProperty(overriddenProperties, 'position0', { get: () => { return geometry.playerPosition[0]; }, });
+								overriddenProperties.updateVertices ||= (vertices) => { this.hyperSphere.bufferGeometry.attributes.position.needsUpdate = true; }
+								overriddenProperties.vertices ||= () => {}
+								overriddenProperties.r ||= (timeId) => { return settings.object.geometry.times[timeId != undefined ? timeId : 0].player.r; }
+								overriddenProperties.pushMiddleVertice ||= (timeId, middleVertice) => { geometry.times[timeId].push(middleVertice); }
+								overriddenProperties.angles ||= (anglesId, timeId) => { return settings.object.geometry.times[timeId][anglesId]; }
+								overriddenProperties.verticeAngles ||= (anglesCur, verticeId) => {
+
+									const guiPoints = settings.guiPoints;
 									return guiPoints.timeAngles[guiPoints.verticeId != undefined ? guiPoints.verticeId : verticeId];
 									
 								}
-								classSettings.overriddenProperties.verticeText ||= (intersection, text) => {
+								overriddenProperties.verticeText ||= (intersection, text) => {
 
-									const times = classSettings.settings.object.geometry.times;
+									const times = settings.object.geometry.times;
 									let index = 0;
 									for (let i = 0; i < times.length; i++) {
 
@@ -581,33 +579,22 @@ class Universe
 									}
 									
 								}
-/*								
-								classSettings.overriddenProperties.verticeText ||= (intersection, text) => {
-
-									const timesAngles = classSettings.settings.object.geometry.timesAngles;
-									let index = 0;
-									for (let i = 0; i < timesAngles.length; i++) {
-
-										const timeAngles = timesAngles[i];
-										index += timeAngles.length;
-										if (index > intersection.index) {
-
-											index = intersection.index - index + timeAngles.length;
-											return text(timeAngles, index);
-											
-										}
-										
-									}
-									
-								}
-*/								
-								classSettings.overriddenProperties.text ||= (tab, timeAngles, lang) => {
+								overriddenProperties.text ||= (tab, timeAngles, lang) => {
 									
 									return '\n' + tab + 'time Id: ' + timeAngles.player.id
 										+ '\n' + tab + 't: ' + timeAngles.player.t
 										+ '\n' + tab + lang.radius + ': ' + timeAngles.player.r;
 								
 								}
+								overriddenProperties.onSelectSceneEndSetDrawRange ||= (timeId) => {
+
+									if (classSettings.edges.project === false) return;//Ребра не отбражаются на холсте. Не нужно устанавливать bufferGeometry.drawRange в зависимость от индекса ребер.
+									const bufferGeometry = settings.bufferGeometry, drawRange = bufferGeometry.drawRange;
+									bufferGeometry.attributes.position.needsUpdate = true;
+									bufferGeometry.setDrawRange(drawRange.start, (settings.object.geometry.indices[0].timeEdgesCount * (timeId + 1) * 2) - drawRange.start);
+									
+								}
+								settings.overriddenProperties.setDrawRange = (start, count) => { settings.bufferGeometry.setDrawRange(start, count); }
 
 							}
 							return geometry.playerPosition[classSettings.settings.options.player.getTimeId()];
@@ -947,14 +934,20 @@ class Universe
 					}
 				
 				});
-				this.hyperSphere.bufferGeometry.attributes.position.needsUpdate = true;
+				const bufferGeometry = this.hyperSphere.bufferGeometry, drawRange = bufferGeometry.drawRange;
+				bufferGeometry.attributes.position.needsUpdate = true;
+				bufferGeometry.setDrawRange(drawRange.start, geometry.indices[0].timeEdgesCount * (timeId + 1) * 2);
+				this.hyperSphere.onSelectSceneEnd(timeId);
+/*				
 				classSettings.settings.options.player.endSelect();//Нужно, что бы появлялось описание вершины, когда пользователь наведет мышку на вершину, которая появилась, когда проигрыватель передвинулся на шаг
 				classSettings.settings.options.player.continue();
+*/				
 				return false;//Немедленно выпоняется следующий шаг проигрывателя потому что copyAngles выполняется синхронно
 				
 			},
 			
 		}
+//		const onSelectSceneEnd = () => {}
 
 	}
 	name(options) {
