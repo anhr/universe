@@ -503,6 +503,7 @@ class Universe
 										const timeId = parseInt(name);
 										if (!isNaN(timeId)) {
 	
+											const playerPositionItem0 = playerPosition[0];
 											if ((timeId != 0) && !playerPosition[timeId]) return new Proxy([], {
 	
 												get: (playerPositionItem, name) => {
@@ -510,14 +511,16 @@ class Universe
 													switch (name) {
 	
 														case 'length': {
-	
-															const length = playerPosition[0].length;
+
+															const length = playerPositionItem0.length;
+//															const length = playerPositionItemLength;
 															if (classSettings.debug && (length != classSettings.settings.object.geometry.angles.length))
 																console.error(sUniverse + ': get player position item failed! Invalid length = ' + length);
 															return length;
 	
 														}
-														case 'angles': return classSettings.settings.object.geometry.timesAngles[timeId];
+														case 'angles': return classSettings.settings.object.geometry.times[timeId];
+//														case 'angles': return classSettings.settings.object.geometry.timesAngles[timeId];
 															
 													}
 													const playerIndexItemId = parseInt(name);
