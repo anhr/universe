@@ -787,6 +787,42 @@ class Universe
 				
 			}
 			this.hyperSphere = this.getHyperSphere(options, classSettings);
+			classSettings.edges = new Proxy(classSettings.edges, {
+
+				set: (edges, name, value) => {
+
+					switch(name) {
+
+						case 'project':
+							const settings = classSettings.settings, bufferGeometry = settings.bufferGeometry, drawRange = bufferGeometry.drawRange;
+							if (value) { console.error('Under constraction') }
+							else {
+								
+								//display of vertices
+//									positionData = this.hyperSphere.getPositionData(0, settings.options.player.getTimeId());
+								bufferGeometry.setDrawRange(drawRange.start, classSettings.overriddenProperties.position0.length * (settings.options.player.getTimeId() + 1) - drawRange.start);
+								
+							}
+/*							
+							bufferGeometry.attributes.position.needsUpdate = true;
+							bufferGeometry.attributes.color.needsUpdate = true;
+*/							
+							break;
+							
+					}
+					edges[name] = value;
+					return true;
+					
+				}
+					
+			});
+/*			
+			Object.defineProperty(classSettings.edges, 'project', {
+
+				set: (projectNew) => { classSettings.edges['project'] = projectNew; },
+
+			});
+*/			
 			{//hide geometry
 
 				const geometry = classSettings.settings.object.geometry;
@@ -899,8 +935,15 @@ class Universe
 				if ((length > 1) && (length > index)) {
 
 					//пользователь передвинул проигрыватель назад
-					const bufferGeometry = classSettings.settings.bufferGeometry;
-					bufferGeometry.setDrawRange(bufferGeometry.drawRange.start,  times[0].length * (index + 1));
+					const settings = classSettings.settings, bufferGeometry = settings.bufferGeometry, drawRange = bufferGeometry.drawRange;
+					if (classSettings.edges.project) {
+
+						//Видны ребра
+						const timeEdgesCount = settings.object.geometry.indices[0].timeEdgesCount;
+						if (timeEdgesCount) bufferGeometry.setDrawRange(drawRange.start, timeEdgesCount * 2 * (index + 1) - drawRange.start);
+//console.error('Under constraction')
+						
+					} else bufferGeometry.setDrawRange(drawRange.start, times[0].length * (index + 1) - drawRange.start);
 					return false;//Сдедующий шаг проигрывателя выполняется немедленно
 					
 				}
