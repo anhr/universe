@@ -592,9 +592,12 @@ class Universe
 								overriddenProperties.onSelectSceneEndSetDrawRange ||= (timeId) => {
 
 									if (classSettings.edges.project === false) return;//Ребра не отбражаются на холсте. Не нужно устанавливать bufferGeometry.drawRange в зависимость от индекса ребер.
+									this.hyperSphere.setEdgesRange();
+/*									
 									const bufferGeometry = settings.bufferGeometry, drawRange = bufferGeometry.drawRange;
 									bufferGeometry.attributes.position.needsUpdate = true;
 									bufferGeometry.setDrawRange(drawRange.start, (settings.object.geometry.indices[0].timeEdgesCount * (timeId + 1) * 2) - drawRange.start);
+*/									
 									
 								}
 								settings.overriddenProperties.setDrawRange = (start, count) => { settings.bufferGeometry.setDrawRange(start, count); }
@@ -795,12 +798,14 @@ class Universe
 
 						case 'project':
 							const settings = classSettings.settings, bufferGeometry = settings.bufferGeometry, drawRange = bufferGeometry.drawRange;
-							if (value) { console.error('Under constraction') }
+							if (value) 
+//								this.hyperSphere.setDrawRange(drawRange.start, settings.object.geometry.indices[0].timeEdgesCount * 2 * times - drawRange.start);
+								this.hyperSphere.setEdgesRange();
 							else {
 								
 								//display of vertices
-//									positionData = this.hyperSphere.getPositionData(0, settings.options.player.getTimeId());
-								bufferGeometry.setDrawRange(drawRange.start, classSettings.overriddenProperties.position0.length * (settings.options.player.getTimeId() + 1) - drawRange.start);
+//								bufferGeometry.setDrawRange(drawRange.start, classSettings.overriddenProperties.position0.length * (settings.options.player.getTimeId() + 1) - drawRange.start);
+								this.hyperSphere.setVerticesRange(drawRange.start, classSettings.overriddenProperties.position0.length * (settings.options.player.getTimeId() + 1) - drawRange.start);
 								
 							}
 /*							
