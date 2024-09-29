@@ -797,21 +797,17 @@ class Universe
 					switch(name) {
 
 						case 'project':
-							const settings = classSettings.settings, bufferGeometry = settings.bufferGeometry, drawRange = bufferGeometry.drawRange;
 							if (value) 
 //								this.hyperSphere.setDrawRange(drawRange.start, settings.object.geometry.indices[0].timeEdgesCount * 2 * times - drawRange.start);
 								this.hyperSphere.setEdgesRange();
 							else {
 								
 								//display of vertices
+								const settings = classSettings.settings, drawRange = settings.bufferGeometry.drawRange;
 //								bufferGeometry.setDrawRange(drawRange.start, classSettings.overriddenProperties.position0.length * (settings.options.player.getTimeId() + 1) - drawRange.start);
 								this.hyperSphere.setVerticesRange(drawRange.start, classSettings.overriddenProperties.position0.length * (settings.options.player.getTimeId() + 1) - drawRange.start);
-								
+							
 							}
-/*							
-							bufferGeometry.attributes.position.needsUpdate = true;
-							bufferGeometry.attributes.color.needsUpdate = true;
-*/							
 							break;
 							
 					}
