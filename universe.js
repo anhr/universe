@@ -941,10 +941,13 @@ class Universe
 
 						//Видны ребра
 						const timeEdgesCount = settings.object.geometry.indices[0].timeEdgesCount;
-						if (timeEdgesCount) bufferGeometry.setDrawRange(drawRange.start, timeEdgesCount * 2 * (index + 1) - drawRange.start);
-//console.error('Under constraction')
+						if (timeEdgesCount)
+							this.hyperSphere.setEdgesRange();
+//							bufferGeometry.setDrawRange(drawRange.start, timeEdgesCount * 2 * (index + 1) - drawRange.start);
 						
-					} else bufferGeometry.setDrawRange(drawRange.start, times[0].length * (index + 1) - drawRange.start);
+					} else
+						this.hyperSphere.setVerticesRange(drawRange.start, times[0].length * (index + 1) - drawRange.start);
+//						bufferGeometry.setDrawRange(drawRange.start, times[0].length * (index + 1) - drawRange.start);
 					return false;//Сдедующий шаг проигрывателя выполняется немедленно
 					
 				}
