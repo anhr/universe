@@ -152,11 +152,22 @@ class Universe
 									get: (timeAngles, name) => {
 
 										const verticeId = parseInt(name);
-										if (!isNaN(verticeId)) {
+										if (!isNaN(verticeId))
+//											return timeAngles[verticeId];
+											return new Proxy(timeAngles[verticeId], {
 
-											return timeAngles[verticeId];
+												get: (verticeAngles, name) => {
 
-										}
+													switch (name) {
+
+														case 'edges': return times[0][verticeId].edges;
+															
+													}
+													return verticeAngles[name];
+													
+												}
+												
+											});
 										switch (name) {
 
 											case 'player': return this.hyperSphere.anglesPlayer(timeId);
