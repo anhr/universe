@@ -630,7 +630,6 @@ class Universe
 			});
 			classSettings.settings.guiPoints = {
 
-
 				seletedIndex: (guiIndexStr) => {
 
 					let guiIndex = parseInt(guiIndexStr);
@@ -639,6 +638,44 @@ class Universe
 					while (guiIndex > anglesLength) guiIndex -= anglesLength;
 					return guiIndex;
 				
+				},
+				getVerticeId: (index) => {
+return					
+					if (
+						(index === undefined) ||
+						(classSettings.settings.guiPoints.verticeId === undefined)
+					) return;
+					
+					//User has mouse clicked a vertice
+					
+					let anglesCount = 0, timeIdSelected;
+					const guiPoints = classSettings.settings.guiPoints;
+					classSettings.settings.object.geometry.times.forEach((timeAngles, timeId) => {
+
+						const anglesCountOld = anglesCount;
+						anglesCount += timeAngles.length;
+						if((index >= anglesCountOld) && (index < anglesCount)) {
+
+							const verticeId = index - anglesCountOld;
+							if ((guiPoints.verticeId != verticeId) || (guiPoints.timeId != timeId)) {
+								
+								timeIdSelected = timeId;
+								guiPoints.verticeId = verticeId;
+
+							}
+
+						}
+						
+					});
+					if (timeIdSelected != undefined) {
+
+						guiPoints.cTimes.__onChange(timeIdSelected);
+						guiPoints.cTimes.__select[timeIdSelected + 1].selected = true;
+						guiPoints.cPoints.__onChange(guiPoints.verticeId);
+						guiPoints.cPoints.__select[guiPoints.verticeId + 1].selected = true;
+
+					}
+					
 				},
 				create: (fPoints, cPoints, count, intersectionSelected) => {
 
@@ -663,7 +700,9 @@ class Universe
 
 					}
 					
-					const cTimes = fPoints.add({ Points: lang.notSelected }, 'Points', { [lang.notSelected]: -1 });
+					const cTimes = fPoints.add({ Points: lang.notSelected }, 'Points', { [lang.notSelected]: -1 }), guiPoints = classSettings.settings.guiPoints;
+					guiPoints.cTimes = cTimes;
+					guiPoints.cPoints = cPoints;
 					dat.controllerNameAndTitle(cTimes, lang.time, lang.timeTitle);
 
 					//Переместить список Time вверх
@@ -671,7 +710,7 @@ class Universe
 					fPoints.__ul.removeChild(elLast);
 					fPoints.__ul.insertBefore(elLast, elBefore);
 
-					const times = classSettings.settings.object.geometry.times, guiPoints = classSettings.settings.guiPoints;
+					const times = classSettings.settings.object.geometry.times;
 					cTimes.onChange((timeId) => {
 
 						const selectPoints = cPoints.__select;
@@ -731,6 +770,12 @@ class Universe
 						cTimes.__select[timeIdSelected + 1].selected = true;
 						cPoints.__onChange(guiPoints.verticeId);
 						cPoints.__select[guiPoints.verticeId + 1].selected = true;
+
+						//если не удалить guiPoints.verticeId, то будет неверно изменяться позиция вершины
+						//Для проверки открыть http://localhost/anhr/universe/main/hyperSphere/Examples/
+						//Щелчком мыши выбрать вершину
+						//Сделать один шаг проигрывателя, нажав →
+						//delete guiPoints.verticeId;
 
 					}
 					
