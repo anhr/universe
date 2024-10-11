@@ -602,6 +602,9 @@ class Universe
 								}
 								overriddenProperties.onSelectSceneEndSetDrawRange ||= (timeId) => {
 
+									const appendTimesChild = classSettings.settings.guiPoints.appendTimesChild;
+									if (appendTimesChild) appendTimesChild(undefined, timeId);
+									
 									if (classSettings.edges.project === false) return;//Ребра не отбражаются на холсте. Не нужно устанавливать bufferGeometry.drawRange в зависимость от индекса ребер.
 									this.hyperSphere.setEdgesRange();
 /*									
@@ -651,7 +654,7 @@ class Universe
 				
 				},
 				getVerticeId: (index) => {
-return					
+//return					
 					if (
 						(index === undefined) ||
 						(classSettings.settings.guiPoints.verticeId === undefined)
@@ -686,6 +689,7 @@ return
 						guiPoints.cPoints.__select[guiPoints.verticeId + 1].selected = true;
 
 					}
+					return guiPoints.verticeId;
 					
 				},
 				create: (fPoints, cPoints, count, intersectionSelected) => {
@@ -750,11 +754,14 @@ return
 						guiPoints.timeId = timeId;
 
 					});
-					const appendChild = (name, pointId) => {
+					guiPoints.appendTimesChild = (time, timeId) => {
 						
 						const opt = document.createElement('option');
-						opt.innerHTML = name;
-						if (pointId != undefined) opt.setAttribute('value', pointId);
+						
+						if (time === undefined) time = classSettings.settings.options.player.getTime(timeId);
+						opt.innerHTML = time;
+						
+						if (timeId != undefined) opt.setAttribute('value', timeId);
 						cTimes.__select.appendChild(opt);
 						return opt;
 						
@@ -763,7 +770,7 @@ return
 					const index = intersectionSelected ? intersectionSelected.index : undefined;
 					times.forEach((timeAngles, timeId) => {
 
-						appendChild(timeAngles.player.t, timeId);
+						guiPoints.appendTimesChild(timeAngles.player.t, timeId);
 						if (index === undefined) return;
 						const anglesCountOld = anglesCount;
 						anglesCount += timeAngles.length;
