@@ -658,7 +658,7 @@ class Universe
 					if (
 						(index === undefined) ||
 						(classSettings.settings.guiPoints.verticeId === undefined)
-					) return;
+					) return index;
 					
 					//User has mouse clicked a vertice
 					
@@ -802,7 +802,7 @@ class Universe
 
 					const value = cPoints.getValue();
 					if (isNaN(value)) return -1;//точка не выбрана
-					return value;
+					return parseInt(value);
 				
 				},
 
