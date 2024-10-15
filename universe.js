@@ -644,6 +644,11 @@ class Universe
 			});
 			classSettings.settings.guiPoints = {
 
+				get timeAngles() { return classSettings.settings.object.geometry.times[this.timeId]; },
+
+				//for debug
+				//set timeAngles(value) { console.warn(sUniverse + ': set classSettings.settings.guiPoints.timeAngles is deprecated'); },
+					
 				seletedIndex: (guiIndexStr) => {
 
 					let guiIndex = parseInt(guiIndexStr);
@@ -651,48 +656,49 @@ class Universe
 					const anglesLength = classSettings.settings.object.geometry.angles.length;
 					while (guiIndex > anglesLength) guiIndex -= anglesLength;
 					return guiIndex;
-				
+
 				},
 				getVerticeId: (index) => {
-//return					
+
 					if (
 						(index === undefined) ||
 						(classSettings.settings.guiPoints.verticeId === undefined)
 					) return index;
-					
+
 					//User has mouse clicked a vertice
-					
+
 					let anglesCount = 0;//, timeIdSelected;
 					const guiPoints = classSettings.settings.guiPoints;
 					classSettings.settings.object.geometry.times.forEach((timeAngles, timeId) => {
 
 						const anglesCountOld = anglesCount;
 						anglesCount += timeAngles.length;
-						if((index >= anglesCountOld) && (index < anglesCount)) {
+						if ((index >= anglesCountOld) && (index < anglesCount)) {
 
 							const verticeId = index - anglesCountOld;
 							if ((guiPoints.verticeId != verticeId) || (guiPoints.timeId != timeId)) {
-								
+
 //								timeIdSelected = timeId;
+								guiPoints.timeId = timeId;
 								guiPoints.verticeId = verticeId;
 
 							}
 
 						}
-						
+
 					});
 /*					
 					if (timeIdSelected != undefined) {
-
+	
 						guiPoints.cTimes.__onChange(timeIdSelected);
 						guiPoints.cTimes.__select[timeIdSelected + 1].selected = true;
 						guiPoints.cPoints.__onChange(guiPoints.verticeId);
 						guiPoints.cPoints.__select[guiPoints.verticeId + 1].selected = true;
-
+	
 					}
-*/					
+*/
 					return guiPoints.verticeId;
-					
+
 				},
 				create: (fPoints, cPoints, count, intersectionSelected) => {
 
@@ -716,7 +722,7 @@ class Universe
 							break;
 
 					}
-					
+
 					const cTimes = fPoints.add({ Points: lang.notSelected }, 'Points', { [lang.notSelected]: -1 }), guiPoints = classSettings.settings.guiPoints;
 					guiPoints.cTimes = cTimes;
 					guiPoints.cPoints = cPoints;
@@ -738,9 +744,10 @@ class Universe
 
 							console.error(sUniverse + ': cTimes.onChange. Invalid timeId = ' + timeId);
 							return;
-							
+
 						}
-						guiPoints.timeAngles = times[timeId];
+						guiPoints.timeId = timeId;
+//							guiPoints.timeAngles = times[timeId];
 						guiPoints.timeAngles.forEach((verticeAngles, verticeId) => {
 
 							const opt = document.createElement('option');
@@ -751,22 +758,21 @@ class Universe
 						});
 						let positionOffset = 0;
 						for (let i = 0; i < timeId; i++) positionOffset += times[i].length;
-						
+
 						guiPoints.positionOffset = positionOffset;
-						guiPoints.timeId = timeId;
 
 					});
 					guiPoints.appendTimesChild = (time, timeId) => {
-						
+
 						const opt = document.createElement('option');
-						
+
 						if (time === undefined) time = classSettings.settings.options.player.getTime(timeId);
 						opt.innerHTML = time;
-						
+
 						if (timeId != undefined) opt.setAttribute('value', timeId);
 						cTimes.__select.appendChild(opt);
 						return opt;
-						
+
 					}
 					let anglesCount = 0, timeIdSelected;
 					const index = intersectionSelected ? intersectionSelected.index : undefined;
@@ -776,16 +782,17 @@ class Universe
 						if (index === undefined) return;
 						const anglesCountOld = anglesCount;
 						anglesCount += timeAngles.length;
-						if((index >= anglesCountOld) && (index < anglesCount)) {
+						if ((index >= anglesCountOld) && (index < anglesCount)) {
 
 							timeIdSelected = timeId;
+							guiPoints.timeId = timeId;
 							guiPoints.verticeId = index - anglesCountOld;
 
 						}
-						
+
 					});
 					if (timeIdSelected != undefined) {
-						
+
 						cTimes.__onChange(timeIdSelected);
 						cTimes.__select[timeIdSelected + 1].selected = true;
 						const verticeId = guiPoints.verticeId;
@@ -793,18 +800,18 @@ class Universe
 						cPoints.__select[verticeId + 1].selected = true;
 
 					}
-					
+
 				},
 				getValue: (cPoints) => {
 
 					const value = cPoints.getValue();
 					if (isNaN(value)) return -1;//точка не выбрана
 					return parseInt(value);
-				
+
 				},
 
-
 			}
+
 			classSettings.anglesObject2Array = () => {
 
 				const settings = classSettings.settings, times = settings.object.geometry.times;
