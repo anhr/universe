@@ -662,7 +662,7 @@ class Universe
 					
 					//User has mouse clicked a vertice
 					
-					let anglesCount = 0, timeIdSelected;
+					let anglesCount = 0;//, timeIdSelected;
 					const guiPoints = classSettings.settings.guiPoints;
 					classSettings.settings.object.geometry.times.forEach((timeAngles, timeId) => {
 
@@ -673,7 +673,7 @@ class Universe
 							const verticeId = index - anglesCountOld;
 							if ((guiPoints.verticeId != verticeId) || (guiPoints.timeId != timeId)) {
 								
-								timeIdSelected = timeId;
+//								timeIdSelected = timeId;
 								guiPoints.verticeId = verticeId;
 
 							}
@@ -681,6 +681,7 @@ class Universe
 						}
 						
 					});
+/*					
 					if (timeIdSelected != undefined) {
 
 						guiPoints.cTimes.__onChange(timeIdSelected);
@@ -689,6 +690,7 @@ class Universe
 						guiPoints.cPoints.__select[guiPoints.verticeId + 1].selected = true;
 
 					}
+*/					
 					return guiPoints.verticeId;
 					
 				},
@@ -786,14 +788,9 @@ class Universe
 						
 						cTimes.__onChange(timeIdSelected);
 						cTimes.__select[timeIdSelected + 1].selected = true;
-						cPoints.__onChange(guiPoints.verticeId);
-						cPoints.__select[guiPoints.verticeId + 1].selected = true;
-
-						//если не удалить guiPoints.verticeId, то будет неверно изменяться позиция вершины
-						//Для проверки открыть http://localhost/anhr/universe/main/hyperSphere/Examples/
-						//Щелчком мыши выбрать вершину
-						//Сделать один шаг проигрывателя, нажав →
-						//delete guiPoints.verticeId;
+						const verticeId = guiPoints.verticeId;
+						cPoints.__onChange(verticeId);
+						cPoints.__select[verticeId + 1].selected = true;
 
 					}
 					
