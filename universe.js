@@ -661,8 +661,10 @@ class Universe
 				getVerticeId: (index, timesItemCallBack) => {
 
 					if (
-						(index === undefined) ||
-						(classSettings.settings.guiPoints.verticeId === undefined)
+						!timesItemCallBack && (
+							(index === undefined) ||
+							(classSettings.settings.guiPoints.verticeId === undefined)
+						)
 					) return index;
 
 					//User has mouse clicked a vertice
