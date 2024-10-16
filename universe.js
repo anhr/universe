@@ -658,7 +658,7 @@ class Universe
 					return guiIndex;
 
 				},
-				getVerticeId: (index) => {
+				getVerticeId: (index, timesItemCallBack) => {
 
 					if (
 						(index === undefined) ||
@@ -667,10 +667,11 @@ class Universe
 
 					//User has mouse clicked a vertice
 
-					let anglesCount = 0;//, timeIdSelected;
+					let anglesCount = 0, timeIdSelected;
 					const guiPoints = classSettings.settings.guiPoints;
 					classSettings.settings.object.geometry.times.forEach((timeAngles, timeId) => {
 
+						if (timesItemCallBack) timesItemCallBack(timeAngles, timeId);
 						const anglesCountOld = anglesCount;
 						anglesCount += timeAngles.length;
 						if ((index >= anglesCountOld) && (index < anglesCount)) {
@@ -678,7 +679,7 @@ class Universe
 							const verticeId = index - anglesCountOld;
 							if ((guiPoints.verticeId != verticeId) || (guiPoints.timeId != timeId)) {
 
-//								timeIdSelected = timeId;
+								timeIdSelected = timeId;
 								guiPoints.timeId = timeId;
 								guiPoints.verticeId = verticeId;
 
@@ -774,6 +775,10 @@ class Universe
 						return opt;
 
 					}
+					const timeId = guiPoints.timeId;
+					guiPoints.getVerticeId(intersectionSelected ? intersectionSelected.index : undefined, (timeAngles, timeId) => { guiPoints.appendTimesChild(timeAngles.player.t, timeId); });
+					const timeIdSelected = timeId != guiPoints.timeId ? guiPoints.timeId : undefined;
+/*					
 					let anglesCount = 0, timeIdSelected;
 					const index = intersectionSelected ? intersectionSelected.index : undefined;
 					times.forEach((timeAngles, timeId) => {
@@ -791,6 +796,7 @@ class Universe
 						}
 
 					});
+*/					
 					if (timeIdSelected != undefined) {
 
 						cTimes.__onChange(timeIdSelected);
