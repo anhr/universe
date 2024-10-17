@@ -642,181 +642,216 @@ class Universe
 				},
 				
 			});
-			classSettings.settings.guiPoints = {
+			{//hide timeId
 
-				get timeAngles() { return classSettings.settings.object.geometry.times[this.timeId]; },
+//				let timeId;
+				classSettings.settings.guiPoints = {
 
-				//for debug
-				//set timeAngles(value) { console.warn(sUniverse + ': set classSettings.settings.guiPoints.timeAngles is deprecated'); },
-					
-				seletedIndex: (guiIndexStr) => {
+/*					
+					get timeId() { return timeId; },
+					set timeId(value) { timeId = value; },
+*/					
 
-					let guiIndex = parseInt(guiIndexStr);
-					if (isNaN(guiIndex)) return guiIndexStr;
-					const anglesLength = classSettings.settings.object.geometry.angles.length;
-					while (guiIndex > anglesLength) guiIndex -= anglesLength;
-					return guiIndex;
+					get timeAngles() { return classSettings.settings.object.geometry.times[this.timeId]; },
+					//for debug
+					//set timeAngles(value) { console.warn(sUniverse + ': set classSettings.settings.guiPoints.timeAngles is deprecated'); },
 
-				},
-				getVerticeId: (index, timesItemCallBack) => {
+					seletedIndex: (guiIndexStr) => {
 
-					if (
-						!timesItemCallBack && (
-							(index === undefined) ||
-							(classSettings.settings.guiPoints.verticeId === undefined)
-						)
-					) return index;
+						let guiIndex = parseInt(guiIndexStr);
+						if (isNaN(guiIndex)) return guiIndexStr;
+						const anglesLength = classSettings.settings.object.geometry.angles.length;
+						while (guiIndex > anglesLength) guiIndex -= anglesLength;
+						return guiIndex;
 
-					//User has mouse clicked a vertice
+					},
+					setControllers: (index) => {
 
-					let anglesCount = 0, timeIdSelected;
-					const guiPoints = classSettings.settings.guiPoints;
-					classSettings.settings.object.geometry.times.forEach((timeAngles, timeId) => {
+						const guiPoints = classSettings.settings.guiPoints;
+						guiPoints.getVerticeId(index);
+						const sError = sUniverse + ': classSettings.settings.guiPoints.setControllers. Invalid '
+						if (guiPoints.timeId === undefined) console.error(sError + 'guiPoints.timeId = ' + guiPoints.timeId);
+						guiPoints.cTimes.__onChange(guiPoints.timeId);
+//						guiPoints.cTimes.__select[(guiPoints.timeId != undefined ? guiPoints.timeId : 0) + 1].selected = true;
+						guiPoints.cTimes.__select[guiPoints.timeId + 1].selected = true;
+//						if (guiPoints.verticeId === undefined) console.error(sError + 'guiPoints.verticeId = ' + guiPoints.verticeId);
+						if (guiPoints.verticeId != undefined) guiPoints.cPoints.__select[guiPoints.verticeId + 1].selected = true;
 
-						if (timesItemCallBack) timesItemCallBack(timeAngles, timeId);
-						const anglesCountOld = anglesCount;
-						anglesCount += timeAngles.length;
-						if ((index >= anglesCountOld) && (index < anglesCount)) {
+					},
+					getVerticeId: (index, timesItemCallBack) => {
 
-							const verticeId = index - anglesCountOld;
-							if ((guiPoints.verticeId != verticeId) || (guiPoints.timeId != timeId)) {
+						if (
+							!timesItemCallBack && (
+								(index === undefined) ||
+								(classSettings.settings.guiPoints.verticeId === undefined)
+							)
+						) return index;
 
-								timeIdSelected = timeId;
-								guiPoints.timeId = timeId;
-								guiPoints.verticeId = verticeId;
+						//User has mouse clicked a vertice
+
+						let anglesCount = 0, timeIdSelected;
+						const guiPoints = classSettings.settings.guiPoints;
+						classSettings.settings.object.geometry.times.forEach((timeAngles, timeId) => {
+
+							if (timesItemCallBack) timesItemCallBack(timeAngles, timeId);
+							const anglesCountOld = anglesCount;
+							anglesCount += timeAngles.length;
+							if ((index >= anglesCountOld) && (index < anglesCount)) {
+
+								const verticeId = index - anglesCountOld;
+								if ((guiPoints.verticeId != verticeId) || (guiPoints.timeId != timeId)) {
+
+									timeIdSelected = timeId;
+									guiPoints.timeId = timeId;
+									guiPoints.verticeId = verticeId;
+
+								}
 
 							}
 
-						}
+						});
+						/*					
+											if (timeIdSelected != undefined) {
+							
+												guiPoints.cTimes.__onChange(timeIdSelected);
+												guiPoints.cTimes.__select[timeIdSelected + 1].selected = true;
+												guiPoints.cPoints.__onChange(guiPoints.verticeId);
+												guiPoints.cPoints.__select[guiPoints.verticeId + 1].selected = true;
+							
+											}
+						*/
+						return guiPoints.verticeId;
 
-					});
-/*					
-					if (timeIdSelected != undefined) {
-	
-						guiPoints.cTimes.__onChange(timeIdSelected);
-						guiPoints.cTimes.__select[timeIdSelected + 1].selected = true;
-						guiPoints.cPoints.__onChange(guiPoints.verticeId);
-						guiPoints.cPoints.__select[guiPoints.verticeId + 1].selected = true;
-	
-					}
-*/
-					return guiPoints.verticeId;
+					},
+					create: (fPoints, cPoints, count, intersectionSelected) => {
 
-				},
-				create: (fPoints, cPoints, count, intersectionSelected) => {
+						//Localization
 
-					//Localization
+						const lang = {
 
-					const lang = {
+							notSelected: 'Not selected',
+							time: 'Time',
+							timeTitle: 'Position of vertices at selected time',
 
-						notSelected: 'Not selected',
-						time: 'Time',
-						timeTitle: 'Position of vertices at selected time',
+						};
 
-					};
+						const options = classSettings.settings.options;
+						switch (options.getLanguageCode()) {
 
-					const options = classSettings.settings.options;
-					switch (options.getLanguageCode()) {
-
-						case 'ru'://Russian language
-							lang.notSelected = 'Не выбран';
-							lang.time = 'Время';
-							lang.timeTitle = 'Выбрать список вершин в выбранное время';
-							break;
-
-					}
-
-					const cTimes = fPoints.add({ Points: lang.notSelected }, 'Points', { [lang.notSelected]: -1 }), guiPoints = classSettings.settings.guiPoints;
-					guiPoints.cTimes = cTimes;
-					guiPoints.cPoints = cPoints;
-					dat.controllerNameAndTitle(cTimes, lang.time, lang.timeTitle);
-
-					//Переместить список Time вверх
-					const elBefore = fPoints.__ul.children[1], elLast = fPoints.__ul.children[fPoints.__ul.children.length - 1];
-					fPoints.__ul.removeChild(elLast);
-					fPoints.__ul.insertBefore(elLast, elBefore);
-
-					const times = classSettings.settings.object.geometry.times;
-					cTimes.onChange((timeId) => {
-
-						const selectPoints = cPoints.__select;
-						options.guiSelectPoint.selectPoint(-1);
-						while (selectPoints.length > 1) selectPoints.removeChild(selectPoints.lastChild);
-						timeId = parseInt(timeId);
-						if (isNaN(timeId)) {
-
-							console.error(sUniverse + ': cTimes.onChange. Invalid timeId = ' + timeId);
-							return;
+							case 'ru'://Russian language
+								lang.notSelected = 'Не выбран';
+								lang.time = 'Время';
+								lang.timeTitle = 'Выбрать список вершин в выбранное время';
+								break;
 
 						}
-						guiPoints.timeId = timeId;
-//							guiPoints.timeAngles = times[timeId];
-						guiPoints.timeAngles.forEach((verticeAngles, verticeId) => {
 
-							const opt = document.createElement('option');
-							opt.innerHTML = verticeId;
-							opt.setAttribute('value', verticeId);
-							selectPoints.appendChild(opt);
+						const cTimes = fPoints.add({ Points: lang.notSelected }, 'Points', { [lang.notSelected]: -1 }), guiPoints = classSettings.settings.guiPoints;
+						guiPoints.cTimes = cTimes;
+						guiPoints.cPoints = cPoints;
+						dat.controllerNameAndTitle(cTimes, lang.time, lang.timeTitle);
+
+						//Переместить список Time вверх
+						const elBefore = fPoints.__ul.children[1], elLast = fPoints.__ul.children[fPoints.__ul.children.length - 1];
+						fPoints.__ul.removeChild(elLast);
+						fPoints.__ul.insertBefore(elLast, elBefore);
+
+						const times = classSettings.settings.object.geometry.times;
+						cTimes.onChange((timeId) => {
+
+							const selectPoints = cPoints.__select;
+							options.guiSelectPoint.selectPoint(-1);
+							while (selectPoints.length > 1) selectPoints.removeChild(selectPoints.lastChild);
+							timeId = parseInt(timeId);
+							if (isNaN(timeId)) {
+
+								console.error(sUniverse + ': cTimes.onChange. Invalid timeId = ' + timeId);
+								return;
+
+							}
+							guiPoints.timeId = timeId;
+							//							guiPoints.timeAngles = times[timeId];
+							guiPoints.timeAngles.forEach((verticeAngles, verticeId) => {
+
+								const opt = document.createElement('option');
+								opt.innerHTML = verticeId;
+								opt.setAttribute('value', verticeId);
+								selectPoints.appendChild(opt);
+
+							});
+							let positionOffset = 0;
+							for (let i = 0; i < timeId; i++) positionOffset += times[i].length;
+
+							guiPoints.positionOffset = positionOffset;
 
 						});
-						let positionOffset = 0;
-						for (let i = 0; i < timeId; i++) positionOffset += times[i].length;
+						guiPoints.appendTimesChild = (time, timeId) => {
 
-						guiPoints.positionOffset = positionOffset;
+							const opt = document.createElement('option');
 
-					});
-					guiPoints.appendTimesChild = (time, timeId) => {
+							if (time === undefined) time = classSettings.settings.options.player.getTime(timeId);
+							opt.innerHTML = time;
 
-						const opt = document.createElement('option');
-
-						if (time === undefined) time = classSettings.settings.options.player.getTime(timeId);
-						opt.innerHTML = time;
-
-						if (timeId != undefined) opt.setAttribute('value', timeId);
-						cTimes.__select.appendChild(opt);
-						return opt;
-
-					}
-					const timeId = guiPoints.timeId;
-					guiPoints.getVerticeId(intersectionSelected ? intersectionSelected.index : undefined, (timeAngles, timeId) => { guiPoints.appendTimesChild(timeAngles.player.t, timeId); });
-					const timeIdSelected = timeId != guiPoints.timeId ? guiPoints.timeId : undefined;
-/*					
-					let anglesCount = 0, timeIdSelected;
-					const index = intersectionSelected ? intersectionSelected.index : undefined;
-					times.forEach((timeAngles, timeId) => {
-
-						guiPoints.appendTimesChild(timeAngles.player.t, timeId);
-						if (index === undefined) return;
-						const anglesCountOld = anglesCount;
-						anglesCount += timeAngles.length;
-						if ((index >= anglesCountOld) && (index < anglesCount)) {
-
-							timeIdSelected = timeId;
-							guiPoints.timeId = timeId;
-							guiPoints.verticeId = index - anglesCountOld;
+							if (timeId != undefined) opt.setAttribute('value', timeId);
+							cTimes.__select.appendChild(opt);
+							return opt;
 
 						}
+						const timeId = guiPoints.timeId;
+						guiPoints.getVerticeId(intersectionSelected ? intersectionSelected.index : undefined, (timeAngles, timeId) => { guiPoints.appendTimesChild(timeAngles.player.t, timeId); });
+						if (guiPoints.timeId != undefined) {
+							
+							const timesSelectedIndex = guiPoints.timeId + 1;
+							if (cTimes.selectedIndex != timesSelectedIndex) {
+								
+								cTimes.__onChange(guiPoints.timeId);
+								cTimes.__select[timesSelectedIndex].selected = true;
+								
+							}
 
-					});
-*/					
-					if (timeIdSelected != undefined) {
+						}
+						/*					
+											let anglesCount = 0, timeIdSelected;
+											const index = intersectionSelected ? intersectionSelected.index : undefined;
+											times.forEach((timeAngles, timeId) => {
+						
+												guiPoints.appendTimesChild(timeAngles.player.t, timeId);
+												if (index === undefined) return;
+												const anglesCountOld = anglesCount;
+												anglesCount += timeAngles.length;
+												if ((index >= anglesCountOld) && (index < anglesCount)) {
+						
+													timeIdSelected = timeId;
+													guiPoints.timeId = timeId;
+													guiPoints.verticeId = index - anglesCountOld;
+						
+												}
+						
+											});
+						*/
+/*						
+						const timeIdSelected = timeId != guiPoints.timeId ? guiPoints.timeId : undefined;
+						if (timeIdSelected != undefined) {
 
-						cTimes.__onChange(timeIdSelected);
-						cTimes.__select[timeIdSelected + 1].selected = true;
-						const verticeId = guiPoints.verticeId;
-						cPoints.__onChange(verticeId);
-						cPoints.__select[verticeId + 1].selected = true;
+							cTimes.__onChange(timeIdSelected);
+							cTimes.__select[timeIdSelected + 1].selected = true;
+							const verticeId = guiPoints.verticeId;
+							cPoints.__onChange(verticeId);
+							cPoints.__select[verticeId + 1].selected = true;
 
-					}
+						}
+*/						
 
-				},
-				getValue: (cPoints) => {
+					},
+					getValue: (cPoints) => {
 
-					const value = cPoints.getValue();
-					if (isNaN(value)) return -1;//точка не выбрана
-					return parseInt(value);
+						const value = cPoints.getValue();
+						if (isNaN(value)) return -1;//точка не выбрана
+						return parseInt(value);
 
-				},
+					},
+
+				}
 
 			}
 
