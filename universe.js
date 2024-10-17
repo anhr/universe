@@ -669,6 +669,8 @@ class Universe
 
 						const guiPoints = classSettings.settings.guiPoints;
 						guiPoints.getVerticeId(index);
+						guiPoints.changeControllers();
+/*						
 						const sError = sUniverse + ': classSettings.settings.guiPoints.setControllers. Invalid '
 						if (guiPoints.timeId === undefined) console.error(sError + 'guiPoints.timeId = ' + guiPoints.timeId);
 						guiPoints.cTimes.__onChange(guiPoints.timeId);
@@ -676,6 +678,7 @@ class Universe
 						guiPoints.cTimes.__select[guiPoints.timeId + 1].selected = true;
 //						if (guiPoints.verticeId === undefined) console.error(sError + 'guiPoints.verticeId = ' + guiPoints.verticeId);
 						if (guiPoints.verticeId != undefined) guiPoints.cPoints.__select[guiPoints.verticeId + 1].selected = true;
+*/						
 
 					},
 					getVerticeId: (index, timesItemCallBack) => {
@@ -747,8 +750,8 @@ class Universe
 						}
 
 						const cTimes = fPoints.add({ Points: lang.notSelected }, 'Points', { [lang.notSelected]: -1 }), guiPoints = classSettings.settings.guiPoints;
-						guiPoints.cTimes = cTimes;
-						guiPoints.cPoints = cPoints;
+//						guiPoints.cTimes = cTimes;
+//						guiPoints.cPoints = cPoints;
 						dat.controllerNameAndTitle(cTimes, lang.time, lang.timeTitle);
 
 						//Переместить список Time вверх
@@ -797,8 +800,23 @@ class Universe
 							return opt;
 
 						}
-						const timeId = guiPoints.timeId;
+//						const timeId = guiPoints.timeId;
 						guiPoints.getVerticeId(intersectionSelected ? intersectionSelected.index : undefined, (timeAngles, timeId) => { guiPoints.appendTimesChild(timeAngles.player.t, timeId); });
+						guiPoints.changeControllers = () => {
+
+							if (guiPoints.timeId === undefined) return;
+							
+							const timesSelectedIndex = guiPoints.timeId + 1;
+							if (cTimes.selectedIndex === timesSelectedIndex) return;
+							cTimes.__onChange(guiPoints.timeId);
+							cTimes.__select[timesSelectedIndex].selected = true;
+							
+							if (guiPoints.verticeId === undefined) return;
+							cPoints.__select[guiPoints.verticeId + 1].selected = true;
+							
+						}
+						guiPoints.changeControllers();
+/*						
 						if (guiPoints.timeId != undefined) {
 							
 							const timesSelectedIndex = guiPoints.timeId + 1;
@@ -806,10 +824,13 @@ class Universe
 								
 								cTimes.__onChange(guiPoints.timeId);
 								cTimes.__select[timesSelectedIndex].selected = true;
+//								cPoints.__onChange(guiPoints.verticeId);
+								cPoints.__select[guiPoints.verticeId + 1].selected = true;
 								
 							}
 
 						}
+*/						
 						/*					
 											let anglesCount = 0, timeIdSelected;
 											const index = intersectionSelected ? intersectionSelected.index : undefined;
