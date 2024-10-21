@@ -752,24 +752,35 @@ class Universe
 						if (timeId != -1) {
 							
 							display = block;
-							start = anglesLength * timeId;
-							end = anglesLength * (timeId + 1);
+							start = timeId;
+							end = (timeId + 1);
 //							this.hyperSphere.object().geometry.setEdgesRange()
 //							this.hyperSphere.setEdgesRange()
 //							this.hyperSphere.setVerticesRange(anglesLength * timeId, anglesLength * (timeId + 1));
 //							this.hyperSphere.setVerticesRange(0, anglesLength * (timeId + 1));
 							
+							guiPoints.timeId = timeId;
+							guiPoints.timeAngles.forEach((verticeAngles, verticeId) => {
+	
+								const opt = document.createElement('option');
+								opt.innerHTML = verticeId;
+								opt.setAttribute('value', verticeId);
+								selectPoints.appendChild(opt);
+	
+							});
+							
 						} else {
 							
 							display = none;
 							start = 0;
-							end = anglesLength * classSettings.settings.options.player.getTimeId() + 1;
+							end = classSettings.settings.options.player.getTimeId() + 1;
 //							this.hyperSphere.setVerticesRange(0, anglesLength * classSettings.settings.object.geometry.times.length);
 							
 						}
-						this.hyperSphere.setVerticesRange(start, end - start);
+						this.hyperSphere.setVerticesRange(anglesLength * start, anglesLength * (end - start));
 						cPointsStyle.display = display;
 						guiPoints.pointsStyleDisplay = cPointsStyle.display;
+/*						
 						guiPoints.timeId = timeId;
 						guiPoints.timeAngles.forEach((verticeAngles, verticeId) => {
 
@@ -779,6 +790,7 @@ class Universe
 							selectPoints.appendChild(opt);
 
 						});
+*/						
 						let positionOffset = 0;
 						for (let i = 0; i < timeId; i++) positionOffset += times[i].length;
 
