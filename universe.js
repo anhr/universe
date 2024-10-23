@@ -803,6 +803,16 @@ class Universe
 							display = block;
 							start = timeId;
 							end = timeId + 1;
+								
+							guiPoints.timeId = timeId;
+							guiPoints.timeAngles.forEach((verticeAngles, verticeId) => {
+	
+								const opt = document.createElement('option');
+								opt.innerHTML = verticeId;
+								opt.setAttribute('value', verticeId);
+								selectPoints.appendChild(opt);
+	
+							});
 
 						} else {
 							
