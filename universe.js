@@ -746,51 +746,81 @@ class Universe
 							return;
 
 						}
-						const anglesLength = classSettings.settings.object.geometry.angles.length;
-						let display,
-							start, end;
+						let display, start, end;
+/*						
+						if (classSettings.edges.project) {
+
+							if (timeId != -1) {
+								
+								display = block;
+								start = timeId;
+								end = timeId + 1;
+
+							} else {
+								
+								display = none;
+								start = 0;
+								end = classSettings.settings.options.player.getTimeId() + 1;
+								
+							}
+							this.hyperSphere.setEdgesRange(start, end);
+							
+						} else {
+							
+							if (timeId != -1) {
+								
+								display = block;
+								start = timeId;
+								end = (timeId + 1);
+	//							this.hyperSphere.object().geometry.setEdgesRange()
+	//							this.hyperSphere.setVerticesRange(anglesLength * timeId, anglesLength * (timeId + 1));
+	//							this.hyperSphere.setVerticesRange(0, anglesLength * (timeId + 1));
+								
+								guiPoints.timeId = timeId;
+								guiPoints.timeAngles.forEach((verticeAngles, verticeId) => {
+		
+									const opt = document.createElement('option');
+									opt.innerHTML = verticeId;
+									opt.setAttribute('value', verticeId);
+									selectPoints.appendChild(opt);
+		
+								});
+								
+							} else {
+								
+								display = none;
+								start = 0;
+								end = classSettings.settings.options.player.getTimeId() + 1;
+	//							this.hyperSphere.setVerticesRange(0, anglesLength * classSettings.settings.object.geometry.times.length);
+								
+							}
+							this.hyperSphere.setVerticesRange(anglesLength * start, anglesLength * (end - start));
+	
+						}
+*/						
 						if (timeId != -1) {
 							
 							display = block;
 							start = timeId;
-							end = (timeId + 1);
-//							this.hyperSphere.object().geometry.setEdgesRange()
-//							this.hyperSphere.setEdgesRange()
-//							this.hyperSphere.setVerticesRange(anglesLength * timeId, anglesLength * (timeId + 1));
-//							this.hyperSphere.setVerticesRange(0, anglesLength * (timeId + 1));
-							
-							guiPoints.timeId = timeId;
-							guiPoints.timeAngles.forEach((verticeAngles, verticeId) => {
-	
-								const opt = document.createElement('option');
-								opt.innerHTML = verticeId;
-								opt.setAttribute('value', verticeId);
-								selectPoints.appendChild(opt);
-	
-							});
-							
+							end = timeId + 1;
+
 						} else {
 							
 							display = none;
 							start = 0;
 							end = classSettings.settings.options.player.getTimeId() + 1;
-//							this.hyperSphere.setVerticesRange(0, anglesLength * classSettings.settings.object.geometry.times.length);
 							
 						}
-						this.hyperSphere.setVerticesRange(anglesLength * start, anglesLength * (end - start));
+						if (classSettings.edges.project)
+							this.hyperSphere.setEdgesRange(start, end);
+						else {
+							
+							const anglesLength = classSettings.settings.object.geometry.angles.length;
+							this.hyperSphere.setVerticesRange(anglesLength * start, anglesLength * (end - start));
+
+						}
 						cPointsStyle.display = display;
 						guiPoints.pointsStyleDisplay = cPointsStyle.display;
-/*						
-						guiPoints.timeId = timeId;
-						guiPoints.timeAngles.forEach((verticeAngles, verticeId) => {
-
-							const opt = document.createElement('option');
-							opt.innerHTML = verticeId;
-							opt.setAttribute('value', verticeId);
-							selectPoints.appendChild(opt);
-
-						});
-*/						
 						let positionOffset = 0;
 						for (let i = 0; i < timeId; i++) positionOffset += times[i].length;
 
