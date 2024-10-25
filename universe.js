@@ -746,58 +746,8 @@ class Universe
 							return;
 
 						}
+						const anglesLength = classSettings.settings.object.geometry.angles.length, hyperSphereObject = this.hyperSphere.object();
 						let display, start, end;
-/*						
-						if (classSettings.edges.project) {
-
-							if (timeId != -1) {
-								
-								display = block;
-								start = timeId;
-								end = timeId + 1;
-
-							} else {
-								
-								display = none;
-								start = 0;
-								end = classSettings.settings.options.player.getTimeId() + 1;
-								
-							}
-							this.hyperSphere.setEdgesRange(start, end);
-							
-						} else {
-							
-							if (timeId != -1) {
-								
-								display = block;
-								start = timeId;
-								end = (timeId + 1);
-	//							this.hyperSphere.object().geometry.setEdgesRange()
-	//							this.hyperSphere.setVerticesRange(anglesLength * timeId, anglesLength * (timeId + 1));
-	//							this.hyperSphere.setVerticesRange(0, anglesLength * (timeId + 1));
-								
-								guiPoints.timeId = timeId;
-								guiPoints.timeAngles.forEach((verticeAngles, verticeId) => {
-		
-									const opt = document.createElement('option');
-									opt.innerHTML = verticeId;
-									opt.setAttribute('value', verticeId);
-									selectPoints.appendChild(opt);
-		
-								});
-								
-							} else {
-								
-								display = none;
-								start = 0;
-								end = classSettings.settings.options.player.getTimeId() + 1;
-	//							this.hyperSphere.setVerticesRange(0, anglesLength * classSettings.settings.object.geometry.times.length);
-								
-							}
-							this.hyperSphere.setVerticesRange(anglesLength * start, anglesLength * (end - start));
-	
-						}
-*/						
 						if (timeId != -1) {
 							
 							display = block;
@@ -813,22 +763,30 @@ class Universe
 								selectPoints.appendChild(opt);
 	
 							});
+							hyperSphereObject.userData.myObject.guiPoints.getPositionId = (timeAnglesId) => {
+	
+								if (timeAnglesId >= anglesLength) {
+
+									//не выводить сообщение об ошибке если пользователь проводит мышкой над вершиной.
+									if (!hyperSphereObject.userData.myObject.guiPoints.boMouseOver) console.error(sUniverse + ': guiPoints.getPositionId. Invalid timeAnglesId = ' + timeAnglesId);
+									return timeAnglesId;
+	
+								}
+								return timeId * anglesLength + timeAnglesId;
+							
+							}
 
 						} else {
 							
 							display = none;
 							start = 0;
 							end = classSettings.settings.options.player.getTimeId() + 1;
+							hyperSphereObject.userData.myObject.guiPoints.getPositionId = (timeAnglesId) => { return timeAnglesId; }
 							
 						}
 						if (classSettings.edges.project)
 							this.hyperSphere.setEdgesRange(start, end);
-						else {
-							
-							const anglesLength = classSettings.settings.object.geometry.angles.length;
-							this.hyperSphere.setVerticesRange(anglesLength * start, anglesLength * (end - start));
-
-						}
+						else this.hyperSphere.setVerticesRange(anglesLength * start, anglesLength * (end - start));
 						cPointsStyle.display = display;
 						guiPoints.pointsStyleDisplay = cPointsStyle.display;
 						let positionOffset = 0;
@@ -856,7 +814,8 @@ class Universe
 						if (guiPoints.timeId === undefined) return;
 							
 						const timesSelectedIndex = guiPoints.timeId + 1;
-						if (cTimes.selectedIndex === timesSelectedIndex) return;
+//						if (cTimes.selectedIndex === timesSelectedIndex) return;
+						if (cTimes.__select.selectedIndex === timesSelectedIndex) return;
 						cTimes.__onChange(guiPoints.timeId);
 						cTimes.__select[timesSelectedIndex].selected = true;
 							
