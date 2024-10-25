@@ -789,10 +789,12 @@ class Universe
 						else this.hyperSphere.setVerticesRange(anglesLength * start, anglesLength * (end - start));
 						cPointsStyle.display = display;
 						guiPoints.pointsStyleDisplay = cPointsStyle.display;
+/*
 						let positionOffset = 0;
 						for (let i = 0; i < timeId; i++) positionOffset += times[i].length;
 
 						guiPoints.positionOffset = positionOffset;
+*/
 
 					});
 					guiPoints.appendTimesChild = (time, timeId) => {
