@@ -725,8 +725,26 @@ class Universe
 
 					}
 
-					const cTimes = fPoints.add({ Points: lang.notSelected }, 'Points', { [lang.notSelected]: -1 }), guiPoints = classSettings.settings.guiPoints;
-					dat.controllerNameAndTitle(cTimes, lang.time, lang.timeTitle);
+					const sTimes = 'Times', guiPoints = classSettings.settings.guiPoints;
+					let cTimes;
+
+					//find duplicate cTimes
+					fPoints.__controllers.forEach((controller) => {
+
+						if (controller.property === sTimes) {
+
+							cTimes = controller;
+							return;
+							
+						}
+							
+					});
+					if (!cTimes) {
+						
+						cTimes = fPoints.add({ Times: lang.notSelected }, 'Times', { [lang.notSelected]: -1 });
+						dat.controllerNameAndTitle(cTimes, lang.time, lang.timeTitle);
+
+					}
 
 					//Переместить список Time вверх
 					const elBefore = fPoints.__ul.children[1], elLast = fPoints.__ul.children[fPoints.__ul.children.length - 1];
