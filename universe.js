@@ -677,7 +677,7 @@ class Universe
 
 					//User has mouse clicked a vertice
 
-					let anglesCount = 0, timeIdSelected;
+					let anglesCount = 0;//, timeIdSelected;
 					const guiPoints = classSettings.settings.guiPoints;
 					classSettings.settings.object.geometry.times.forEach((timeAngles, timeId) => {
 
@@ -689,7 +689,7 @@ class Universe
 							const verticeId = index - anglesCountOld;
 							if ((guiPoints.verticeId != verticeId) || (guiPoints.timeId != timeId)) {
 
-								timeIdSelected = timeId;
+//								timeIdSelected = timeId;
 								guiPoints.timeId = timeId;
 								guiPoints.verticeId = verticeId;
 
