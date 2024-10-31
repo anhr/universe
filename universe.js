@@ -889,17 +889,20 @@ class Universe
 			}
 */			
 			classSettings.overriddenProperties ||= {};
-			classSettings.overriddenProperties.edges = (cEdges) => {
+			classSettings.overriddenProperties.edges ||= () => { return {}; };
+			classSettings.overriddenProperties.setEdges = (cEdges) => {
 				
 				if (classSettings.edges === false) {
 	
 					//во вселенной ребра должны быть обязательно.
 					console.error(sUniverse + ': Invalid classSettings.edges = ' + classSettings.edges);
-					cEdges.__onChange(true);
-					return { creationMethod: this.edgesCreationMethod.Random, project: true, }
+//					cEdges.__onChange(true, false);
+//					setTimeout( () => { cEdges.setValue(true); }, 0 );
+//					cEdges.setValue(true);
+//					return { creationMethod: this.edgesCreationMethod.Random, project: true, }
 	
 				}
-				return classSettings.edges;
+//				return classSettings.edges;
 				
 			}
 			this.hyperSphere = this.getHyperSphere(options, classSettings);
