@@ -877,27 +877,29 @@ class Universe
 					times[timeId] = angles;
 
 				});
-/*
-				const settings = classSettings.settings, timesAngles = settings.object.geometry.timesAngles;
-				if (timesAngles.length > settings.options.playerOptions.marks) console.warn(sUniverse +': anglesObject2Array. Invalid classSettings.settings.object.geometry.timesAngles.length = ' + timesAngles.length);
-				timesAngles.forEach((geometryAngles, timeId) => {
+				
+			}
+/*			
+			if (classSettings.edges === false) {
 
-					//Непонятно зачем эта проверка
-//					if (geometryAngles.isTimeAnglesProxy) return;
-					
-					if (geometryAngles instanceof Array) {
+				//во вселенной ребра должны быть обязательно.
+				console.error(sUniverse + ': Invalid classSettings.edges = ' + classSettings.edges);
+				classSettings.edges = { creationMethod: this.edgesCreationMethod.Random, project: false, }
 
-						if (timeId > 0) timesAngles[timeId] = timesAngles[timeId];
-						return;
-
-					}
-					if ((timeId > 0) && (geometryAngles.count != undefined)) console.warn(sUniverse +': anglesObject2Array. classSettings.settings.object.geometry.timesAngles[' + timeId + '].count = ' + geometryAngles.count + ' is ignore.');
-					const angles = [];
-					Object.keys(geometryAngles).forEach((key) => angles[key] = geometryAngles[key]);
-					timesAngles[timeId] = angles;
-							
-				});
-*/
+			}
+*/			
+			classSettings.overriddenProperties ||= {};
+			classSettings.overriddenProperties.edges = (cEdges) => {
+				
+				if (classSettings.edges === false) {
+	
+					//во вселенной ребра должны быть обязательно.
+					console.error(sUniverse + ': Invalid classSettings.edges = ' + classSettings.edges);
+					cEdges.__onChange(true);
+					return { creationMethod: this.edgesCreationMethod.Random, project: true, }
+	
+				}
+				return classSettings.edges;
 				
 			}
 			this.hyperSphere = this.getHyperSphere(options, classSettings);
@@ -909,13 +911,11 @@ class Universe
 
 						case 'project':
 							if (value) 
-//								this.hyperSphere.setDrawRange(drawRange.start, settings.object.geometry.indices[0].timeEdgesCount * 2 * times - drawRange.start);
 								this.hyperSphere.setEdgesRange();
 							else {
 								
 								//display of vertices
 								const settings = classSettings.settings, drawRange = settings.bufferGeometry.drawRange;
-//								bufferGeometry.setDrawRange(drawRange.start, classSettings.overriddenProperties.position0.length * (settings.options.player.getTimeId() + 1) - drawRange.start);
 								this.hyperSphere.setVerticesRange(drawRange.start, classSettings.overriddenProperties.position0.length * (settings.options.player.getTimeId() + 1) - drawRange.start);
 							
 							}
@@ -928,13 +928,6 @@ class Universe
 				}
 					
 			});
-/*			
-			Object.defineProperty(classSettings.edges, 'project', {
-
-				set: (projectNew) => { classSettings.edges['project'] = projectNew; },
-
-			});
-*/			
 			{//hide geometry
 
 				const geometry = classSettings.settings.object.geometry;

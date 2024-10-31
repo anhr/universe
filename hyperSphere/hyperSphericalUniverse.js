@@ -30,6 +30,7 @@ class HypersphericalUniverse extends SphericalUniverse {
 	 **/
 	constructor(classSettings = {}, myThreeOptions) { super(classSettings, myThreeOptions); }
 	getHyperSphere(options, classSettings) { return new HyperSphere3D(options, classSettings); }
+	get edgesCreationMethod() { return HypersphericalUniverse.edgesCreationMethod; }
 	name(getLanguageCode) {
 
 		//Localization
@@ -56,4 +57,13 @@ class HypersphericalUniverse extends SphericalUniverse {
 	}
 
 }
+/**
+ * Enums a methods for creating edges:
+ * <pre>
+ * Random: every vertice of the edge have random position.
+ * NearestVertice: Vertices of the edge have nearest position.
+ * </pre>
+ * */
+HypersphericalUniverse.edgesCreationMethod = HyperSphere3D.edgesCreationMethod;
+
 export default HypersphericalUniverse;
