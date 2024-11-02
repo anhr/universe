@@ -607,13 +607,32 @@ class Universe
 									
 									if (classSettings.edges.project === false) return;//Ребра не отбражаются на холсте. Не нужно устанавливать bufferGeometry.drawRange в зависимость от индекса ребер.
 									this.hyperSphere.setEdgesRange();
-/*									
-									const bufferGeometry = settings.bufferGeometry, drawRange = bufferGeometry.drawRange;
-									bufferGeometry.attributes.position.needsUpdate = true;
-									bufferGeometry.setDrawRange(drawRange.start, (settings.object.geometry.indices[0].timeEdgesCount * (timeId + 1) * 2) - drawRange.start);
-*/									
 									
 								}
+								overriddenProperties.isEdgesOnly = () => {
+
+
+									//Localization
+
+									const lang = {
+
+										isEdgesOnly: 'Only vertices with edges are available in the universe.',
+
+									};
+
+									switch (classSettings.settings.options.getLanguageCode()) {
+
+										case 'ru'://Russian language
+											lang.isEdgesOnly = 'Во вселенной доступны только вершины с ребрами.';
+											break;
+
+									}
+
+									alert(lang.isEdgesOnly)
+									return true;
+
+								}
+
 								settings.overriddenProperties.setDrawRange = (start, count) => { settings.bufferGeometry.setDrawRange(start, count); }
 								settings.overriddenProperties.getPlayerTimesLength = () => { return settings.object.geometry.times.length; }
 
@@ -889,7 +908,14 @@ class Universe
 			}
 */			
 			classSettings.overriddenProperties ||= {};
-			classSettings.overriddenProperties.edges ||= () => { return {}; };
+			classSettings.overriddenProperties.edges ||= () => {
+
+				//во вселенной ребра должны быть обязательно.
+				console.error(sUniverse + ': classSettings.edges = false is impossible in the Universe');
+				return {};
+			
+			};
+/*			
 			classSettings.overriddenProperties.setEdges = (cEdges) => {
 				
 				if (classSettings.edges === false) {
@@ -905,6 +931,7 @@ class Universe
 //				return classSettings.edges;
 				
 			}
+*/			
 			this.hyperSphere = this.getHyperSphere(options, classSettings);
 			classSettings.edges = new Proxy(classSettings.edges, {
 
