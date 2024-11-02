@@ -839,7 +839,7 @@ class Universe
 						const opt = document.createElement('option');
 
 						if (time === undefined) time = classSettings.settings.options.player.getTime(timeId);
-						opt.innerHTML = time;
+						opt.innerHTML = '(' + timeId + ') ' + time;
 
 						if (timeId != undefined) opt.setAttribute('value', timeId);
 						cTimes.__select.appendChild(opt);
