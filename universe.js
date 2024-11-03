@@ -753,6 +753,7 @@ class Universe
 						if (controller.property === sTimes) {
 
 							cTimes = controller;
+							for (let i = cTimes.__select.length - 1; i > 0; i--) cTimes.__select.remove(i);
 							return;
 							
 						}
@@ -770,7 +771,8 @@ class Universe
 					fPoints.__ul.removeChild(elLast);
 					fPoints.__ul.insertBefore(elLast, elBefore);
 
-					const times = classSettings.settings.object.geometry.times, cPointsStyle = cPoints.domElement.parentElement.parentElement.style;
+//					const times = classSettings.settings.object.geometry.times, 
+					const cPointsStyle = cPoints.domElement.parentElement.parentElement.style;
 					cTimes.onChange((timeId) => {
 
 						const selectPoints = cPoints.__select;
