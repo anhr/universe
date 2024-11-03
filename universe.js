@@ -790,6 +790,14 @@ class Universe
 							display = block;
 							start = timeId;
 							end = timeId + 1;
+							this.selectTime = () => {
+								
+								if (classSettings.edges.project)
+									this.hyperSphere.setEdgesRange(start, end);
+//								else this.hyperSphere.setVerticesRange(start, end - start);
+								else this.hyperSphere.setVerticesRange(anglesLength * start, anglesLength * (end - start));
+								
+							}
 								
 							guiPoints.timeId = timeId;
 							guiPoints.timeAngles.forEach((verticeAngles, verticeId) => {
@@ -854,7 +862,23 @@ class Universe
 							
 						const timesSelectedIndex = guiPoints.timeId + 1;
 //						if (cTimes.selectedIndex === timesSelectedIndex) return;
-						if (cTimes.__select.selectedIndex === timesSelectedIndex) return;
+						if (cTimes.__select.selectedIndex === timesSelectedIndex) {
+
+/*							
+							const start = 0, end = 0;
+							if (classSettings.edges.project)
+								this.hyperSphere.setEdgesRange(start, end);
+							else this.hyperSphere.setVerticesRange(anglesLength * start, anglesLength * (end - start));
+*/							
+/*							
+							if (classSettings.edges.project)
+								this.hyperSphere.setEdgesRange();
+							else this.hyperSphere.setVerticesRange(0, classSettings.overriddenProperties.position0.length * (classSettings.settings.options.player.getTimeId() + 1));
+*/							
+							this.selectTime();
+							return;
+							
+						}
 						cTimes.__onChange(guiPoints.timeId);
 						cTimes.__select[timesSelectedIndex].selected = true;
 							
@@ -945,9 +969,13 @@ class Universe
 							else {
 								
 								//display of vertices
+/*								
 								const settings = classSettings.settings, drawRange = settings.bufferGeometry.drawRange;
 								this.hyperSphere.setVerticesRange(drawRange.start, classSettings.overriddenProperties.position0.length * (settings.options.player.getTimeId() + 1) - drawRange.start);
-							
+*/								
+								//Время не выбрано. Показать все вершины до времени проигрывателя
+								this.hyperSphere.setVerticesRange(0, classSettings.overriddenProperties.position0.length * (classSettings.settings.options.player.getTimeId() + 1));
+								
 							}
 							break;
 							
