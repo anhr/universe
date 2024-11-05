@@ -576,7 +576,7 @@ class Universe
 									
 								}
 								overriddenProperties.verticeText ||= (intersection, text) => {
-
+									
 									const times = settings.object.geometry.times;
 									let verticeId = intersection.index, tRes = '';
 									if (classSettings.edges.project) {
@@ -607,6 +607,8 @@ class Universe
 							
 										}
 
+										verticeId = this.hyperSphere.searchNearestEdgeVerticeId(verticeId, intersection);
+/*										
 										//find nearest vertice id
 										const array = intersection.object.geometry.index.array, edge = [array[intersection.index], array[intersection.index + 1]]
 										let minDistance = Infinity;//, pointId;
@@ -624,6 +626,7 @@ class Universe
 										}
 										distance ( 0 );
 										distance ( 1 );
+*/										
 
 										//find edge Id
 										let edgeId = intersection.index;
