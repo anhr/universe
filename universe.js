@@ -95,6 +95,8 @@ class Universe
 		myThreeOptions.canvas = myThreeOptions.canvas || {};
 		myThreeOptions.canvas.noButtonFullScreen = myThreeOptions.canvas.noButtonFullScreen != undefined ? myThreeOptions.canvas.noButtonFullScreen : true;
 
+		if (myThreeOptions.palette === undefined) myThreeOptions.palette = MyThree.ColorPicker.paletteIndexes.rainbow;
+		
 		new MyThree((scene, options) => {
 
 			//classSettings.projectParams ||= {};//Эта строка выдает ошибку "[!] (cleanup plugin) SyntaxError: Unexpected token (63:36)" при выполнении команды "npm run build"
