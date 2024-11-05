@@ -578,14 +578,21 @@ class Universe
 								overriddenProperties.verticeText ||= (intersection, text) => {
 
 									const times = settings.object.geometry.times;
+									let verticeIndex = intersection.index;
+									if (classSettings.edges.project) {
+
+										//edges is visible
+										verticeIndex = intersection.object.geometry.index.array[intersection.index]
+										
+									}
 									let index = 0;
 									for (let i = 0; i < times.length; i++) {
 
 										const timeAngles = times[i];
 										index += timeAngles.length;
-										if (index > intersection.index) {
+										if (index > verticeIndex) {
 
-											index = intersection.index - index + timeAngles.length;
+											index = verticeIndex - index + timeAngles.length;
 											return text(timeAngles, index);
 											
 										}

@@ -44,8 +44,8 @@
 			*/
 			onSelectScene: (hyperSphere, timeId, t) => {
 				
-				if (hyperSphere.middleVertices) return hyperSphere.middleVertices(timeId, t);
-				//if (hyperSphere.child) return hyperSphere.child.onSelectScene.copyAngles(timeId, t);
+				//if (hyperSphere.middleVertices) return hyperSphere.middleVertices(timeId, t);
+				if (hyperSphere.child) return hyperSphere.child.onSelectScene.copyAngles(timeId, t);
 	
 			},
 
