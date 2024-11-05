@@ -578,11 +578,64 @@ class Universe
 								overriddenProperties.verticeText ||= (intersection, text) => {
 
 									const times = settings.object.geometry.times;
-									let verticeIndex = intersection.index;
+									let verticeId = intersection.index, tRes = '';
 									if (classSettings.edges.project) {
 
 										//edges is visible
-										verticeIndex = intersection.object.geometry.index.array[intersection.index]
+//										verticeId = intersection.object.geometry.index.array[intersection.index];
+
+										//Localization
+							
+										const getLanguageCode = settings.options.getLanguageCode;
+							
+										const lang = {
+							
+											pointId: "point Id",
+											edgeId: "edge Id",
+							
+										};
+							
+										const _languageCode = getLanguageCode();
+							
+										switch (_languageCode) {
+							
+											case 'ru'://Russian language
+							
+												lang.pointId = 'Индекс вершины';
+												lang.edgeId = 'Индекс ребра';
+												break;
+							
+										}
+
+										//find nearest vertice id
+										const array = intersection.object.geometry.index.array, edge = [array[intersection.index], array[intersection.index + 1]]
+										let minDistance = Infinity;//, pointId;
+										const distance = ( i ) => {
+							
+											const pointIndex = edge[i],
+												distance = intersection.point.distanceTo( new THREE.Vector3().fromBufferAttribute( intersection.object.geometry.attributes.position, pointIndex ) );
+											if ( minDistance > distance  ) {
+								
+												minDistance = distance;
+												verticeId = pointIndex;
+												
+											}
+											
+										}
+										distance ( 0 );
+										distance ( 1 );
+
+										//find edge Id
+										let edgeId = intersection.index;
+										const timeEdgesCount = settings.object.geometry.indices.edges.timeEdgesCount * 2;//в intersection.object.geometry.attributes.position на каждое ребро приходится по два индекса. Поэтому приходится умножать на 2
+										for (let i = 0; i < timeEdgesCount; i++) {
+
+											if ((edgeId - timeEdgesCount) < 0) break;
+											edgeId -= timeEdgesCount;
+											
+										}
+										edgeId = edgeId / 2;
+										tRes = lang.edgeId + ' ' + edgeId;
 										
 									}
 									let index = 0;
@@ -590,10 +643,10 @@ class Universe
 
 										const timeAngles = times[i];
 										index += timeAngles.length;
-										if (index > verticeIndex) {
+										if (index > verticeId) {
 
-											index = verticeIndex - index + timeAngles.length;
-											return text(timeAngles, index);
+											index = verticeId - index + timeAngles.length;
+											return (tRes === '' ? '' : '\n' + tRes) + text(timeAngles, index);
 											
 										}
 										
