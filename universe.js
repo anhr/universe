@@ -938,22 +938,14 @@ class Universe
 								guiPoints.getVerticeId(intersectionSelected.index);//, (timeAngles, timeId) => { guiPoints.appendTimesChild(timeAngles.player.t, timeId); });
 
 							}
+							if (guiPoints.timeId === undefined) return;
 							const timeId = guiPoints.timeId, start = timeId;
 							end = timeId + 1;
 							this.hyperSphere.setEdgesRange(start, end);
-/*							
-							cTimes.__onChange(guiPoints.timeId);
-							cTimes.__select[end].selected = true;
-								
-							if (guiPoints.verticeId === undefined) return;
-							cPoints.__select[guiPoints.verticeId + 1].selected = true;
-							return;
-*/							
 
  						} else {
 
 							if (guiPoints.timeId === undefined) return;
-								
 							end = guiPoints.timeId + 1;
 							if (cTimes.__select.selectedIndex === end) {
 	
@@ -963,6 +955,7 @@ class Universe
 							}
 
 						}
+							
 						cTimes.__onChange(guiPoints.timeId);
 						cTimes.__select[end].selected = true;
 							
