@@ -923,16 +923,21 @@ class Universe
 					}
 //						const timeId = guiPoints.timeId;
 					guiPoints.getVerticeId(intersectionSelected ? intersectionSelected.index : undefined, (timeAngles, timeId) => { guiPoints.appendTimesChild(timeAngles.player.t, timeId); });
+					guiPoints.setIntersection = (intersection) => { intersectionSelected = intersection; }
 					guiPoints.changeControllers = () => {
 
 						let end;
 						if (classSettings.edges.project) {
 
 							//edges
-							
-//								const start = classSettings.settings.options.player.getTimeId(), end = start + 1;
-							intersectionSelected.index = this.hyperSphere.searchNearestEdgeVerticeId(intersectionSelected.index, intersectionSelected);
-							guiPoints.getVerticeId(intersectionSelected.index);//, (timeAngles, timeId) => { guiPoints.appendTimesChild(timeAngles.player.t, timeId); });
+
+							if (intersectionSelected) {
+								
+	//								const start = classSettings.settings.options.player.getTimeId(), end = start + 1;
+								intersectionSelected.index = this.hyperSphere.searchNearestEdgeVerticeId(intersectionSelected.index, intersectionSelected);
+								guiPoints.getVerticeId(intersectionSelected.index);//, (timeAngles, timeId) => { guiPoints.appendTimesChild(timeAngles.player.t, timeId); });
+
+							}
 							const timeId = guiPoints.timeId, start = timeId;
 							end = timeId + 1;
 							this.hyperSphere.setEdgesRange(start, end);
