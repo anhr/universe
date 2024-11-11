@@ -730,7 +730,7 @@ class Universe
 			const block = 'block', none = 'none';
 			classSettings.settings.guiPoints = {
 
-				get timeAngles() { return classSettings.settings.object.geometry.times[this.timeId]; },
+				get timeAngles() { return classSettings.settings.object.geometry.times[this.timeId != undefined ? this.timeId : 0]; },
 				//for debug
 				//set timeAngles(value) { console.warn(sUniverse + ': set classSettings.settings.guiPoints.timeAngles is deprecated'); },
 
@@ -925,29 +925,41 @@ class Universe
 					guiPoints.getVerticeId(intersectionSelected ? intersectionSelected.index : undefined, (timeAngles, timeId) => { guiPoints.appendTimesChild(timeAngles.player.t, timeId); });
 					guiPoints.changeControllers = () => {
 
-						if (guiPoints.timeId === undefined) return;
-							
-						const timesSelectedIndex = guiPoints.timeId + 1;
-//						if (cTimes.selectedIndex === timesSelectedIndex) return;
-						if (cTimes.__select.selectedIndex === timesSelectedIndex) {
+						let end;
+						if (classSettings.edges.project) {
 
-/*							
-							const start = 0, end = 0;
-							if (classSettings.edges.project)
-								this.hyperSphere.setEdgesRange(start, end);
-							else this.hyperSphere.setVerticesRange(anglesLength * start, anglesLength * (end - start));
-*/							
-/*							
-							if (classSettings.edges.project)
-								this.hyperSphere.setEdgesRange();
-							else this.hyperSphere.setVerticesRange(0, classSettings.overriddenProperties.position0.length * (classSettings.settings.options.player.getTimeId() + 1));
-*/							
-							this.selectTime();
-							return;
+							//edges
 							
+//								const start = classSettings.settings.options.player.getTimeId(), end = start + 1;
+							intersectionSelected.index = this.hyperSphere.searchNearestEdgeVerticeId(intersectionSelected.index, intersectionSelected);
+							guiPoints.getVerticeId(intersectionSelected.index);//, (timeAngles, timeId) => { guiPoints.appendTimesChild(timeAngles.player.t, timeId); });
+							const timeId = guiPoints.timeId, start = timeId;
+							end = timeId + 1;
+							this.hyperSphere.setEdgesRange(start, end);
+/*							
+							cTimes.__onChange(guiPoints.timeId);
+							cTimes.__select[end].selected = true;
+								
+							if (guiPoints.verticeId === undefined) return;
+							cPoints.__select[guiPoints.verticeId + 1].selected = true;
+							return;
+*/							
+
+ 						} else {
+
+							if (guiPoints.timeId === undefined) return;
+								
+							end = guiPoints.timeId + 1;
+							if (cTimes.__select.selectedIndex === end) {
+	
+								this.selectTime();
+								return;
+								
+							}
+
 						}
 						cTimes.__onChange(guiPoints.timeId);
-						cTimes.__select[timesSelectedIndex].selected = true;
+						cTimes.__select[end].selected = true;
 							
 						if (guiPoints.verticeId === undefined) return;
 						cPoints.__select[guiPoints.verticeId + 1].selected = true;
