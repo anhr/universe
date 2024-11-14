@@ -610,25 +610,6 @@ class Universe
 										}
 
 										verticeId = this.hyperSphere.searchNearestEdgeVerticeId(verticeId, intersection);
-/*										
-										//find nearest vertice id
-										const array = intersection.object.geometry.index.array, edge = [array[intersection.index], array[intersection.index + 1]]
-										let minDistance = Infinity;//, pointId;
-										const distance = ( i ) => {
-							
-											const pointIndex = edge[i],
-												distance = intersection.point.distanceTo( new THREE.Vector3().fromBufferAttribute( intersection.object.geometry.attributes.position, pointIndex ) );
-											if ( minDistance > distance  ) {
-								
-												minDistance = distance;
-												verticeId = pointIndex;
-												
-											}
-											
-										}
-										distance ( 0 );
-										distance ( 1 );
-*/										
 
 										//find edge Id
 										let edgeId = intersection.index;
@@ -750,8 +731,9 @@ class Universe
 					guiPoints.changeControllers();
 
 				},
+				searchNearestEdgeVerticeId: (index, intersection) => { return this.hyperSphere.searchNearestEdgeVerticeId(index, intersection); },
 				getVerticeId: (index, timesItemCallBack) => {
-
+					
 					if (
 						!timesItemCallBack && (
 							(index === undefined) ||
