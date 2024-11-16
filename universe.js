@@ -709,6 +709,7 @@ class Universe
 				
 			});
 			const block = 'block', none = 'none';
+			let cTimes;
 			classSettings.settings.guiPoints = {
 
 				get timeAngles() { return classSettings.settings.object.geometry.times[this.timeId != undefined ? this.timeId : 0]; },
@@ -732,8 +733,18 @@ class Universe
 
 				},
 				searchNearestEdgeVerticeId: (index, intersection) => { return this.hyperSphere.searchNearestEdgeVerticeId(index, intersection); },
-				getVerticeId: (index, timesItemCallBack) => {
+				resetControllers: () => {
 					
+					if(!cTimes) return;
+
+					//сбросить выбранное время
+					cTimes.__onChange( -1 );
+					cTimes.__select[0].selected = true;
+					delete classSettings.settings.guiPoints.timeId;
+				
+				},
+				getVerticeId: (index, timesItemCallBack) => {
+
 					if (
 						!timesItemCallBack && (
 							(index === undefined) ||
@@ -792,7 +803,6 @@ class Universe
 					}
 
 					const sTimes = 'Times', guiPoints = classSettings.settings.guiPoints;
-					let cTimes;
 
 					//find duplicate cTimes
 					fPoints.__controllers.forEach((controller) => {
@@ -1074,26 +1084,6 @@ class Universe
 									return position;
 									
 								}
-/*								
-								const timesAngles = geometry.timesAngles;
-								if (timesAngles) {
-			
-									let timeAnglesId = 0, positionId = timesAngles[timeAnglesId].length;
-									while(i >= positionId) {
-			
-										timeAnglesId++;
-										positionId += timesAngles[timeAnglesId].length;
-										
-									}
-									const guiPoints = classSettings.settings.guiPoints, timeIdOld = guiPoints.timeId;
-									guiPoints.timeId = timeAnglesId;
-									i -= positionId - geometry.angles.length;
-									const position = positions[i];
-									guiPoints.timeId = timeIdOld;
-									return position;
-									
-								}
-*/								
 								return positions[i];
 							
 							}
