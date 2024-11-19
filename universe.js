@@ -715,7 +715,7 @@ class Universe
 				get timeAngles() { return classSettings.settings.object.geometry.times[this.timeId != undefined ? this.timeId : 0]; },
 				//for debug
 				//set timeAngles(value) { console.warn(sUniverse + ': set classSettings.settings.guiPoints.timeAngles is deprecated'); },
-
+				isSetIntersectionIndex: false,
 				seletedIndex: (guiIndexStr) => {
 
 					let guiIndex = parseInt(guiIndexStr);
