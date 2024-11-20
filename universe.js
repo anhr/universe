@@ -849,7 +849,10 @@ class Universe
 							display = block;
 							start = timeId;
 							end = timeId + 1;
-							this.selectTime = () => {
+							this.selectTime = (newStart, newEnd) => {
+
+								if (newStart != undefined) start = newStart;
+								if (newEnd != undefined) end = newEnd;
 								
 								if (classSettings.edges.project)
 									this.hyperSphere.setEdgesRange(start, end);
@@ -940,8 +943,13 @@ class Universe
 							if (guiPoints.timeId === undefined) return;
 							end = guiPoints.timeId + 1;
 							if (cTimes.__select.selectedIndex === end) {
-	
-								this.selectTime();
+
+/*								
+								const start = classSettings.settings.options.player.getTimeId();
+								this.selectTime(start, start + 1);
+*/
+								guiPoints.getVerticeId(intersectionSelected.index, () => {});//Get guiPoints.timeId
+								this.selectTime(guiPoints.timeId, guiPoints.timeId + 1);
 								return;
 								
 							}
