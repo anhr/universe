@@ -944,10 +944,6 @@ class Universe
 							end = guiPoints.timeId + 1;
 							if (cTimes.__select.selectedIndex === end) {
 
-/*								
-								const start = classSettings.settings.options.player.getTimeId();
-								this.selectTime(start, start + 1);
-*/
 								guiPoints.getVerticeId(intersectionSelected.index, () => {});//Get guiPoints.timeId
 								this.selectTime(guiPoints.timeId, guiPoints.timeId + 1);
 								return;
