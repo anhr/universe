@@ -540,7 +540,7 @@ class Universe
 													if (!isNaN(playerIndexItemId)) {
 	
 														const userData = classSettings.settings.bufferGeometry.userData, playerIndexOld = userData.timeId;
-														userData.timeId = timeId;
+														userData.timeId = userData.selectedTimeId === undefined ? timeId : userData.selectedTimeId;
 														const vertice = userData.position[playerIndexItemId];
 														userData.timeId = playerIndexOld;
 														return vertice;
