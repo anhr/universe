@@ -875,7 +875,7 @@ class Universe
 								if (timeAnglesId >= anglesLength) {
 
 									//не выводить сообщение об ошибке если пользователь проводит мышкой над вершиной.
-									if (!hyperSphereObject.userData.myObject.guiPoints.boMouseOver) console.error(sUniverse + ': guiPoints.getPositionId. Invalid timeAnglesId = ' + timeAnglesId);
+									if ((timeId === 0) && !hyperSphereObject.userData.myObject.guiPoints.boMouseOver) console.error(sUniverse + ': guiPoints.getPositionId. timeAnglesId = ' + timeAnglesId + ' >= anglesLength = ' + anglesLength);
 									return timeAnglesId;
 	
 								}
