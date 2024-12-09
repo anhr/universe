@@ -543,6 +543,7 @@ class Universe
 														userData.timeId = userData.selectedTimeId === undefined ? timeId : userData.selectedTimeId;
 														const vertice = userData.position[playerIndexItemId];
 														userData.timeId = playerIndexOld;
+														vertice.timeId = timeId;
 														return vertice;
 														
 													}
