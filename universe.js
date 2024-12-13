@@ -691,6 +691,7 @@ class Universe
 										bufferAttributes: settings.bufferGeometry.attributes,
 										scene: classSettings.projectParams.scene,
 										options: settings.options,
+										isRaycaster: false,
 										object: {
 
 											name: 'Traces',
