@@ -33,6 +33,7 @@ import MyThree from '../../commonNodeJS/master/myThree/myThree.js';
 MyThree.three.THREE = THREE;
 
 import { dat } from '../../commonNodeJS/master/dat/dat.module.js';
+import ND from '../../commonNodeJS/master/nD/nD.js';
 
 const sUniverse = 'Universe';
 
@@ -678,6 +679,56 @@ class Universe
 									alert(lang.isEdgesOnly)
 									return true;
 
+								}
+								overriddenProperties.project ||= () => {
+
+									if (!classSettings.traces) return;
+
+									const settings = classSettings.settings;
+									const traces3DObject = new ND(this.hyperSphere.dimension, {
+										
+										options: settings.options,
+										bufferAttributes: settings.bufferGeometry.attributes,
+										scene: classSettings.projectParams.scene,
+										options: settings.options,
+										object: {
+
+											name: 'Traces',
+											geometry: {
+
+												position: settings.object.geometry.position,
+												//indices: [[ [0,1], [1,2], [2,3], [3,0], ]],//Debug. Edges
+												indices: [[[0,1]]],//Edges. Что бы не выполнялась лишняя работа по созданию ребер
+											
+											}
+										},
+										overriddenProperties: { setTracesIndices: (bufferGeometry) => {
+
+											if (bufferGeometry.index != null) console.error(sUniverse + ': settings.overriddenProperties.setTracesIndices. settings.bufferGeometry.index is not null.');
+											const angles = settings.object.geometry.angles,
+												timeVerticesLength = angles.length,
+//												verticeIds = [],
+												index = [];
+											let verticeId = timeVerticesLength;
+//											angles.forEach((angle, i) => verticeIds.push(i));
+											for (let timeId = 1; timeId < settings.options.playerOptions.marks; timeId++) {
+												
+												angles.forEach(() => {
+													
+													index.push(verticeId - timeVerticesLength);
+													index.push(verticeId);
+													verticeId++;
+													
+												});
+												
+											}
+											bufferGeometry.setIndex(index);
+//											bufferGeometry.index = new THREE.Uint16BufferAttribute(index, 1);
+											
+										} },
+									
+									});
+										
 								}
 
 								settings.overriddenProperties.setDrawRange = (start, count) => { settings.bufferGeometry.setDrawRange(start, count); }
