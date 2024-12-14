@@ -1221,8 +1221,13 @@ class Universe
 				}
 					
 				if (classSettings.onSelectScene) return classSettings.onSelectScene(this.hyperSphere, index, t);
+				/*до сюда не доходит потому что сейчас по умолчанию classSettings.onSelectScene создается в констркуторе HyperSphere.
+				Иначе на странице http://localhost/anhr/commonNodeJS/master/HyperSphere/Examples/hyperSphere.html
+				не будет выполняться шаг проигрывателя при нажатии →
+				при условии что в hyperSphere.html не будет задана classSettings.onSelectScene
 				else return this.onSelectScene.copyAngles(index, t);
 				return true;//Сдедующий шаг проигрывателя выполняется только после посторения всех вершин без временной задержки
+				*/
 			
 			}
 			this.hyperSphere.child = this;
