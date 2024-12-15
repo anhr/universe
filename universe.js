@@ -100,6 +100,8 @@ class Universe
 		
 		new MyThree((scene, options) => {
 
+			let traces3DObject;
+
 			//classSettings.projectParams ||= {};//Эта строка выдает ошибку "[!] (cleanup plugin) SyntaxError: Unexpected token (63:36)" при выполнении команды "npm run build"
 			classSettings.projectParams = classSettings.projectParams || {};
 			classSettings.projectParams.scene = scene;
@@ -568,7 +570,12 @@ class Universe
 								overriddenProperties.oppositeVertice ||= (oppositeAngleId, timeId) => { return geometry.playerPosition[timeId - 1][oppositeAngleId]; }
 								if (!overriddenProperties.position) Object.defineProperty(overriddenProperties, 'position', { get: () => { return geometry.playerPosition[settings.bufferGeometry.userData.timeId]; }, });
 								if (!overriddenProperties.position0) Object.defineProperty(overriddenProperties, 'position0', { get: () => { return geometry.playerPosition[0]; }, });
-								overriddenProperties.updateVertices ||= (vertices) => { this.hyperSphere.bufferGeometry.attributes.position.needsUpdate = true; }
+								overriddenProperties.updateVertices ||= (vertices) => {
+
+									if (traces3DObject) traces3DObject.bufferGeometry.index.userData.setDrawRange(classSettings.settings.options.player.getTimeId());
+									this.hyperSphere.bufferGeometry.attributes.position.needsUpdate = true;
+								
+								}
 								overriddenProperties.vertices ||= () => {}
 								overriddenProperties.r ||= (timeId) => { return settings.object.geometry.times[timeId != undefined ? timeId : 0].player.r; }
 								overriddenProperties.pushMiddleVertice ||= (timeId, middleVertice) => { geometry.times[timeId].push(middleVertice); }
@@ -685,7 +692,7 @@ class Universe
 									if (!classSettings.traces) return;
 
 									const settings = classSettings.settings;
-									const traces3DObject = new ND(this.hyperSphere.dimension, {
+									traces3DObject = new ND(this.hyperSphere.dimension, {
 										
 										options: settings.options,
 										bufferAttributes: settings.bufferGeometry.attributes,
@@ -710,7 +717,7 @@ class Universe
 												timeVerticesLength = angles.length,
 //												verticeIds = [],
 												index = [];
-											let verticeId = timeVerticesLength;
+											let verticeId = timeVerticesLength, timeIndexCount;
 //											angles.forEach((angle, i) => verticeIds.push(i));
 											for (let timeId = 1; timeId < settings.options.playerOptions.marks; timeId++) {
 												
@@ -721,10 +728,13 @@ class Universe
 													verticeId++;
 													
 												});
+												if (timeIndexCount === undefined) timeIndexCount = index.length;
 												
 											}
 											bufferGeometry.setIndex(index);
-//											bufferGeometry.index = new THREE.Uint16BufferAttribute(index, 1);
+//											bufferGeometry.index.userData = { timeIndexCount: timeIndexCount }
+											bufferGeometry.index.userData = { setDrawRange: (timeId = 0) => { bufferGeometry.setDrawRange(0, timeIndexCount * timeId); } }
+											bufferGeometry.index.userData.setDrawRange();
 											
 										} },
 									
@@ -1220,7 +1230,7 @@ class Universe
 					
 				}
 					
-				if (classSettings.onSelectScene) return classSettings.onSelectScene(this.hyperSphere, index, t);
+				if (classSettings.onSelectScene) { return classSettings.onSelectScene(this.hyperSphere, index, t); }
 				/*до сюда не доходит потому что сейчас по умолчанию classSettings.onSelectScene создается в констркуторе HyperSphere.
 				Иначе на странице http://localhost/anhr/commonNodeJS/master/HyperSphere/Examples/hyperSphere.html
 				не будет выполняться шаг проигрывателя при нажатии →
