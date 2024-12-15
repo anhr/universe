@@ -1270,6 +1270,7 @@ class Universe
 				const bufferGeometry = this.hyperSphere.bufferGeometry, drawRange = bufferGeometry.drawRange;
 				bufferGeometry.attributes.position.needsUpdate = true;
 				bufferGeometry.setDrawRange(drawRange.start, geometry.indices[0].timeEdgesCount * (timeId + 1) * 2);
+				classSettings.overriddenProperties.updateVertices();
 				this.hyperSphere.onSelectSceneEnd(timeId);
 /*				
 				classSettings.settings.options.player.endSelect();//Нужно, что бы появлялось описание вершины, когда пользователь наведет мышку на вершину, которая появилась, когда проигрыватель передвинулся на шаг
