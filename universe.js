@@ -1223,9 +1223,12 @@ class Universe
 							this.hyperSphere.setEdgesRange();
 //							bufferGeometry.setDrawRange(drawRange.start, timeEdgesCount * 2 * (index + 1) - drawRange.start);
 						
-					} else
+					} else {
+						
 						this.hyperSphere.setVerticesRange(drawRange.start, times[0].length * (index + 1) - drawRange.start);
-//						bufferGeometry.setDrawRange(drawRange.start, times[0].length * (index + 1) - drawRange.start);
+						classSettings.overriddenProperties.updateVertices();
+
+					}
 					return false;//Сдедующий шаг проигрывателя выполняется немедленно
 					
 				}
