@@ -689,7 +689,7 @@ class Universe
 								}
 								overriddenProperties.project ||= () => {
 
-									if (!classSettings.traces) return;
+									if (!classSettings.boTraces) return;
 
 									const settings = classSettings.settings;
 									traces3DObject = new ND(this.hyperSphere.dimension, {
@@ -740,6 +740,42 @@ class Universe
 									
 									});
 										
+								}
+								overriddenProperties.addSettingsFolder ||= (fParent, getLanguageCode) => {
+
+									//Localization
+									
+									const lang = {
+							
+										name: "Universe",
+							
+									};
+							
+									const _languageCode = getLanguageCode();
+							
+									switch (_languageCode) {
+							
+										case 'ru'://Russian language
+							
+											lang.name = 'Вселенная';
+							
+											break;
+							
+									}
+									
+									const fUniverse = fParent.addFolder(lang.name);
+									/*
+									cTraces = fUniverse.add(objectEdge, 'boTraces').onChange((boTraces) => {
+					
+										if (classSettings.edges.project === boProject) return;
+										classSettings.edges.project = boProject;
+										_this.projectGeometry();
+										setCockie();
+					
+									});
+									dat.controllerNameAndTitle(cEdges, lang.edges, lang.edgesTitle);
+									*/
+									
 								}
 
 								settings.overriddenProperties.setDrawRange = (start, count) => { settings.bufferGeometry.setDrawRange(start, count); }
