@@ -572,7 +572,7 @@ class Universe
 								if (!overriddenProperties.position0) Object.defineProperty(overriddenProperties, 'position0', { get: () => { return geometry.playerPosition[0]; }, });
 								overriddenProperties.updateVertices ||= (vertices) => {
 
-									if (traces3DObject) traces3DObject.bufferGeometry.index.userData.setDrawRange(classSettings.settings.options.player.getTimeId());
+									if (traces3DObject) traces3DObject.bufferGeometry.userData.setDrawRange(classSettings.settings.options.player.getTimeId());
 									this.hyperSphere.bufferGeometry.attributes.position.needsUpdate = true;
 								
 								}
@@ -692,6 +692,22 @@ class Universe
 									if (!classSettings.boTraces) return;
 
 									const settings = classSettings.settings;
+//									if (settings.bufferGeometry.index != null) console.error(sUniverse + ': settings.overriddenProperties.project. settings.bufferGeometry.index is not null.');
+									const angles = settings.object.geometry.angles,
+										timeVerticesLength = angles.length,
+										edges = [];
+									let verticeId = timeVerticesLength, timeIndexCount;
+									for (let timeId = 1; timeId < settings.options.playerOptions.marks; timeId++) {
+										
+										angles.forEach(() => {
+											
+											edges.push([verticeId - timeVerticesLength, verticeId]);
+											verticeId++;
+											
+										});
+										if (timeIndexCount === undefined) timeIndexCount = edges.length * 2;
+										
+									}
 									traces3DObject = new ND(this.hyperSphere.dimension, {
 										
 										options: settings.options,
@@ -706,19 +722,19 @@ class Universe
 
 												position: settings.object.geometry.position,
 												//indices: [[ [0,1], [1,2], [2,3], [3,0], ]],//Debug. Edges
-												indices: [[[0,1]]],//Edges. Что бы не выполнялась лишняя работа по созданию ребер
+//												indices: [[[0,1]]],//Edges. Что бы не выполнялась лишняя работа по созданию ребер
+												indices: [edges],
 											
 											}
 										},
 										overriddenProperties: { setTracesIndices: (bufferGeometry) => {
 
+/*											
 											if (bufferGeometry.index != null) console.error(sUniverse + ': settings.overriddenProperties.setTracesIndices. settings.bufferGeometry.index is not null.');
 											const angles = settings.object.geometry.angles,
 												timeVerticesLength = angles.length,
-//												verticeIds = [],
 												index = [];
 											let verticeId = timeVerticesLength, timeIndexCount;
-//											angles.forEach((angle, i) => verticeIds.push(i));
 											for (let timeId = 1; timeId < settings.options.playerOptions.marks; timeId++) {
 												
 												angles.forEach(() => {
@@ -732,9 +748,13 @@ class Universe
 												
 											}
 											bufferGeometry.setIndex(index);
-//											bufferGeometry.index.userData = { timeIndexCount: timeIndexCount }
+*/											
+/*											
 											bufferGeometry.index.userData = { setDrawRange: (timeId = 0) => { bufferGeometry.setDrawRange(0, timeIndexCount * timeId); } }
 											bufferGeometry.index.userData.setDrawRange();
+*/											
+											bufferGeometry.userData = { setDrawRange: (timeId = 0) => { bufferGeometry.setDrawRange(0, timeIndexCount * timeId); } }
+											bufferGeometry.userData.setDrawRange();
 											
 										} },
 									
