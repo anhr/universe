@@ -689,7 +689,18 @@ class Universe
 								}
 								overriddenProperties.project ||= () => {
 
-									if (!classSettings.boTraces) return;
+									const scene = classSettings.projectParams.scene;
+									if (!classSettings.boTraces) {
+
+										if (traces3DObject) {
+											
+											scene.remove(traces3DObject.object3D);
+											traces3DObject = undefined;
+
+										}
+										return;
+
+									}
 
 									const settings = classSettings.settings;
 //									if (settings.bufferGeometry.index != null) console.error(sUniverse + ': settings.overriddenProperties.project. settings.bufferGeometry.index is not null.');
@@ -712,7 +723,7 @@ class Universe
 										
 										options: settings.options,
 										bufferAttributes: settings.bufferGeometry.attributes,
-										scene: classSettings.projectParams.scene,
+										scene: scene,
 										options: settings.options,
 										isRaycaster: false,
 										object: {
@@ -753,7 +764,7 @@ class Universe
 											bufferGeometry.index.userData = { setDrawRange: (timeId = 0) => { bufferGeometry.setDrawRange(0, timeIndexCount * timeId); } }
 											bufferGeometry.index.userData.setDrawRange();
 */											
-											bufferGeometry.userData = { setDrawRange: (timeId = 0) => { bufferGeometry.setDrawRange(0, timeIndexCount * timeId); } }
+											bufferGeometry.userData = { setDrawRange: (timeId = classSettings.settings.options.player.getTimeId()) => { bufferGeometry.setDrawRange(0, timeIndexCount * timeId); } }
 											bufferGeometry.userData.setDrawRange();
 											
 										} },
@@ -768,6 +779,8 @@ class Universe
 									const lang = {
 							
 										name: "Universe",
+										traces: 'Traces',
+										tracesTitle: 'Display tracks of universe vertices',
 							
 									};
 							
@@ -778,23 +791,36 @@ class Universe
 										case 'ru'://Russian language
 							
 											lang.name = 'Вселенная';
+											
+											lang.traces = 'Треки';
+											lang.tracesTitle = 'Показать перемещения всех вершин вселенной';
 							
 											break;
 							
 									}
 									
 									const fUniverse = fParent.addFolder(lang.name);
-									/*
-									cTraces = fUniverse.add(objectEdge, 'boTraces').onChange((boTraces) => {
-					
-										if (classSettings.edges.project === boProject) return;
-										classSettings.edges.project = boProject;
-										_this.projectGeometry();
-										setCockie();
+//									classSettings.boTraces ||= false;
+									let boTraces = classSettings.boTraces ||= false;
+									Object.defineProperty(classSettings, 'boTraces', {
+
+										get: () => { return boTraces; },
+										set: (newValue) => {
+											
+											boTraces = newValue;
+											classSettings.overriddenProperties.project();
+										
+										},
 					
 									});
-									dat.controllerNameAndTitle(cEdges, lang.edges, lang.edgesTitle);
-									*/
+									
+									const cTraces = fUniverse.add(classSettings, 'boTraces');/*.onChange((boTraces) => {
+
+//										setCockie();
+					
+									});
+*/									
+									dat.controllerNameAndTitle(cTraces, lang.traces, lang.tracesTitle);
 									
 								}
 
