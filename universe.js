@@ -800,8 +800,9 @@ class Universe
 									}
 									
 									const fUniverse = fParent.addFolder(lang.name);
-//									classSettings.boTraces ||= false;
-									let boTraces = classSettings.boTraces ||= false;
+
+									const cookieName = 'Traces', boTracesDefault = false;
+									let boTraces = classSettings.boTraces ||= options.dat ?  options.dat.cookie.get(cookieName, boTracesDefault): boTracesDefault;
 									Object.defineProperty(classSettings, 'boTraces', {
 
 										get: () => { return boTraces; },
@@ -814,12 +815,7 @@ class Universe
 					
 									});
 									
-									const cTraces = fUniverse.add(classSettings, 'boTraces');/*.onChange((boTraces) => {
-
-//										setCockie();
-					
-									});
-*/									
+									const cTraces = fUniverse.add(classSettings, 'boTraces').onChange((boTraces) => { if (options.dat)  options.dat.cookie.set(cookieName, boTraces); });
 									dat.controllerNameAndTitle(cTraces, lang.traces, lang.tracesTitle);
 									
 								}
