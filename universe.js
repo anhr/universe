@@ -49,6 +49,16 @@ class Universe
 	constructor(classSettings = {}, myThreeOptions = {}) {
 
 		const _this = this;
+		myThreeOptions.traces = {
+
+			boTraces: classSettings.boTraces != undefined ? classSettings.boTraces : false,
+			onChange: (boTraces) => {
+
+				classSettings.boTraces = boTraces;
+				
+			}
+			
+		};
 		myThreeOptions.playerOptions ||= {};
 		myThreeOptions.playerOptions.interval = myThreeOptions.playerOptions.interval != undefined ? myThreeOptions.playerOptions.interval : Infinity;
 		myThreeOptions.scales = myThreeOptions.scales || {};
@@ -920,7 +930,7 @@ class Universe
 
 				},
 				pointsStyleDisplay: none,
-				create: (fPoints, cPoints, count, intersectionSelected) => {
+				create: (fPoints, cPoints, cTraceAll, count, intersectionSelected) => {
 
 					//Localization
 
@@ -970,7 +980,7 @@ class Universe
 					fPoints.__ul.insertBefore(elLast, elBefore);
 
 //					const times = classSettings.settings.object.geometry.times, 
-					const cPointsStyle = cPoints.domElement.parentElement.parentElement.style;
+					const cPointsStyle = cPoints.domElement.parentElement.parentElement.style, cTraceAllStyle = cTraceAll.domElement.parentElement.parentElement.style;
 					cTimes.onChange((timeId) => {
 
 						const selectPoints = cPoints.__select;
@@ -1036,6 +1046,7 @@ class Universe
 							this.hyperSphere.setEdgesRange(start, end);
 						else this.hyperSphere.setVerticesRange(anglesLength * start, anglesLength * (end - start));
 						cPointsStyle.display = display;
+						cTraceAllStyle.display = display;
 						guiPoints.pointsStyleDisplay = cPointsStyle.display;
 /*
 						let positionOffset = 0;
