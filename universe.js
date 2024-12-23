@@ -49,16 +49,6 @@ class Universe
 	constructor(classSettings = {}, myThreeOptions = {}) {
 
 		const _this = this;
-		myThreeOptions.traces = {
-
-			boTraces: classSettings.boTraces != undefined ? classSettings.boTraces : false,
-			onChange: (boTraces) => {
-
-				classSettings.boTraces = boTraces;
-				
-			}
-			
-		};
 		myThreeOptions.playerOptions ||= {};
 		myThreeOptions.playerOptions.interval = myThreeOptions.playerOptions.interval != undefined ? myThreeOptions.playerOptions.interval : Infinity;
 		myThreeOptions.scales = myThreeOptions.scales || {};
@@ -110,6 +100,22 @@ class Universe
 		
 		new MyThree((scene, options) => {
 
+			{
+				
+				const cookieName = 'Traces', boTracesDefault = false;
+				let boTraces = classSettings.boTraces ||= options.dat ?  options.dat.cookie.get(cookieName, boTracesDefault): boTracesDefault;
+				myThreeOptions.traces = {
+		
+					boTraces: classSettings.boTraces != undefined ? classSettings.boTraces : false,
+					onChange: (boTraces) => {
+		
+						classSettings.boTraces = boTraces;
+						
+					}
+					
+				};
+	
+			}
 			let traces3DObject;
 
 			//classSettings.projectParams ||= {};//Эта строка выдает ошибку "[!] (cleanup plugin) SyntaxError: Unexpected token (63:36)" при выполнении команды "npm run build"
