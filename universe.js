@@ -100,6 +100,7 @@ class Universe
 		
 		new MyThree((scene, options) => {
 
+/*			
 			{
 				
 				const cookieName = 'Traces', boTracesDefault = false;
@@ -116,6 +117,7 @@ class Universe
 				};
 	
 			}
+*/			
 			let traces3DObject;
 
 			//classSettings.projectParams ||= {};//Эта строка выдает ошибку "[!] (cleanup plugin) SyntaxError: Unexpected token (63:36)" при выполнении команды "npm run build"
@@ -936,7 +938,7 @@ class Universe
 
 				},
 				pointsStyleDisplay: none,
-				create: (fPoints, cPoints, cTraceAll, count, intersectionSelected) => {
+				create: (fPoints, cPoints, cTrace, cTraceAll, count, intersectionSelected) => {
 
 					//Localization
 
@@ -985,8 +987,15 @@ class Universe
 					fPoints.__ul.removeChild(elLast);
 					fPoints.__ul.insertBefore(elLast, elBefore);
 
-//					const times = classSettings.settings.object.geometry.times, 
-					const cPointsStyle = cPoints.domElement.parentElement.parentElement.style, cTraceAllStyle = cTraceAll.domElement.parentElement.parentElement.style;
+					const cPointsStyle = cPoints.domElement.parentElement.parentElement.style;
+//						cTraceStyle = cTrace.domElement.parentElement.parentElement.style;
+//						cTraceAllStyle = cTraceAll.domElement.parentElement.parentElement.style;
+					cTraceAll.userData ||= {}
+					classSettings.settings.options.trace.onChange = (boTrace) => {
+
+						if (boTrace) classSettings.boTraces = boTrace;
+						
+					}
 					cTimes.onChange((timeId) => {
 
 						const selectPoints = cPoints.__select;
@@ -1052,14 +1061,10 @@ class Universe
 							this.hyperSphere.setEdgesRange(start, end);
 						else this.hyperSphere.setVerticesRange(anglesLength * start, anglesLength * (end - start));
 						cPointsStyle.display = display;
-						cTraceAllStyle.display = display;
+						cTraceAll.userData.display = none;
+//						cTraceAllStyle.display = none;
+//						cTraceStyle.display = none;
 						guiPoints.pointsStyleDisplay = cPointsStyle.display;
-/*
-						let positionOffset = 0;
-						for (let i = 0; i < timeId; i++) positionOffset += times[i].length;
-
-						guiPoints.positionOffset = positionOffset;
-*/
 
 					});
 					guiPoints.appendTimesChild = (time, timeId) => {
