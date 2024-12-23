@@ -118,7 +118,7 @@ class Universe
 	
 			}
 */			
-			let traces3DObject;
+			let traces;
 
 			//classSettings.projectParams ||= {};//Эта строка выдает ошибку "[!] (cleanup plugin) SyntaxError: Unexpected token (63:36)" при выполнении команды "npm run build"
 			classSettings.projectParams = classSettings.projectParams || {};
@@ -590,7 +590,7 @@ class Universe
 								if (!overriddenProperties.position0) Object.defineProperty(overriddenProperties, 'position0', { get: () => { return geometry.playerPosition[0]; }, });
 								overriddenProperties.updateVertices ||= (vertices) => {
 
-									if (traces3DObject) traces3DObject.bufferGeometry.userData.setDrawRange(classSettings.settings.options.player.getTimeId());
+									if (traces) traces.bufferGeometry.userData.setDrawRange(classSettings.settings.options.player.getTimeId());
 									this.hyperSphere.bufferGeometry.attributes.position.needsUpdate = true;
 								
 								}
@@ -710,34 +710,71 @@ class Universe
 									const scene = classSettings.projectParams.scene;
 									if (!classSettings.boTraces) {
 
-										if (traces3DObject) {
+										if (traces) {
 											
-											scene.remove(traces3DObject.object3D);
-											traces3DObject = undefined;
+											scene.remove(traces.object3D);
+											traces = undefined;
 
 										}
 										return;
 
 									}
 
-									const settings = classSettings.settings;
-//									if (settings.bufferGeometry.index != null) console.error(sUniverse + ': settings.overriddenProperties.project. settings.bufferGeometry.index is not null.');
-									const angles = settings.object.geometry.angles,
-										timeVerticesLength = angles.length,
-										edges = [];
-									let verticeId = timeVerticesLength, timeIndexCount;
-									for (let timeId = 1; timeId < settings.options.playerOptions.marks; timeId++) {
+									class Traces extends ND{
+
+										constructor() {
+
+											const settings = classSettings.settings;
+		//									if (settings.bufferGeometry.index != null) console.error(sUniverse + ': settings.overriddenProperties.project. settings.bufferGeometry.index is not null.');
+											const angles = settings.object.geometry.angles,
+												timeVerticesLength = angles.length,
+												edges = [];
+											let verticeId = timeVerticesLength, timeIndexCount;
+											for (let timeId = 1; timeId < settings.options.playerOptions.marks; timeId++) {
+												
+												angles.forEach(() => {
+													
+													edges.push([verticeId - timeVerticesLength, verticeId]);
+													verticeId++;
+													
+												});
+												if (timeIndexCount === undefined) timeIndexCount = edges.length * 2;
+												
+											}
+											super(_this.hyperSphere.dimension, {
 										
-										angles.forEach(() => {
+												options: settings.options,
+												bufferAttributes: settings.bufferGeometry.attributes,
+												scene: scene,
+												options: settings.options,
+												isRaycaster: false,
+												object: {
+
+													name: 'Traces',
+													geometry: {
+
+														position: settings.object.geometry.position,
+														//indices: [[ [0,1], [1,2], [2,3], [3,0], ]],//Debug. Edges
+		//												indices: [[[0,1]]],//Edges. Что бы не выполнялась лишняя работа по созданию ребер
+														indices: [edges],
 											
-											edges.push([verticeId - timeVerticesLength, verticeId]);
-											verticeId++;
+													}
+												},
+												overriddenProperties: { setTracesIndices: (bufferGeometry) => {
+
+													bufferGeometry.userData = { setDrawRange: (timeId = classSettings.settings.options.player.getTimeId()) => { bufferGeometry.setDrawRange(0, timeIndexCount * timeId); } }
+													bufferGeometry.userData.setDrawRange();
 											
-										});
-										if (timeIndexCount === undefined) timeIndexCount = edges.length * 2;
+												} },
+									
+											});
+											
+										}
 										
 									}
-									traces3DObject = new ND(this.hyperSphere.dimension, {
+									traces = new Traces();
+/*
+									traces = new ND(this.hyperSphere.dimension, {
 										
 										options: settings.options,
 										bufferAttributes: settings.bufferGeometry.attributes,
@@ -758,36 +795,13 @@ class Universe
 										},
 										overriddenProperties: { setTracesIndices: (bufferGeometry) => {
 
-/*											
-											if (bufferGeometry.index != null) console.error(sUniverse + ': settings.overriddenProperties.setTracesIndices. settings.bufferGeometry.index is not null.');
-											const angles = settings.object.geometry.angles,
-												timeVerticesLength = angles.length,
-												index = [];
-											let verticeId = timeVerticesLength, timeIndexCount;
-											for (let timeId = 1; timeId < settings.options.playerOptions.marks; timeId++) {
-												
-												angles.forEach(() => {
-													
-													index.push(verticeId - timeVerticesLength);
-													index.push(verticeId);
-													verticeId++;
-													
-												});
-												if (timeIndexCount === undefined) timeIndexCount = index.length;
-												
-											}
-											bufferGeometry.setIndex(index);
-*/											
-/*											
-											bufferGeometry.index.userData = { setDrawRange: (timeId = 0) => { bufferGeometry.setDrawRange(0, timeIndexCount * timeId); } }
-											bufferGeometry.index.userData.setDrawRange();
-*/											
 											bufferGeometry.userData = { setDrawRange: (timeId = classSettings.settings.options.player.getTimeId()) => { bufferGeometry.setDrawRange(0, timeIndexCount * timeId); } }
 											bufferGeometry.userData.setDrawRange();
 											
 										} },
 									
 									});
+*/
 										
 								}
 								overriddenProperties.addSettingsFolder ||= (fParent, getLanguageCode) => {
