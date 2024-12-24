@@ -726,19 +726,34 @@ class Universe
 
 											const settings = classSettings.settings;
 		//									if (settings.bufferGeometry.index != null) console.error(sUniverse + ': settings.overriddenProperties.project. settings.bufferGeometry.index is not null.');
-											const angles = settings.object.geometry.angles,
-												timeVerticesLength = angles.length,
-												edges = [];
+											const angles = settings.object.geometry.angles, timeVerticesLength = angles.length, lines = [];
+											angles.forEach((angle) => angle.trace = []);
 											let verticeId = timeVerticesLength, timeIndexCount;
 											for (let timeId = 1; timeId < settings.options.playerOptions.marks; timeId++) {
 												
-												angles.forEach(() => {
-													
-													edges.push([verticeId - timeVerticesLength, verticeId]);
+												angles.forEach((angle, angleId) => {
+
+													const line = [verticeId - timeVerticesLength, verticeId];
+													lines.push(line);
+													angle.trace.push(new Proxy({ line: line }, {
+
+														get: (target, name) => {
+															
+															switch (name) {
+											
+																case 'line': return target.line;
+											
+															}
+															console.error(sUniverse + ': class Traces. Invalid get ' + name);
+															return trace[name];
+															
+														},
+											
+													}));
 													verticeId++;
 													
 												});
-												if (timeIndexCount === undefined) timeIndexCount = edges.length * 2;
+												if (timeIndexCount === undefined) timeIndexCount = lines.length * 2;
 												
 											}
 											super(_this.hyperSphere.dimension, {
@@ -756,7 +771,7 @@ class Universe
 														position: settings.object.geometry.position,
 														//indices: [[ [0,1], [1,2], [2,3], [3,0], ]],//Debug. Edges
 		//												indices: [[[0,1]]],//Edges. Что бы не выполнялась лишняя работа по созданию ребер
-														indices: [edges],
+														indices: [lines],
 											
 													}
 												},
@@ -770,9 +785,24 @@ class Universe
 											});
 											
 										}
+										get verticesTraces() {
+
+											return new Proxy([], {
+
+												get: (vertice, name) => {
+
+													return settings.object.geometry.angles[name].trace;
+													
+												},
+									
+											});
+											
+										}
 										
 									}
 									traces = new Traces();
+const verticeTrace = traces.verticesTraces[0];
+const traceLine = verticeTrace[3].line;
 /*
 									traces = new ND(this.hyperSphere.dimension, {
 										
