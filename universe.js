@@ -133,6 +133,9 @@ class Universe
 			classSettings.projectParams.scene.userData.endSelect = () => {}
 
 			classSettings.settings.isSetPosition = true;//при выполнении шага в Player не надо вычислять позицию вершин в самом Player
+			
+			if (classSettings.settings.object.geometry.opacity === undefined) classSettings.settings.object.geometry.opacity = 1;//Непрозрачность нужна для выделения трека одной вершины
+			
 			classSettings.settings.object.geometry.rCount = options.playerOptions.marks;//количество возможных радиусов вселенной
 			{//hide times
 
@@ -720,21 +723,23 @@ class Universe
 
 									}
 
-									class Traces extends ND{
+									class Traces extends ND {
 
 										constructor() {
 
 											const settings = classSettings.settings;
 		//									if (settings.bufferGeometry.index != null) console.error(sUniverse + ': settings.overriddenProperties.project. settings.bufferGeometry.index is not null.');
-											const angles = settings.object.geometry.angles, timeVerticesLength = angles.length, lines = [];
-											angles.forEach((angle) => angle.trace = []);
+											const angles = settings.object.geometry.angles, timeVerticesLength = angles.length, lines = [],
+												playerMarks = settings.options.playerOptions.marks;
+//											angles.forEach((angle) => angle.trace = []);
 											let verticeId = timeVerticesLength, timeIndexCount;
-											for (let timeId = 1; timeId < settings.options.playerOptions.marks; timeId++) {
+											for (let timeId = 1; timeId < playerMarks; timeId++) {
 												
 												angles.forEach((angle, angleId) => {
 
 													const line = [verticeId - timeVerticesLength, verticeId];
 													lines.push(line);
+/*													
 													angle.trace.push(new Proxy({ line: line }, {
 
 														get: (target, name) => {
@@ -750,6 +755,7 @@ class Universe
 														},
 											
 													}));
+*/													
 													verticeId++;
 													
 												});
@@ -772,6 +778,7 @@ class Universe
 														//indices: [[ [0,1], [1,2], [2,3], [3,0], ]],//Debug. Edges
 		//												indices: [[[0,1]]],//Edges. Что бы не выполнялась лишняя работа по созданию ребер
 														indices: [lines],
+														opacity: 1,//задать этот параметр, чтобы можно было делать треки прозрачными
 											
 													}
 												},
@@ -783,55 +790,67 @@ class Universe
 												} },
 									
 											});
+											this.select = (selectedVerticeId/*, timeId*/) => {
+
+												console.log(this)
+												for (let verticeId = 0; verticeId < timeVerticesLength; verticeId++) {
+
+													if (verticeId === selectedVerticeId) continue;
+													for (let timeId = 0; timeId < playerMarks; timeId++) {
+
+														const positionId = verticeId + timeId * timeVerticesLength, opacity = 0.0;
+														_this.hyperSphere.verticeOpacity(positionId, true, opacity);//Universe vertices or edges
+//														this.verticesTraces[timeId][verticeId].forEach(lineVerticeId => this.verticeOpacity(lineVerticeId, true, opacity));
+														//this.verticeOpacity(positionId, true, opacity);//traces same as _this.hyperSphere.verticeOpacity
+														
+													}
+
+												}
+												
+											}
 											
 										}
+										/*Currently do not use
 										get verticesTraces() {
 
 											return new Proxy([], {
 
 												get: (vertice, name) => {
 
-													return settings.object.geometry.angles[name].trace;
+													const verticeId = parseInt(name);
+													if (!isNaN(verticeId)) return new Proxy([], {
+
+														get: (trace, name) => {
+															
+															const traceId = parseInt(name);
+															if (!isNaN(traceId)) {
+
+																const indexId = (settings.object.geometry.angles.length * verticeId + traceId) * 2,
+																	indexArray = this.bufferGeometry.index.array;
+																return [indexArray[indexId], indexArray[indexId + 1]];
+
+															}
+															console.error(sUniverse + ': get vertice trace. Invalid name = ' + name);
+															return trace[name];
+															
+														},
+											
+													})
+													console.error(sUniverse + ': Traces.verticesTraces. Invalid name = ' + name);
+													return 
 													
 												},
 									
 											});
 											
 										}
+										*/										
 										
 									}
-									traces = new Traces();
-const verticeTrace = traces.verticesTraces[0];
-const traceLine = verticeTrace[3].line;
-/*
-									traces = new ND(this.hyperSphere.dimension, {
-										
-										options: settings.options,
-										bufferAttributes: settings.bufferGeometry.attributes,
-										scene: scene,
-										options: settings.options,
-										isRaycaster: false,
-										object: {
-
-											name: 'Traces',
-											geometry: {
-
-												position: settings.object.geometry.position,
-												//indices: [[ [0,1], [1,2], [2,3], [3,0], ]],//Debug. Edges
-//												indices: [[[0,1]]],//Edges. Что бы не выполнялась лишняя работа по созданию ребер
-												indices: [edges],
-											
-											}
-										},
-										overriddenProperties: { setTracesIndices: (bufferGeometry) => {
-
-											bufferGeometry.userData = { setDrawRange: (timeId = classSettings.settings.options.player.getTimeId()) => { bufferGeometry.setDrawRange(0, timeIndexCount * timeId); } }
-											bufferGeometry.userData.setDrawRange();
-											
-										} },
 									
-									});
-*/
+									traces = new Traces();
+//const verticeTrace = traces.verticesTraces[2];
+//const traceLine = verticeTrace[3];
 										
 								}
 								overriddenProperties.addSettingsFolder ||= (fParent, getLanguageCode) => {
@@ -1035,10 +1054,13 @@ const traceLine = verticeTrace[3].line;
 //						cTraceStyle = cTrace.domElement.parentElement.parentElement.style;
 //						cTraceAllStyle = cTraceAll.domElement.parentElement.parentElement.style;
 					cTraceAll.userData ||= {}
-					classSettings.settings.options.trace.onChange = (boTrace) => {
-
-						if (boTrace) classSettings.boTraces = boTrace;
+					classSettings.settings.options.trace.onChange = (boTrace, verticeId) => {
 						
+						if (!boTrace) return;
+						classSettings.boTraces = boTrace;
+						traces.select(verticeId);//, cTimes.__select.selectedIndex - 1);
+//						const verticeLine = traces.verticesTraces[cTimes.__select.selectedIndex - 1][verticeId];
+					
 					}
 					cTimes.onChange((timeId) => {
 
