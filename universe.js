@@ -100,7 +100,7 @@ class Universe
 		
 		new MyThree((scene, options) => {
 
-/*			
+/*
 			{
 				
 				const cookieName = 'Traces', boTracesDefault = false;
@@ -715,6 +715,7 @@ class Universe
 
 										if (traces) {
 											
+											traces.select();
 											scene.remove(traces.object3D);
 											traces = undefined;
 
@@ -792,14 +793,15 @@ class Universe
 											});
 											this.select = (selectedVerticeId/*, timeId*/) => {
 
-												console.log(this)
 												for (let verticeId = 0; verticeId < timeVerticesLength; verticeId++) {
 
-													if (verticeId === selectedVerticeId) continue;
+													if ((selectedVerticeId != undefined) && (verticeId === selectedVerticeId)) continue;
 													for (let timeId = 0; timeId < playerMarks; timeId++) {
 
-														const positionId = verticeId + timeId * timeVerticesLength, opacity = 0.0;
-														_this.hyperSphere.verticeOpacity(positionId, true, opacity);//Universe vertices or edges
+														const positionId = verticeId + timeId * timeVerticesLength, opacity = selectedVerticeId != undefined ?
+															0.01 ://Скрыть все треки и вершины за исключением трека для selectedVerticeId 
+															1.0;//показать все треки и вершмны
+														_this.hyperSphere.verticeOpacity(positionId, true, opacity);
 //														this.verticesTraces[timeId][verticeId].forEach(lineVerticeId => this.verticeOpacity(lineVerticeId, true, opacity));
 														//this.verticeOpacity(positionId, true, opacity);//traces same as _this.hyperSphere.verticeOpacity
 														
@@ -883,20 +885,23 @@ class Universe
 									const fUniverse = fParent.addFolder(lang.name);
 
 									const cookieName = 'Traces', boTracesDefault = false;
-									let boTraces = classSettings.boTraces ||= options.dat ?  options.dat.cookie.get(cookieName, boTracesDefault): boTracesDefault;
+									let boTraces = classSettings.boTraces ||= options.dat ?  options.dat.cookie.get(cookieName, boTracesDefault): boTracesDefault,
+										cTraces;
 									Object.defineProperty(classSettings, 'boTraces', {
 
 										get: () => { return boTraces; },
 										set: (newValue) => {
-											
+
+											if (cTraces.getValue() === newValue) return;
 											boTraces = newValue;
 											classSettings.overriddenProperties.project();
+											cTraces.setValue(newValue);//Add/remove traces
 										
 										},
 					
 									});
 									
-									const cTraces = fUniverse.add(classSettings, 'boTraces').onChange((boTraces) => { if (options.dat)  options.dat.cookie.set(cookieName, boTraces); });
+									cTraces = fUniverse.add(classSettings, 'boTraces').onChange((boTraces) => { if (options.dat)  options.dat.cookie.set(cookieName, boTraces); });
 									dat.controllerNameAndTitle(cTraces, lang.traces, lang.tracesTitle);
 									
 								}
@@ -1054,6 +1059,7 @@ class Universe
 //						cTraceStyle = cTrace.domElement.parentElement.parentElement.style;
 //						cTraceAllStyle = cTraceAll.domElement.parentElement.parentElement.style;
 					cTraceAll.userData ||= {}
+/*					
 					classSettings.settings.options.trace.onChange = (boTrace, verticeId) => {
 						
 						if (!boTrace) return;
@@ -1061,6 +1067,33 @@ class Universe
 						traces.select(verticeId);//, cTimes.__select.selectedIndex - 1);
 //						const verticeLine = traces.verticesTraces[cTimes.__select.selectedIndex - 1][verticeId];
 					
+					}
+*/					
+//					let boTraces = false;
+					classSettings.settings.options.trace = {
+
+/*не получилось						
+						boTrace: {
+
+							get: () => { return boTraces; },
+							set: (newValue) => {
+
+								//сюда не попадает
+								boTraces = newValue;
+							
+							},
+		
+						},
+*/						
+						onChange: (boTrace, verticeId) => {
+						
+							classSettings.boTraces = boTrace;//Add/remove traces
+							if (traces) traces.select(verticeId);//, cTimes.__select.selectedIndex - 1);
+//							if (!boTrace) return;
+	//						const verticeLine = traces.verticesTraces[cTimes.__select.selectedIndex - 1][verticeId];
+						
+						}
+
 					}
 					cTimes.onChange((timeId) => {
 
