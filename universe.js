@@ -100,25 +100,7 @@ class Universe
 		
 		new MyThree((scene, options) => {
 
-/*
-			{
-				
-				const cookieName = 'Traces', boTracesDefault = false;
-				let boTraces = classSettings.boTraces ||= options.dat ?  options.dat.cookie.get(cookieName, boTracesDefault): boTracesDefault;
-				myThreeOptions.traces = {
-		
-					boTraces: classSettings.boTraces != undefined ? classSettings.boTraces : false,
-					onChange: (boTraces) => {
-		
-						classSettings.boTraces = boTraces;
-						
-					}
-					
-				};
-	
-			}
-*/			
-			let traces;
+			let traces, traceVerticeId;
 
 			//classSettings.projectParams ||= {};//Эта строка выдает ошибку "[!] (cleanup plugin) SyntaxError: Unexpected token (63:36)" при выполнении команды "npm run build"
 			classSettings.projectParams = classSettings.projectParams || {};
@@ -715,7 +697,7 @@ class Universe
 
 										if (traces) {
 											
-											traces.select();
+//											traces.select();
 											scene.remove(traces.object3D);
 											traces = undefined;
 
@@ -729,34 +711,18 @@ class Universe
 										constructor() {
 
 											const settings = classSettings.settings;
-		//									if (settings.bufferGeometry.index != null) console.error(sUniverse + ': settings.overriddenProperties.project. settings.bufferGeometry.index is not null.');
-											const angles = settings.object.geometry.angles, timeVerticesLength = angles.length, lines = [],
-												playerMarks = settings.options.playerOptions.marks;
-//											angles.forEach((angle) => angle.trace = []);
+											const angles = settings.object.geometry.angles, timeVerticesLength = angles.length, lines = [], playerMarks = settings.options.playerOptions.marks;
 											let verticeId = timeVerticesLength, timeIndexCount;
 											for (let timeId = 1; timeId < playerMarks; timeId++) {
 												
 												angles.forEach((angle, angleId) => {
 
-													const line = [verticeId - timeVerticesLength, verticeId];
-													lines.push(line);
-/*													
-													angle.trace.push(new Proxy({ line: line }, {
+													if ((traceVerticeId === undefined) || (traceVerticeId === angleId)) {
+														
+														const line = [verticeId - timeVerticesLength, verticeId];
+														lines.push(line);
 
-														get: (target, name) => {
-															
-															switch (name) {
-											
-																case 'line': return target.line;
-											
-															}
-															console.error(sUniverse + ': class Traces. Invalid get ' + name);
-															return trace[name];
-															
-														},
-											
-													}));
-*/													
+													}
 													verticeId++;
 													
 												});
@@ -791,7 +757,8 @@ class Universe
 												} },
 									
 											});
-											this.select = (selectedVerticeId/*, timeId*/) => {
+/*											
+											this.select = (selectedVerticeId) => {
 
 												for (let verticeId = 0; verticeId < timeVerticesLength; verticeId++) {
 
@@ -810,6 +777,7 @@ class Universe
 												}
 												
 											}
+*/											
 											
 										}
 										/*Currently do not use
@@ -1086,11 +1054,11 @@ class Universe
 						},
 */						
 						onChange: (boTrace, verticeId) => {
-						
+
+							traceVerticeId = verticeId;
 							classSettings.boTraces = boTrace;//Add/remove traces
-							if (traces) traces.select(verticeId);//, cTimes.__select.selectedIndex - 1);
-//							if (!boTrace) return;
-	//						const verticeLine = traces.verticesTraces[cTimes.__select.selectedIndex - 1][verticeId];
+							traceVerticeId = undefined;
+//							if (traces) traces.select(verticeId);//, cTimes.__select.selectedIndex - 1);
 						
 						}
 
