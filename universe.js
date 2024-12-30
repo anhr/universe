@@ -1187,7 +1187,8 @@ class Universe
 							
 						if (guiPoints.verticeId === undefined) return;
 						cPoints.__select[guiPoints.verticeId + 1].selected = true;
-							
+						cPoints.setValue(guiPoints.verticeId);
+						
 					}
 					guiPoints.changeControllers();
 
