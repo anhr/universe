@@ -1187,7 +1187,12 @@ class Universe
 							
 						if (guiPoints.verticeId === undefined) return;
 						cPoints.__select[guiPoints.verticeId + 1].selected = true;
-						cPoints.setValue(guiPoints.verticeId);
+
+						//если не выполнить это команду, то неверно будет возвращаться cPoints.getValue()
+						//В результате в gui не будет меняться "Локальная позиция точки" когда пользователь меняет "Углы" вершины
+						//если пользователь выбрал вершину с помошью мыши
+						//Непонятно почему так происходит
+						if (cPoints.getValue() != guiPoints.verticeId) cPoints.setValue(guiPoints.verticeId);
 						
 					}
 					guiPoints.changeControllers();
