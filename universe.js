@@ -1192,7 +1192,7 @@ class Universe
 						//В результате в gui не будет меняться "Локальная позиция точки" когда пользователь меняет "Углы" вершины
 						//если пользователь выбрал вершину с помошью мыши
 						//Непонятно почему так происходит
-						if (cPoints.getValue() != guiPoints.verticeId) cPoints.setValue(guiPoints.verticeId);
+						//if (cPoints.getValue() != guiPoints.verticeId) cPoints.setValue(guiPoints.verticeId);
 						
 					}
 					guiPoints.changeControllers();
@@ -1200,9 +1200,12 @@ class Universe
 				},
 				getValue: (cPoints) => {
 
+					return cPoints.__select.options.selectedIndex - 1;
+/*					
 					const value = cPoints.getValue();
 					if (isNaN(value)) return -1;//точка не выбрана
 					return parseInt(value);
+*/					
 
 				},
 
