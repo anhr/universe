@@ -1186,7 +1186,8 @@ class Universe
 						cTimes.__select[end].selected = true;
 							
 						if (guiPoints.verticeId === undefined) return;
-						cPoints.__select[guiPoints.verticeId + 1].selected = true;
+//						cPoints.__select[guiPoints.verticeId + 1].selected = true;
+						options.guiSelectPoint.selectPoint(guiPoints.verticeId);
 
 						//если не выполнить это команду, то неверно будет возвращаться cPoints.getValue()
 						//В результате в gui не будет меняться "Локальная позиция точки" когда пользователь меняет "Углы" вершины
