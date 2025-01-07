@@ -1181,9 +1181,18 @@ class Universe
 							}
 
 						}
-							
+
+						const option = cTimes.__select[end];
+
+						//для устранения бесконечного цикла.
+						//Для проверки
+						//запустить http://localhost/anhr/universe/main/hyperSphere/Examples/
+						//Сделать ребра видимыми
+						//Мышью выбать ребро
+						if (option.selected === true) return;
+						
 						cTimes.__onChange(guiPoints.timeId);
-						cTimes.__select[end].selected = true;
+						option.selected = true;
 							
 						if (guiPoints.verticeId === undefined) return;
 //						cPoints.__select[guiPoints.verticeId + 1].selected = true;
