@@ -49,7 +49,8 @@ class Universe
 	constructor(classSettings = {}, myThreeOptions = {}) {
 
 		const _this = this;
-		myThreeOptions.playerOptions ||= {};
+		//myThreeOptions.playerOptions ||= {};Not compatible with buid of hyperSphericalUniverse.module.min.js
+		if (!myThreeOptions.playerOptions) myThreeOptions.playerOptions = {};
 		myThreeOptions.playerOptions.interval = myThreeOptions.playerOptions.interval != undefined ? myThreeOptions.playerOptions.interval : Infinity;
 		myThreeOptions.scales = myThreeOptions.scales || {};
 		myThreeOptions.scales.x = myThreeOptions.scales.x || {};
@@ -150,6 +151,8 @@ class Universe
 									get: (timeAngles, name) => {
 
 										const verticeId = parseInt(name);
+if(verticeId === 9)
+	console.log(verticeId)										
 										if (!isNaN(verticeId))
 											return new Proxy(timeAngles[verticeId], {
 
@@ -403,28 +406,30 @@ class Universe
 								});
 
 								//иммитация наследования классов
-								classSettings.overriddenProperties ||= {};
+								//classSettings.overriddenProperties ||= {};Is not compatible with build of hyperSphericalUniverse.module.min.js
+								if (!classSettings.overriddenProperties) classSettings.overriddenProperties = {};
 								const overriddenProperties = classSettings.overriddenProperties, settings = classSettings.settings;
-								overriddenProperties.oppositeVertice ||= (oppositeAngleId, timeId) => { return geometry.playerPosition[timeId - 1][oppositeAngleId]; }
+								//overriddenProperties.oppositeVertice ||= (oppositeAngleId, timeId) => { return geometry.playerPosition[timeId - 1][oppositeAngleId]; }Is not compatible with build of hyperSphericalUniverse.module.min.js
+								if (!overriddenProperties.oppositeVertice) overriddenProperties.oppositeVertice = (oppositeAngleId, timeId) => { return geometry.playerPosition[timeId - 1][oppositeAngleId]; }
 								if (!overriddenProperties.position) Object.defineProperty(overriddenProperties, 'position', { get: () => { return geometry.playerPosition[settings.bufferGeometry.userData.timeId]; }, });
 								if (!overriddenProperties.position0) Object.defineProperty(overriddenProperties, 'position0', { get: () => { return geometry.playerPosition[0]; }, });
-								overriddenProperties.updateVertices ||= (vertices) => {
+								if (!overriddenProperties.updateVertices) overriddenProperties.updateVertices = (vertices) => {
 
 									if (traces) traces.bufferGeometry.userData.setDrawRange(classSettings.settings.options.player.getTimeId());
 									this.hyperSphere.bufferGeometry.attributes.position.needsUpdate = true;
 								
 								}
-								overriddenProperties.vertices ||= () => {}
-								overriddenProperties.r ||= (timeId) => { return settings.object.geometry.times[timeId != undefined ? timeId : 0].player.r; }
-								overriddenProperties.pushMiddleVertice ||= (timeId, middleVertice) => { geometry.times[timeId].push(middleVertice); }
-								overriddenProperties.angles ||= (anglesId, timeId) => { return settings.object.geometry.times[timeId][anglesId]; }
-								overriddenProperties.verticeAngles ||= (anglesCur, verticeId) => {
+								if (!overriddenProperties.vertices) overriddenProperties.vertices = () => {}
+								if (!overriddenProperties.r) overriddenProperties.r = (timeId) => { return settings.object.geometry.times[timeId != undefined ? timeId : 0].player.r; }
+								if (!overriddenProperties.pushMiddleVertice) overriddenProperties.pushMiddleVertice = (timeId, middleVertice) => { geometry.times[timeId].push(middleVertice); }
+								if (!overriddenProperties.angles) overriddenProperties.angles = (anglesId, timeId) => { return settings.object.geometry.times[timeId][anglesId]; }
+								if (!overriddenProperties.verticeAngles) overriddenProperties.verticeAngles = (anglesCur, verticeId) => {
 
 									const guiPoints = settings.guiPoints;
 									return guiPoints.timeAngles[guiPoints.verticeId != undefined ? guiPoints.verticeId : verticeId];
 									
 								}
-								overriddenProperties.verticeText ||= (intersection, text) => {
+								if (!overriddenProperties.verticeText) overriddenProperties.verticeText = (intersection, text) => {
 									
 									const times = settings.object.geometry.times;
 									let verticeId = intersection.index, tRes = '';
@@ -483,14 +488,14 @@ class Universe
 									}
 									
 								}
-								overriddenProperties.text ||= (tab, timeAngles, lang) => {
+								if (!overriddenProperties.text) overriddenProperties.text = (tab, timeAngles, lang) => {
 									
 									return '\n' + tab + 'time Id: ' + timeAngles.player.id
 										+ '\n' + tab + 't: ' + timeAngles.player.t
 										+ '\n' + tab + lang.radius + ': ' + timeAngles.player.r;
 								
 								}
-								overriddenProperties.onSelectSceneEndSetDrawRange ||= (timeId) => {
+								if (!overriddenProperties.onSelectSceneEndSetDrawRange) overriddenProperties.onSelectSceneEndSetDrawRange = (timeId) => {
 
 									const appendTimesChild = classSettings.settings.guiPoints.appendTimesChild;
 									if (appendTimesChild) appendTimesChild(undefined, timeId);
@@ -522,7 +527,7 @@ class Universe
 									return true;
 
 								}
-								overriddenProperties.project ||= () => {
+								if (!overriddenProperties.project) overriddenProperties.project = () => {
 
 									const scene = classSettings.projectParams.scene;
 									if (!classSettings.boTraces) {
@@ -595,7 +600,7 @@ class Universe
 									traces = new Traces();
 										
 								}
-								overriddenProperties.addSettingsFolder ||= (fParent, getLanguageCode) => {
+								if (!overriddenProperties.addSettingsFolder) overriddenProperties.addSettingsFolder = (fParent, getLanguageCode) => {
 
 									//Localization
 									
@@ -625,7 +630,8 @@ class Universe
 									const fUniverse = fParent.addFolder(lang.name);
 
 									const cookieName = 'Traces', boTracesDefault = false;
-									let boTraces = classSettings.boTraces ||= options.dat ?  options.dat.cookie.get(cookieName, boTracesDefault): boTracesDefault,
+									//let boTraces = classSettings.boTraces ||= options.dat ? options.dat.cookie.get(cookieName, boTracesDefault) : boTracesDefault,Is not compatible with build of hyperSphericalUniverse.module.min.js
+									let boTraces = classSettings.boTraces === true ? classSettings.boTraces : options.dat ?  options.dat.cookie.get(cookieName, boTracesDefault): boTracesDefault,
 										cTraces;
 									Object.defineProperty(classSettings, 'boTraces', {
 
@@ -794,7 +800,7 @@ class Universe
 					fPoints.__ul.insertBefore(elLast, elBefore);
 
 					const cPointsStyle = cPoints.domElement.parentElement.parentElement.style;
-					cTraceAll.userData ||= {}
+					if (!cTraceAll.userData) cTraceAll.userData = {}
 					classSettings.settings.options.trace = {
 
 						onChange: (boTrace, verticeId) => {
@@ -963,8 +969,8 @@ class Universe
 				});
 				
 			}
-			classSettings.overriddenProperties ||= {};
-			classSettings.overriddenProperties.edges ||= () => {
+			if (!classSettings.overriddenProperties) classSettings.overriddenProperties = {};
+			if (!classSettings.overriddenProperties.edges) classSettings.overriddenProperties.edges = () => {
 
 				//во вселенной ребра должны быть обязательно.
 				console.error(sUniverse + ': classSettings.edges = false is impossible in the Universe');

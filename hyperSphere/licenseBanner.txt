@@ -3,7 +3,7 @@
  * @description Hyperspherical Universe.
  * All the vertices of the HypersphericalUniverse form a 3D [hypersphere]{@link https://en.wikipedia.org/wiki/N-sphere}.
  *
- * @author [Andrej Hristoliubov]{@link https://anhr.github.io/AboutMe/}
+ * @author [Andrej Hristoliubov]{@link https://github.com/anhr}
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

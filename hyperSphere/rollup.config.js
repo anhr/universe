@@ -16,17 +16,15 @@
 
 import fs from 'fs';
 import path from 'path';
-import resolve from 'rollup-plugin-node-resolve';
-import cleanup from 'rollup-plugin-cleanup';
 
-const banner = fs.readFileSync(path.join(__dirname, 'licenseBanner.txt'));
+const banner = fs.readFileSync( path.join( __dirname, 'licenseBanner.txt' ) );
+
 const sBuild = 'build';
-fs.mkdirSync( path.join( __dirname, sBuild ), { recursive: true, force: true } );
+fs.mkdirSync(path.join(__dirname, sBuild), { recursive: true, force: true });
 
 function callback(err) {
-//    if (err) throw err;
-    if (err) console.error(err);
-    //    console.log( 'colorpicker.css was copied' );
+    if (err) throw err;
+//    if (err) console.error(err);
 }
 const sCommonNodeJS = '..\\..\\..\\commonNodeJS\\master';
 fs.copyFile(path.join(__dirname, sCommonNodeJS + '\\colorpicker\\colorpicker.css'), sBuild + '\\colorpicker.css', callback);
@@ -40,29 +38,23 @@ fs.copyFile(path.join(__dirname, sGetShaderMaterialPointsSrc + '\\fragment.c'), 
 const textures = 'textures', sPointPng = 'point.png';
 fs.mkdirSync(path.join(__dirname, sBuild + '\\' + textures), { recursive: true, force: true });
 fs.copyFile(path.join(__dirname, sCommonNodeJS + sGetShaderMaterialPoints + '\\' + textures + '\\' + sPointPng), sBuild + '\\' + textures + '\\' + sPointPng, callback);
+
 export default {
 
     input: 'hyperSphericalUniverse.js',
 
-  output: [{
-    // TODO: Remove default exports, and this line, in v0.8.0.
-    exports: 'named',
-      file: './build/hyperSphericalUniverse.js',
-      format: 'es',
-      name: 'HypersphericalUniverse',
-    sourcemap: true,
-    banner: banner
-  }, {
-      file: './build/hyperSphericalUniverse.module.js',
-    format: 'es',
-    sourcemap: true,
-    banner: banner
-  }],
-  watch: {
-    include: 'src/**'
-  },
-  plugins: [
-      resolve(),
-    cleanup()
-  ]
+    output: [{
+        // TODO: Remove default exports, and this line, in v0.8.0.
+        exports: 'named',
+        file: './build/hyperSphericalUniverse.js',
+        format: 'umd',
+        name: 'HyperSphericalUniverse',
+        sourcemap: true,
+        banner: banner
+    }, {
+        file: './build/hyperSphericalUniverse.module.js',
+        format: 'es',
+        sourcemap: true,
+        banner: banner
+    }],
 };

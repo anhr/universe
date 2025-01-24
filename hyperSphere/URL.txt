@@ -5,8 +5,5 @@ Open "Node.js command prompt"
 d:
 cd "D:\My documents\MyProjects\webgl\three.js\GitHub\universe\main\hyperSphere"
 npm install
-npm install uglify-es //for build/ND.module.min.js
-
-//Команда выполняется около полутора минут
+//npm install uglify-es не используется//for build/ND.module.min.js
 npm run build
-
