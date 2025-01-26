@@ -151,8 +151,6 @@ class Universe
 									get: (timeAngles, name) => {
 
 										const verticeId = parseInt(name);
-if(verticeId === 9)
-	console.log(verticeId)										
 										if (!isNaN(verticeId))
 											return new Proxy(timeAngles[verticeId], {
 
