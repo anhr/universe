@@ -9,6 +9,13 @@
     <!--<link type="text/css" rel="stylesheet" href="https://threejs.org/examples/main.css">-->
     <link type="text/css" rel="stylesheet" href="../../../../three.js/dev/examples/main.css">
 
+	<!--
+	//Uncaught SyntaxError: Missing initializer in const declaration (at circularUniverse.js:84925:3)
+	//Похоже нельзя использовать символ π
+	<script src="../build/circularUniverse.js"></script>
+	
+	<script src="../build/circularUniverse.min.js"></script>
+	-->
 </head>
 <body>
     <script nomodule>alert('Fatal error: Your browser do not support modular JavaScript code.');</script>
@@ -68,7 +75,7 @@
 							[Math.PI * 1 / 4],
 							[Math.PI * 3 / 4], [- Math.PI * 3 / 4], [- Math.PI * 1 / 4],],//Square
 						//angles: angles,
-						angles: { count: 100, },
+						//angles: { count: 100, },
 
 						//opacity: [1, 0.5],
 						//indices: {
@@ -87,9 +94,10 @@
 
 		}, {
 
+			axesHelper: false,
 			playerOptions: {
 				
-				marks: 100,
+				//marks: 100,
 				min: 0.1,
 				//max: 1.5,
 				//interval: 30,

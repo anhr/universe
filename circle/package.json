@@ -1,0 +1,47 @@
+{
+  "name": "CircularUniverse",
+  "version": "1.4",
+  "description": "All vertices of the Universe form a circle.",
+  "main": "build/circularUniverse.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anhr/universe"
+  },
+  "scripts": {
+    "build": "rollup -c rollup.config.js && rollup -c rollup.config.min.js"
+  },
+  "keywords": [
+    "CircularUniverse",
+    "circularUniverse.js",
+    "javascript",
+    "3d",
+    "webgl",
+    "webgl2",
+    "webgpu",
+    "canvas",
+    "html5"
+  ],
+  "author": "Andrej Hristoliubov https://github.com/anhr",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/anhr/universe/issues"
+  },
+  "homepage": "https://github.com/anhr/universe/tree/main/circle",
+  "devDependencies": {
+    "rollup": "^2.77.2"
+  },
+  "jspm": {
+    "files": [
+      "package.json",
+      "LICENSE",
+      "README.md",
+      "build/circularUniverse.js",
+      "build/circularUniverse.min.js",
+      "build/circularUniverse.module.js"
+    ],
+    "directories": {}
+  },
+  "dependencies": {
+    "uglify-es": "^3.3.10"
+  }
+}
