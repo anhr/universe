@@ -9,13 +9,6 @@
     <!--<link type="text/css" rel="stylesheet" href="https://threejs.org/examples/main.css">-->
     <link type="text/css" rel="stylesheet" href="../../../../three.js/dev/examples/main.css">
 
-	<!--
-	//Uncaught SyntaxError: Missing initializer in const declaration (at circularUniverse.js:84925:3)
-	//Похоже нельзя использовать символ π
-	<script src="../build/circularUniverse.js"></script>
-	
-	<script src="../build/circularUniverse.min.js"></script>
-	-->
 </head>
 <body>
     <script nomodule>alert('Fatal error: Your browser do not support modular JavaScript code.');</script>
@@ -54,7 +47,7 @@
 				probabilityDensity: false,
 				//probabilityDensity: [],
 				//testVertice: false,
-				//log: false,
+				log: false,
 
 			},
 			//debug: false,
@@ -71,11 +64,10 @@
 						angles: [[], [Math.PI * 2 / 3], [- Math.PI * 2 / 3]],//triangle
 						angles: [[], [1.1], [2.6], [Math.PI],],
 						angles: [
-							//[Math.PI * 2],
 							[Math.PI * 1 / 4],
 							[Math.PI * 3 / 4], [- Math.PI * 3 / 4], [- Math.PI * 1 / 4],],//Square
 						//angles: angles,
-						//angles: { count: 100, },
+						//angles: { count: 4, },
 
 						//opacity: [1, 0.5],
 						//indices: {
