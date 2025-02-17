@@ -822,7 +822,7 @@ class Universe
 							return;
 
 						}
-						const anglesLength = classSettings.settings.object.geometry.angles.length, hyperSphereObject = this.hyperSphere.object();
+						const anglesLength = classSettings.settings.object.geometry.angles.length, hyperSphereObject = this.hyperSphere.object3D;
 						let display, start, end;
 						if (timeId != -1) {
 							
