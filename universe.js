@@ -420,7 +420,7 @@ class Universe
 								if (!overriddenProperties.vertices) overriddenProperties.vertices = () => {}
 								if (!overriddenProperties.r) overriddenProperties.r = (timeId) => { return settings.object.geometry.times[timeId != undefined ? timeId : 0].player.r; }
 								if (!overriddenProperties.pushMiddleVertice) overriddenProperties.pushMiddleVertice = (timeId, middleVertice) => { geometry.times[timeId].push(middleVertice); }
-								if (!overriddenProperties.angles) overriddenProperties.angles = (anglesId, timeId) => { return settings.object.geometry.times[timeId][anglesId]; }
+								if (!overriddenProperties.angles) overriddenProperties.angles = (anglesId, timeId = 0) => { return settings.object.geometry.times[timeId][anglesId]; }
 								if (!overriddenProperties.verticeAngles) overriddenProperties.verticeAngles = (anglesCur, verticeId) => {
 
 									const guiPoints = settings.guiPoints;
