@@ -91,6 +91,7 @@ class Universe
 
 			if (myThreeOptions.camera.position instanceof Array === true)
 				myThreeOptions.camera.position = new THREE.Vector3(myThreeOptions.camera.position[0], myThreeOptions.camera.position[1], myThreeOptions.camera.position[2]);
+			
 		}
 		else myThreeOptions.camera.position = new THREE.Vector3(0, 0, 2);
 
@@ -1212,5 +1213,8 @@ class Universe
 	}
 
 }
+
+Universe.release = 'v1.4';
+if (Universe.release != MyThree.release) console.error(sUniverse + ': Incompatible Universe.release = ' + Universe.release + ' version with MyThree.release = ' + MyThree.release + ' version.')
 
 export default Universe;
