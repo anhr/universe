@@ -849,6 +849,7 @@ class Universe
 								selectPoints.appendChild(opt);
 	
 							});
+							hyperSphereObject.userData.myObject.guiPoints.setTimeId = (newTimeId) => { timeId = newTimeId }
 							hyperSphereObject.userData.myObject.guiPoints.getPositionId = (timeAnglesId) => {
 	
 								if (timeAnglesId >= anglesLength) {
@@ -918,6 +919,7 @@ class Universe
 
 								guiPoints.getVerticeId(intersectionSelected.index, () => {});//Get guiPoints.timeId
 								this.selectTime(guiPoints.timeId, guiPoints.timeId + 1);
+								guiPoints.setTimeId(guiPoints.timeId);
 								return;
 								
 							}

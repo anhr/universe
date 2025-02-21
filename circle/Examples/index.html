@@ -29,8 +29,8 @@
 
 			onSelectScene: (hyperSphere, timeId, t) => {
 				
-				//if (hyperSphere.middleVertices) return hyperSphere.middleVertices(timeId, t);
-				if (hyperSphere.child) return hyperSphere.child.onSelectScene.copyAngles(timeId, t);
+				if (hyperSphere.middleVertices) return hyperSphere.middleVertices(timeId, t);
+				//if (hyperSphere.child) return hyperSphere.child.onSelectScene.copyAngles(timeId, t);
 	
 			},
 			edges: {
@@ -67,7 +67,7 @@
 							[Math.PI * 1 / 4],
 							[Math.PI * 3 / 4], [- Math.PI * 3 / 4], [- Math.PI * 1 / 4],],//Square
 						//angles: angles,
-						//angles: { count: 4, },
+						angles: { count: 100, },
 
 						//opacity: [1, 0.5],
 						//indices: {
@@ -86,7 +86,7 @@
 
 		}, {
 
-			axesHelper: false,
+			//axesHelper: false,
 			playerOptions: {
 				
 				//marks: 100,
