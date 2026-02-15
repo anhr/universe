@@ -1214,7 +1214,7 @@ class Universe
 
 }
 
-Universe.release = 'v1.4';
+Universe.release = 'v1.5';
 if (Universe.release != MyThree.release) console.error(sUniverse + ': Incompatible Universe.release = ' + Universe.release + ' version with MyThree.release = ' + MyThree.release + ' version.')
 
 export default Universe;
