@@ -17,6 +17,7 @@
 
 import SphericalUniverse from '../sphere/sphericalUniverse.js';
 import HyperSphere3D from '../../../commonNodeJS/master/HyperSphere/hyperSphere3D.js';
+import distanceOfVertices from '../../../commonNodeJS/master/HyperSphere/distanceOfVertices/middleVerticesHSphere.js';
 
 //const sHypersphericalUniverse = 'HypersphericalUniverse',
 //	π = Math.PI;
@@ -29,7 +30,12 @@ class HypersphericalUniverse extends SphericalUniverse {
 	 * @param {object} [classSettings={}] See <a href="../../../commonNodeJS/master/HyperSphere/jsdoc/module-HyperSphere-HyperSphere.html" target="_blank">HyperSphere classSettings</a> parameter.
 	 **/
 	constructor(classSettings = {}, myThreeOptions) { super(classSettings, myThreeOptions); }
-	getHyperSphere(options, classSettings) { return new HyperSphere3D(options, classSettings); }
+	getHyperSphere(options, classSettings) {
+		
+		classSettings.distanceOfVertices = distanceOfVertices;
+		return new HyperSphere3D(options, classSettings);
+	
+	}
 	get edgesCreationMethod() { return HypersphericalUniverse.edgesCreationMethod; }
 	name(getLanguageCode) {
 

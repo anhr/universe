@@ -17,6 +17,7 @@
 
 import Universe from '../universe.js';
 import Sphere from '../../../commonNodeJS/master/HyperSphere/sphere.js';
+import distanceOfVertices from '../../../commonNodeJS/master/HyperSphere/distanceOfVertices/middleVerticesSphere.js';
 
 //const sSphericalUniverse = 'SphericalUniverse',
 //	π = Math.PI;
@@ -36,7 +37,12 @@ class SphericalUniverse extends Universe {
 		super(classSettings, myThreeOptions);
 
 	}
-	getHyperSphere(options, classSettings) { return new Sphere(options, classSettings); }
+	getHyperSphere(options, classSettings) {
+		
+		classSettings.distanceOfVertices = distanceOfVertices;
+		return new Sphere(options, classSettings);
+	
+	}
 	name( getLanguageCode ) {
 
 		//Localization
