@@ -17,7 +17,10 @@
 
 import Universe from '../universe.js';
 import Sphere from '../../../commonNodeJS/master/HyperSphere/sphere.js';
-import distanceOfVertices from '../../../commonNodeJS/master/HyperSphere/distanceOfVertices/middleVerticesSphere.js';
+//select one:
+import distanceOfVertices from '../../../commonNodeJS/master/HyperSphere/distanceOfVertices/averageVerticesSphere.js';
+//or
+//import distanceOfVertices from '../../../commonNodeJS/master/HyperSphere/distanceOfVertices/middleVerticesSphere.js';
 
 //const sSphericalUniverse = 'SphericalUniverse',
 //	π = Math.PI;
