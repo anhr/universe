@@ -245,7 +245,7 @@ class Universe
 									if (!isNaN(verticeId)) {
 
 										let verticeAngles = timeAngles[verticeId];
-										if (!verticeAngles || ((verticeAngles[verticeId] === undefined) && timeId > 0))
+										if (!verticeAngles || ((timeId > 0) && (verticeAngles[verticeId] === undefined)))
 										{
 
 											if (timeId === 0) {
@@ -653,6 +653,14 @@ class Universe
 
 								settings.overriddenProperties.setDrawRange = (start, count) => { settings.bufferGeometry.setDrawRange(start, count); }
 								settings.overriddenProperties.getPlayerTimesLength = () => { return settings.object.geometry.times.length; }
+								settings.overriddenProperties.position = (position, i, userData) => {
+
+									userData.timeId--;
+									const pos = position[i];
+									userData.timeId++;
+									return pos;
+									
+								}
 
 							}
 							return geometry.playerPosition[classSettings.settings.options.player.getTimeId()];
