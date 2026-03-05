@@ -661,6 +661,11 @@ class Universe
 									return pos;
 									
 								}
+								settings.overriddenProperties.editVertice = (timeId, vertice) => {
+									
+									classSettings.overriddenProperties.pushMiddleVertice(timeId, vertice);//добавляем новый item в classSettings.settings.object.geometry.times[data.timeId]. Это нужно что бы после выполнения шага проигрывателя при наедении мыши на вершину отображалась полная информачия о вершине
+									
+								}
 
 							}
 							return geometry.playerPosition[classSettings.settings.options.player.getTimeId()];
