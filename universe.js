@@ -499,7 +499,7 @@ class Universe
 									const appendTimesChild = classSettings.settings.guiPoints.appendTimesChild;
 									if (appendTimesChild) appendTimesChild(undefined, timeId);
 									
-									if (classSettings.edges.project === false) return;//Ребра не отбражаются на холсте. Не нужно устанавливать bufferGeometry.drawRange в зависимость от индекса ребер.
+									if ((classSettings.edges === false) || (classSettings.edges.project === false)) return;//Ребра не отбражаются на холсте. Не нужно устанавливать bufferGeometry.drawRange в зависимость от индекса ребер.
 									this.hyperSphere.setEdgesRange();
 									
 								}
@@ -992,7 +992,7 @@ class Universe
 			
 			};
 			this.hyperSphere = this.getHyperSphere(options, classSettings);
-			classSettings.edges = new Proxy(classSettings.edges, {
+			if (classSettings.edges) classSettings.edges = new Proxy(classSettings.edges, {
 
 				set: (edges, name, value) => {
 
