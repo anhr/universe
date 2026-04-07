@@ -17,6 +17,7 @@
 
 import Universe from '../universe.js';
 import Sphere from '../../../commonNodeJS/master/HyperSphere/sphere.js';
+
 //select one:
 import distanceOfVertices from '../../../commonNodeJS/master/HyperSphere/distanceOfVertices/averageVerticesSphere.js';
 //or
