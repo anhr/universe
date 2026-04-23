@@ -78,7 +78,7 @@
 				random: () => { return 0.5 },//replacing random vertices with strictly defined vertices.
 				
 			},
-			debug: false,
+			//debug: false,
 			settings: {
 				
 				object: {
@@ -200,7 +200,8 @@
 						],
 						angles: [
 							//[0, 0, 0],//0
-							[Math.PI / 1, Math.PI / 19, Math.PI / 10],//0
+							//[Math.PI / 1, Math.PI / 19, Math.PI / 10],//0. Эта вершина лежит на оси W потомучто Altitude = Math.PI. Это приводит к тому что в функции cartesianToPolar величина rXYZ < 1e-10 и широта с долготой не определены (принимаем за 0)
+							[Math.PI / 1.5, Math.PI / 19, Math.PI / 10],//0.
 							[Math.PI / 2, Math.PI / 20, Math.PI / 11],//1
 							[Math.PI / 3, Math.PI / 21, Math.PI / 2],//2
 							[Math.PI / 4, Math.PI / 22, -Math.PI / 2],//3
