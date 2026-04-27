@@ -109,8 +109,8 @@
         const π = Math.PI, sin = Math.sin, cos = Math.cos;
 
         // --- ГЛОБАЛЬНАЯ КОНФИГУРАЦИЯ ---
-        const DEBUG_MODE = false;
-        const RANDOM_POINTS = true;
+        const DEBUG_MODE = true;
+        const RANDOM_POINTS = false;
         const LOG = false;//log attributes to console
         const LOTS_OF_POINTS = true;
         const totalSteps = LOTS_OF_POINTS ? 100 : 10;
@@ -343,35 +343,6 @@
         }
         const hyperbola = calculateHyperbola(p);
 
-        const random_gpu = RANDOM_POINTS ?
-            /*Этот метод не дает прибавки в производительности но проигрывает в случайности
-            `
-                        //LGC — Линейный конгруэнтный метод. Более быстрый, но чуть менее "хаотичный" вариант
-                        fn random(state: ptr<function, u32>) -> f32 {
-                            *state = (*state * 1664525u + 1013904223u); // Всего одно умножение и сложение
-                            return f32(*state) / f32(0xffffffffu);
-                        }
-            `
-            */
-            `
-                        //Хеширование (Hashing). Простой генератор псевдослучайных чисел (PCG). Permuted Congruential Generator (Перемешанный конгруэнтный генератор).
-                        // Функция принимает указатель на состояние и обновляет его внутри
-                        fn random(seed: ptr<function, u32>) -> f32 {
-                            // 1. Извлекаем текущее значение, перемешиваем его
-                            var x = *seed;
-                            x = ((x >> 16u) ^ x) * 0x45d9f3bu;
-                            x = ((x >> 16u) ^ x) * 0x45d9f3bu;
-                            x = (x >> 16u) ^ x;
-
-                            // 2. Сохраняем обновленное состояние обратно
-                            *seed = x;
-
-                            // 3. Возвращаем нормализованное число 0.0 - 1.0
-                            return f32(x) / f32(0xffffffffu);
-                        }`
-            : `
-                        fn random(seed: ptr<function, u32>) -> f32 { return ${PSEUDO_RANDOM}; }`;
-
         // 4. Преобразование декартовых координат в углы
         const cartesianToPolarRandom = (Q) => { return cartesianToPolar({ x: Q[2], y: Q[3], z: Q[1], w: Q[0] }); }
 
@@ -573,6 +544,36 @@
         let availableAdapters = [];
 
         //for random function in WebGPU
+
+        const random_gpu = RANDOM_POINTS ?
+            /*Этот метод не дает прибавки в производительности но проигрывает в случайности
+            `
+                        //LGC — Линейный конгруэнтный метод. Более быстрый, но чуть менее "хаотичный" вариант
+                        fn random(state: ptr<function, u32>) -> f32 {
+                            *state = (*state * 1664525u + 1013904223u); // Всего одно умножение и сложение
+                            return f32(*state) / f32(0xffffffffu);
+                        }
+            `
+            */
+            `
+                        //Хеширование (Hashing). Простой генератор псевдослучайных чисел (PCG). Permuted Congruential Generator (Перемешанный конгруэнтный генератор).
+                        // Функция принимает указатель на состояние и обновляет его внутри
+                        fn random(seed: ptr<function, u32>) -> f32 {
+                            // 1. Извлекаем текущее значение, перемешиваем его
+                            var x = *seed;
+                            x = ((x >> 16u) ^ x) * 0x45d9f3bu;
+                            x = ((x >> 16u) ^ x) * 0x45d9f3bu;
+                            x = (x >> 16u) ^ x;
+
+                            // 2. Сохраняем обновленное состояние обратно
+                            *seed = x;
+
+                            // 3. Возвращаем нормализованное число 0.0 - 1.0
+                            return f32(x) / f32(0xffffffffu);
+                        }`
+            : `
+                        fn random(seed: ptr<function, u32>) -> f32 { return ${PSEUDO_RANDOM}; }`;
+
         let timeBuffer;//frameBuffer,
         // Если ваш GPU-цикл runAuto работает очень быстро (например, 200 FPS), то за одну миллисекунду может пройти несколько кадров.
         // В этом случае в течение этой миллисекунды uTime будет одинаковым целым числом, и все кадры внутри этого промежутка выдадут идентичные «случайные» числа.
@@ -652,7 +653,8 @@
                         @group(0) @binding(4) var<storage, read_write> messageBuffer: Message;
 //                        @group(0) @binding(5) var<uniform> frame: u32; //Для генератора случайных чисел
                         @group(0) @binding(5) var<uniform> uTime: u32; //Для генератора случайных чисел
-                        ${DEBUG_MODE ? `@group(0) @binding(6) var<storage, read_write> debug: Debug;` : ``}
+                        @group(0) @binding(6) var<storage, read> randomPool: array<f32>;// Используем динамический размер массива для гибкости
+                        ${DEBUG_MODE ? `@group(0) @binding(7) var<storage, read_write> debug: Debug;` : ``}
 
                         /* ВШИТЫЕ КОНСТАНТЫ (Generated by JS) */
                         const PI: f32 = ${π};
@@ -661,6 +663,16 @@
                         const POINTS_PER_STEP: u32 = ${Math.floor(pointsPerStep)}u;
 
                         ${random_gpu}
+fn get_lut_random(pointIndex: u32, offset: u32) -> f32 {
+    // Получаем текущее количество элементов в буфере LUT
+    let poolSize = arrayLength(&randomPool);
+    
+    // Вычисляем индекс со смещением по времени и порядковому номеру вызова (offset)
+    // Используем умножение на простые числа (например, 7), чтобы усилить хаос
+    let idx = (pointIndex + uTime + offset * 13u) % poolSize;
+    
+    return randomPool[idx];
+}
 
                         ${hyperbola_gpu}
 
@@ -812,6 +824,12 @@
                             let i = id.x;
                             if (i >= POINTS_PER_STEP) { return; }
 
+// Получаем 4 случайных числа для 4D координат
+let r1 = get_lut_random(i, 1u);
+let r2 = get_lut_random(i, 2u);
+let r3 = get_lut_random(i, 3u);
+let r4 = get_lut_random(i, 4u);
+
                             // Инициализируем локальное состояние один раз
                             var seed = i ^ uTime;
 
@@ -821,7 +839,7 @@
                                 debug.i = i;
                                 debug.j = seed;
                                 //debug.value = vec4<f32>(anglesBuf[currOffset + i].altitude, anglesBuf[currOffset + i].latitude, anglesBuf[currOffset + i].longitude, 0.0);
-                                debug.value = vec4<f32>(0.0, 0.0, 0.0, 0.0);
+                                debug.value = vec4<f32>(r1, r2, r3, r4);
                             }` : ``}
 
                             let prevOffset = u32(p_param.stepOffset - f32(POINTS_PER_STEP));
@@ -898,6 +916,46 @@
             device.queue.writeBuffer(posBuf, 0, initialPos);
             device.queue.writeBuffer(anglesBufGPU, 0, initialAngles);
 
+            //Анализ производительности показал, что генерация случайного числа внутри WebGPU крайне затратно.
+            //Например при totalSteps = 100; и pointsPerStep = 500; время итерации заняло 14.644 сек.
+            //по сравненияю со временем итерации без генератора случайного числа RANDOM_POINTS = false 4.733 сек.
+            //Поэтому случайные числа я вычисляю на JS.
+
+            //Создание буфера случайных чисел, которые затем будут использоваться в WebGPU вместо герерации случайного числа в WebGPU
+
+            // Функция проверки, является ли число простым
+            function isPrime(n) {
+                for (let i = 2, s = Math.sqrt(n); i <= s; i++) {
+                    if (n % i === 0) return false;
+                }
+                return n > 1;
+            }
+
+            // Находим ближайшее простое число к целевому значению
+            function getNearestPrime(target) {
+                let n = Math.floor(target);
+                while (!isPrime(n)) { n++; }
+                return n;
+            }
+
+            // Подготовка данных LUT
+            const totalPoints = pointsPerStep * totalSteps;; // Ваше текущее число точек
+            // Размер буфера: 25% от количества точек, но не более 4096
+            // Если totalPoints = 5000, то target = 1250. Ближайшее простое будет 1259.
+            const lutSize = getNearestPrime(Math.min(totalPoints * 0.25, 4096));
+
+            const randomData = new Float32Array(lutSize);
+            for (let i = 0; i < lutSize; i++) {
+                randomData[i] = Math.random();
+            }
+
+            // Создание буфера случайныз чисел на GPU
+            const randomBuffer = device.createBuffer({
+                size: randomData.byteLength,
+                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+            });
+            device.queue.writeBuffer(randomBuffer, 0, randomData);
+
             const entries = [
                 { binding: 0, resource: { buffer: posBuf } },
                 { binding: 1, resource: { buffer: velBuf } },
@@ -905,9 +963,10 @@
                 { binding: 3, resource: { buffer: anglesBufGPU } },
                 { binding: 4, resource: { buffer: messageArray } },
 //                { binding: 5, resource: { buffer: frameBuffer } }
-                { binding: 5, resource: { buffer: timeBuffer } }
+                { binding: 5, resource: { buffer: timeBuffer } },
+                { binding: 6, resource: { buffer: randomBuffer } }// Буфер LUT 
             ]
-            if (DEBUG_MODE) entries.push({ binding: 6, resource: { buffer: debugBuf } });
+            if (DEBUG_MODE) entries.push({ binding: 7, resource: { buffer: debugBuf } });
             bindGroup = device.createBindGroup({ layout: pipeline.getBindGroupLayout(0), entries: entries });
         }
 
