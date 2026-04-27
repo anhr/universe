@@ -663,17 +663,21 @@
                         const POINTS_PER_STEP: u32 = ${Math.floor(pointsPerStep)}u;
 
                         ${random_gpu}
-fn get_lut_random(pointIndex: u32, offset: u32) -> f32 {
-    // Получаем текущее количество элементов в буфере LUT
+fn get_lut_random(pointIndex: u32, counter: ptr<function, u32>) -> f32 {
     let poolSize = arrayLength(&randomPool);
     
-    // Вычисляем индекс со смещением по времени и порядковому номеру вызова (offset)
-    // Используем умножение на простые числа (например, 7), чтобы усилить хаос
-    let idx = (pointIndex + uTime + offset * 13u) % poolSize;
+    // 1. Берем текущее значение счетчика
+    let currentOffset = *counter;
+    
+    // 2. Вычисляем индекс (смешиваем индекс точки, время и текущий offset)
+    // Используем множители, чтобы "прыжки" по таблице были более хаотичными
+    let idx = (pointIndex + uTime + currentOffset * 13u) % poolSize;
+    
+    // 3. Увеличиваем счетчик для следующего вызова
+    *counter = currentOffset + 1u;
     
     return randomPool[idx];
 }
-
                         ${hyperbola_gpu}
 
                         fn CDF_S3(theta: f32) -> f32 {
@@ -824,11 +828,14 @@ fn get_lut_random(pointIndex: u32, offset: u32) -> f32 {
                             let i = id.x;
                             if (i >= POINTS_PER_STEP) { return; }
 
+                            // Создаем локальный счетчик для вычисления случайного 
+                            var callStep: u32 = 0u;
+
 // Получаем 4 случайных числа для 4D координат
-let r1 = get_lut_random(i, 1u);
-let r2 = get_lut_random(i, 2u);
-let r3 = get_lut_random(i, 3u);
-let r4 = get_lut_random(i, 4u);
+let r1 = get_lut_random(i, &callStep);
+let r2 = get_lut_random(i, &callStep);
+let r3 = get_lut_random(i, &callStep);
+let r4 = get_lut_random(i, &callStep);
 
                             // Инициализируем локальное состояние один раз
                             var seed = i ^ uTime;
