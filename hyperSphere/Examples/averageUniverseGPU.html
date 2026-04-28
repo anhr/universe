@@ -567,13 +567,17 @@
 
         //for random function in WebGPU
 
-        let random_gpu;
+        let random_gpu, ramdom_param, ramdom_param2;
         switch (RANDOM_POINTS) {
             case 0:
+                ramdom_param = ``;
+                ramdom_param2 = ``;
                 random_gpu = `
-                        fn random(seed: ptr<function, u32>) -> f32 { return ${PSEUDO_RANDOM}; }`
+                        fn random() -> f32 { return ${PSEUDO_RANDOM}; }`
                 break;
             case 1:
+                ramdom_param = `seed: ptr < function, u32 >`;
+                ramdom_param2 = `seed`;
                 /*Этот метод не дает прибавки в производительности но проигрывает в случайности
                 `
                             //LGC — Линейный конгруэнтный метод. Более быстрый, но чуть менее "хаотичный" вариант
@@ -586,7 +590,7 @@
                 random_gpu = `
                         //Хеширование (Hashing). Простой генератор псевдослучайных чисел (PCG). Permuted Congruential Generator (Перемешанный конгруэнтный генератор).
                         // Функция принимает указатель на состояние и обновляет его внутри
-                        fn random(seed: ptr<function, u32>) -> f32 {
+                        fn random(${ramdom_param}) -> f32 {
                             // 1. Извлекаем текущее значение, перемешиваем его
                             var x = *seed;
                             x = ((x >> 16u) ^ x) * 0x45d9f3bu;
@@ -601,6 +605,8 @@
                         }`
                 break;
             case 2:
+                ramdom_param = ``;
+                ramdom_param2 = ``;
                 random_gpu = `
                         fn random(pointIndex: u32, counter: ptr<function, u32>) -> f32 {
                             let poolSize = arrayLength(&randomPool);
@@ -700,7 +706,7 @@
                         @group(0) @binding(${bindingId++}) var<uniform> p_param: Params;
                         @group(0) @binding(${bindingId++}) var<storage, read_write> anglesBuf: array<PolarAngles>;
                         @group(0) @binding(${bindingId++}) var<storage, read_write> messageBuffer: Message;
-                        @group(0) @binding(${bindingId++}) var<uniform> uTime: u32; //Для генератора случайных чисел
+                        ${RANDOM_POINTS != 0 ? `@group(0) @binding(${bindingId++}) var<uniform> uTime: u32; //Для генератора случайных чисел` : ``}
                         ${RANDOM_POINTS === 2 ? `@group(0) @binding(${bindingId++}) var<storage, read> randomPool: array<f32>;// Используем динамический размер массива для гибкости` : ``}
                         ${DEBUG_MODE ? `@group(0) @binding(${bindingId++}) var<storage, read_write> debug: Debug;` : ``}
 
@@ -741,10 +747,10 @@
                             return (low + high) / 2.0;
                         }
 
-                        fn getDistance(dist: f32, R: f32, arc: f32, seed: ptr<function, u32>) -> f32 {
+                        fn getDistance(dist: f32, R: f32, arc: f32, ${ramdom_param}) -> f32 {
                             if (arc == 0.0) { return 0.0; }
                             let y = 1.0 / arc - 1.0 / PI;
-                            return dist / (1.0 + (y * R * random(seed)));
+                            return dist / (1.0 + (y * R * random(${ramdom_param2})));
                         }
 
                         // 2. Создание ортонормированного базиса в касательном пространстве
@@ -767,7 +773,7 @@
 
                             return mat3x4<f32>(e1, e2, e3);
                         }
-                        fn calculateNewPoint(startingPointParams: StartingPointParams, distance: f32, eta: f32, psi: f32, R: f32, seed: ptr<function, u32>) -> PolarAngles {
+                        fn calculateNewPoint(startingPointParams: StartingPointParams, distance: f32, eta: f32, psi: f32, R: f32, ${ramdom_param}) -> PolarAngles {
 
                             // Исходная точка
                             let P = startingPointParams.P;
@@ -783,7 +789,7 @@
                             // Обратное преобразование в углы
                             var angles = cartesianToPolarRandom(cos(delta) * P + R * sin(delta) * u);
 
-            				if (abs((abs(startingPointParams.lat) - PI / 2)) < 1e-12) { angles.longitude = random(seed) * 2 * PI - PI; }//Противоположная вершина находится на полюсе
+            				if (abs((abs(startingPointParams.lat) - PI / 2)) < 1e-12) { angles.longitude = random(${ramdom_param2}) * 2 * PI - PI; }//Противоположная вершина находится на полюсе
 
                             return angles;
                         }
@@ -800,25 +806,25 @@
                             return StartingPointParams(lat, alt, P, tangentBasis);
                         }
 
-                        fn getRandomAngles(startingPointParams: StartingPointParams, arc: f32, seed: ptr<function, u32>) -> PolarAngles {
+                        fn getRandomAngles(startingPointParams: StartingPointParams, arc: f32, ${ramdom_param}) -> PolarAngles {
 
                             // Правильное распределение для равномерного покрытия:
                             // Вероятность попасть в сферическую шапочку радиуса d пропорциональна sin^3(d/R)
-                            let R = 1.0; let distance = getDistance(R * inverseCDF_S3(random(seed)), R, arc, seed) * 2;
+                            let R = 1.0; let distance = getDistance(R * inverseCDF_S3(random(${ramdom_param2})), R, arc, ${ramdom_param2}) * 2;
 
                             let angles = calculateNewPoint(
                                 startingPointParams,
                                 distance,//максимальная дистанция находится на противоположной стороне гиперсферы
-                                acos(2.0 * random(seed) - 1),//eta. первый угол направления (полярный угол). 0 ≤ eta ≤ π
-                                random(seed) * 2 * PI,//psi. второй угол направления (азимутальный угол). 0 ≤ psi < 2π или -π ≤ psi ≤ π
+                                acos(2.0 * random(${ramdom_param2}) - 1),//eta. первый угол направления (полярный угол). 0 ≤ eta ≤ π
+                                random(${ramdom_param2}) * 2 * PI,//psi. второй угол направления (азимутальный угол). 0 ≤ psi < 2π или -π ≤ psi ≤ π
                                 R,
-                                seed
+                                ${ramdom_param2}
                             );
                             return angles;
                         }
 
-                        fn GetRandomVertice(arc: f32, oppositeVertice: PolarAngles, seed: ptr<function, u32>) -> PolarAngles {
-                            return getRandomAngles(getStartingPointParams(oppositeVertice), arc, seed);
+                        fn GetRandomVertice(arc: f32, oppositeVertice: PolarAngles, ${ramdom_param}) -> PolarAngles {
+                            return getRandomAngles(getStartingPointParams(oppositeVertice), arc, ${ramdom_param2});
                         }
 
                         /* МАТЕМАТИКА ВНУТРИ GPU */
@@ -872,14 +878,15 @@ let r3 = random(i, &callStep);
 let r4 = random(i, &callStep);
 */
 
+                            ${RANDOM_POINTS === 1 ? `
                             // Инициализируем локальное состояние один раз
-                            var seed = i ^ uTime;
+                            var seed = i ^ uTime;` : ``}
 
                             ${DEBUG_MODE ? `if (i == 0u) { isDebugInfo = true; } else { isDebugInfo = false; }` : ``}
                               
                             ${DEBUG_MODE ? `if (isDebugInfo) {
                                 debug.i = i;
-                                debug.j = seed;
+                                debug.j = 0;
                                 //debug.value = vec4<f32>(anglesBuf[currOffset + i].altitude, anglesBuf[currOffset + i].latitude, anglesBuf[currOffset + i].longitude, 0.0);
                                 //debug.value = vec4<f32>(r1, r2, r3, r4);
                                 debug.value = vec4<f32>(0.0, 0.0, 0.0, 0.0);
@@ -902,7 +909,7 @@ let r4 = random(i, &callStep);
                                 let arc = PI - hyperbola_gpu((dist / p_param.radiusPrev / 2.0) * PI, i);
 
                                 // Случайное направление для точки j (может быть противоположным для лучшего разведения)
-                                let polarNoise2 = GetRandomVertice(arc, angles2, &seed);
+                                let polarNoise2 = GetRandomVertice(arc, angles2${RANDOM_POINTS === 1 ? `, &seed` : ``});
                                 let noise2 = polarToCartesian(polarNoise2.latitude, polarNoise2.longitude, polarNoise2.altitude, p_param.radiusPrev);
 
                                 // Вектор от i к j
@@ -1001,9 +1008,8 @@ let r4 = random(i, &callStep);
                 { binding: bindingId++, resource: { buffer: paramBuf } },
                 { binding: bindingId++, resource: { buffer: anglesBufGPU } },
                 { binding: bindingId++, resource: { buffer: messageArray } },
-//                { binding: bindingId++, resource: { buffer: frameBuffer } }
-                { binding: bindingId++, resource: { buffer: timeBuffer } },
             ]
+            if (RANDOM_POINTS != 0) entries.push({ binding: bindingId++, resource: { buffer: timeBuffer } });
             if (RANDOM_POINTS === 2) entries.push({ binding: bindingId++, resource: { buffer: randomBuffer } });// Буфер LUT 
             if (DEBUG_MODE) entries.push({ binding: bindingId++, resource: { buffer: debugBuf } });
             bindGroup = device.createBindGroup({ layout: pipeline.getBindGroupLayout(0), entries: entries });
