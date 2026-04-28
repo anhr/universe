@@ -110,7 +110,31 @@
 
         // --- ГЛОБАЛЬНАЯ КОНФИГУРАЦИЯ ---
         const DEBUG_MODE = true;
-        const RANDOM_POINTS = false;
+
+        //randpm
+
+        //select one:
+
+        //Случайная точка не вычисляется. Вместо этого возвращается PSEUDO_RANDOM
+        const RANDOM_POINTS = 0;
+
+        //Вычисляется случайное число.
+        //В GPU для получения случайного числа применяется хеширование(Hashing).Простой генератор псевдослучайных чисел(PCG).Permuted Congruential Generator(Перемешанный конгруэнтный генератор).
+        //Этот метод лучше всего вычисляет случайное число, но требует много времени на вычисления.
+        //const RANDOM_POINTS = 1;
+
+        //Вычисляется случайное число.
+        //Анализ производительности вычислений в GPU показал, что генерация случайного числа внутри WebGPU по методу хеширования(Hashing) (RANDOM_POINTS = 1) крайне затратно.
+        //Например при totalSteps = 100; и pointsPerStep = 500; время итерации заняло 14.644 сек.
+        //по сравненияю со временем итерации без генератора случайного числа RANDOM_POINTS = false 4.733 сек.
+        //Поэтому для GPU применяю метод Lookup Table (LUT) — таблицу предварительно вычисленных значений.
+        //Случайные числа вычисляются на JS и затем через буфер передаются на GPU.
+        //Этот метод работает гораздо быстрее но случайные числа не сосвем случайные.
+        //const RANDOM_POINTS = 2;
+
+        const PSEUDO_RANDOM = 0.5;
+        const random = RANDOM_POINTS ? Math.random : () => { return PSEUDO_RANDOM; };
+
         const LOG = false;//log attributes to console
         const LOTS_OF_POINTS = true;
         const totalSteps = LOTS_OF_POINTS ? 100 : 10;
@@ -123,8 +147,6 @@
         //const p = 1;// Два отрезка: вертикальный и горизонтальный
         const p = 0.99;
 
-        const PSEUDO_RANDOM = 0.5;
-        const random = RANDOM_POINTS ? Math.random : () => { return PSEUDO_RANDOM; };
 
         const baseRadius = 0.1;
         const radiusMax = 1;
@@ -545,17 +567,23 @@
 
         //for random function in WebGPU
 
-        const random_gpu = RANDOM_POINTS ?
-            /*Этот метод не дает прибавки в производительности но проигрывает в случайности
-            `
-                        //LGC — Линейный конгруэнтный метод. Более быстрый, но чуть менее "хаотичный" вариант
-                        fn random(state: ptr<function, u32>) -> f32 {
-                            *state = (*state * 1664525u + 1013904223u); // Всего одно умножение и сложение
-                            return f32(*state) / f32(0xffffffffu);
-                        }
-            `
-            */
-            `
+        let random_gpu;
+        switch (RANDOM_POINTS) {
+            case 0:
+                random_gpu = `
+                        fn random(seed: ptr<function, u32>) -> f32 { return ${PSEUDO_RANDOM}; }`
+                break;
+            case 1:
+                /*Этот метод не дает прибавки в производительности но проигрывает в случайности
+                `
+                            //LGC — Линейный конгруэнтный метод. Более быстрый, но чуть менее "хаотичный" вариант
+                            fn random(state: ptr<function, u32>) -> f32 {
+                                *state = (*state * 1664525u + 1013904223u); // Всего одно умножение и сложение
+                                return f32(*state) / f32(0xffffffffu);
+                            }
+                `
+                */
+                random_gpu = `
                         //Хеширование (Hashing). Простой генератор псевдослучайных чисел (PCG). Permuted Congruential Generator (Перемешанный конгруэнтный генератор).
                         // Функция принимает указатель на состояние и обновляет его внутри
                         fn random(seed: ptr<function, u32>) -> f32 {
@@ -571,8 +599,27 @@
                             // 3. Возвращаем нормализованное число 0.0 - 1.0
                             return f32(x) / f32(0xffffffffu);
                         }`
-            : `
-                        fn random(seed: ptr<function, u32>) -> f32 { return ${PSEUDO_RANDOM}; }`;
+                break;
+            case 2:
+                random_gpu = `
+                        fn random(pointIndex: u32, counter: ptr<function, u32>) -> f32 {
+                            let poolSize = arrayLength(&randomPool);
+
+                            // 1. Берем текущее значение счетчика
+                            let currentOffset = *counter;
+
+                            // 2. Вычисляем индекс (смешиваем индекс точки, время и текущий offset)
+                            // Используем множители, чтобы "прыжки" по таблице были более хаотичными
+                            let idx = (pointIndex + uTime + currentOffset * 13u) % poolSize;
+
+                            // 3. Увеличиваем счетчик для следующего вызова
+                            *counter = currentOffset + 1u;
+
+                            return randomPool[idx];
+                        }`
+                break;
+            default: console.error('Invalid RANDOM_POINTS = ' + RANDOM_POINTS);
+        }
 
         let timeBuffer;//frameBuffer,
         // Если ваш GPU-цикл runAuto работает очень быстро (например, 200 FPS), то за одну миллисекунду может пройти несколько кадров.
@@ -610,6 +657,8 @@
             device = await adapter.requestDevice();
             document.getElementById('activeGpu').innerText = `Активен: ${await getSafeAdapterName(adapter, idx)}`;
 
+            let bindingId = 0;
+
             // ГЕНЕРАЦИЯ ШЕЙДЕРА (МЕТАПРОГРАММИРОВАНИЕ)
             const dynamicShaderCode = `
                         /* СТРУКТУРЫ ДАННЫХ */
@@ -646,15 +695,14 @@
                         : ``}
 
                         /* ПРИВЯЗКИ */
-                        @group(0) @binding(0) var<storage, read_write> positions: array<vec4<f32>>;
-                        @group(0) @binding(1) var<storage, read_write> velocities: array<vec4<f32>>;
-                        @group(0) @binding(2) var<uniform> p_param: Params;
-                        @group(0) @binding(3) var<storage, read_write> anglesBuf: array<PolarAngles>;
-                        @group(0) @binding(4) var<storage, read_write> messageBuffer: Message;
-//                        @group(0) @binding(5) var<uniform> frame: u32; //Для генератора случайных чисел
-                        @group(0) @binding(5) var<uniform> uTime: u32; //Для генератора случайных чисел
-                        @group(0) @binding(6) var<storage, read> randomPool: array<f32>;// Используем динамический размер массива для гибкости
-                        ${DEBUG_MODE ? `@group(0) @binding(7) var<storage, read_write> debug: Debug;` : ``}
+                        @group(0) @binding(${bindingId++}) var<storage, read_write> positions: array<vec4<f32>>;
+                        @group(0) @binding(${bindingId++}) var<storage, read_write> velocities: array<vec4<f32>>;
+                        @group(0) @binding(${bindingId++}) var<uniform> p_param: Params;
+                        @group(0) @binding(${bindingId++}) var<storage, read_write> anglesBuf: array<PolarAngles>;
+                        @group(0) @binding(${bindingId++}) var<storage, read_write> messageBuffer: Message;
+                        @group(0) @binding(${bindingId++}) var<uniform> uTime: u32; //Для генератора случайных чисел
+                        ${RANDOM_POINTS === 2 ? `@group(0) @binding(${bindingId++}) var<storage, read> randomPool: array<f32>;// Используем динамический размер массива для гибкости` : ``}
+                        ${DEBUG_MODE ? `@group(0) @binding(${bindingId++}) var<storage, read_write> debug: Debug;` : ``}
 
                         /* ВШИТЫЕ КОНСТАНТЫ (Generated by JS) */
                         const PI: f32 = ${π};
@@ -663,21 +711,7 @@
                         const POINTS_PER_STEP: u32 = ${Math.floor(pointsPerStep)}u;
 
                         ${random_gpu}
-fn get_lut_random(pointIndex: u32, counter: ptr<function, u32>) -> f32 {
-    let poolSize = arrayLength(&randomPool);
-    
-    // 1. Берем текущее значение счетчика
-    let currentOffset = *counter;
-    
-    // 2. Вычисляем индекс (смешиваем индекс точки, время и текущий offset)
-    // Используем множители, чтобы "прыжки" по таблице были более хаотичными
-    let idx = (pointIndex + uTime + currentOffset * 13u) % poolSize;
-    
-    // 3. Увеличиваем счетчик для следующего вызова
-    *counter = currentOffset + 1u;
-    
-    return randomPool[idx];
-}
+
                         ${hyperbola_gpu}
 
                         fn CDF_S3(theta: f32) -> f32 {
@@ -830,12 +864,13 @@ fn get_lut_random(pointIndex: u32, counter: ptr<function, u32>) -> f32 {
 
                             // Создаем локальный счетчик для вычисления случайного 
                             var callStep: u32 = 0u;
-
+/*
 // Получаем 4 случайных числа для 4D координат
-let r1 = get_lut_random(i, &callStep);
-let r2 = get_lut_random(i, &callStep);
-let r3 = get_lut_random(i, &callStep);
-let r4 = get_lut_random(i, &callStep);
+let r1 = random(i, &callStep);
+let r2 = random(i, &callStep);
+let r3 = random(i, &callStep);
+let r4 = random(i, &callStep);
+*/
 
                             // Инициализируем локальное состояние один раз
                             var seed = i ^ uTime;
@@ -846,7 +881,8 @@ let r4 = get_lut_random(i, &callStep);
                                 debug.i = i;
                                 debug.j = seed;
                                 //debug.value = vec4<f32>(anglesBuf[currOffset + i].altitude, anglesBuf[currOffset + i].latitude, anglesBuf[currOffset + i].longitude, 0.0);
-                                debug.value = vec4<f32>(r1, r2, r3, r4);
+                                //debug.value = vec4<f32>(r1, r2, r3, r4);
+                                debug.value = vec4<f32>(0.0, 0.0, 0.0, 0.0);
                             }` : ``}
 
                             let prevOffset = u32(p_param.stepOffset - f32(POINTS_PER_STEP));
@@ -923,11 +959,6 @@ let r4 = get_lut_random(i, &callStep);
             device.queue.writeBuffer(posBuf, 0, initialPos);
             device.queue.writeBuffer(anglesBufGPU, 0, initialAngles);
 
-            //Анализ производительности показал, что генерация случайного числа внутри WebGPU крайне затратно.
-            //Например при totalSteps = 100; и pointsPerStep = 500; время итерации заняло 14.644 сек.
-            //по сравненияю со временем итерации без генератора случайного числа RANDOM_POINTS = false 4.733 сек.
-            //Поэтому случайные числа я вычисляю на JS.
-
             //Создание буфера случайных чисел, которые затем будут использоваться в WebGPU вместо герерации случайного числа в WebGPU
 
             // Функция проверки, является ли число простым
@@ -963,17 +994,18 @@ let r4 = get_lut_random(i, &callStep);
             });
             device.queue.writeBuffer(randomBuffer, 0, randomData);
 
+            bindingId = 0;
             const entries = [
-                { binding: 0, resource: { buffer: posBuf } },
-                { binding: 1, resource: { buffer: velBuf } },
-                { binding: 2, resource: { buffer: paramBuf } },
-                { binding: 3, resource: { buffer: anglesBufGPU } },
-                { binding: 4, resource: { buffer: messageArray } },
-//                { binding: 5, resource: { buffer: frameBuffer } }
-                { binding: 5, resource: { buffer: timeBuffer } },
-                { binding: 6, resource: { buffer: randomBuffer } }// Буфер LUT 
+                { binding: bindingId++, resource: { buffer: posBuf } },
+                { binding: bindingId++, resource: { buffer: velBuf } },
+                { binding: bindingId++, resource: { buffer: paramBuf } },
+                { binding: bindingId++, resource: { buffer: anglesBufGPU } },
+                { binding: bindingId++, resource: { buffer: messageArray } },
+//                { binding: bindingId++, resource: { buffer: frameBuffer } }
+                { binding: bindingId++, resource: { buffer: timeBuffer } },
             ]
-            if (DEBUG_MODE) entries.push({ binding: 7, resource: { buffer: debugBuf } });
+            if (RANDOM_POINTS === 2) entries.push({ binding: bindingId++, resource: { buffer: randomBuffer } });// Буфер LUT 
+            if (DEBUG_MODE) entries.push({ binding: bindingId++, resource: { buffer: debugBuf } });
             bindGroup = device.createBindGroup({ layout: pipeline.getBindGroupLayout(0), entries: entries });
         }
 
