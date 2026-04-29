@@ -116,12 +116,12 @@
         //select one:
 
         //Случайная точка не вычисляется. Вместо этого возвращается PSEUDO_RANDOM
-        const RANDOM_POINTS = 0;
+        //const RANDOM_POINTS = 0;
 
         //Вычисляется случайное число.
         //В GPU для получения случайного числа применяется хеширование(Hashing).Простой генератор псевдослучайных чисел(PCG).Permuted Congruential Generator(Перемешанный конгруэнтный генератор).
         //Этот метод лучше всего вычисляет случайное число, но требует много времени на вычисления.
-        //const RANDOM_POINTS = 1;
+        const RANDOM_POINTS = 1;
 
         //Вычисляется случайное число.
         //Анализ производительности вычислений в GPU показал, что генерация случайного числа внутри WebGPU по методу хеширования(Hashing) (RANDOM_POINTS = 1) крайне затратно.
@@ -133,7 +133,14 @@
         //const RANDOM_POINTS = 2;
 
         const PSEUDO_RANDOM = 0.5;
-        const random = RANDOM_POINTS ? Math.random : () => { return PSEUDO_RANDOM; };
+        let random, randomCount = 0;
+        if (DEBUG_MODE) {
+            random = RANDOM_POINTS ? () => {
+                randomCount++;
+                return Math.random();
+            } : () => { return PSEUDO_RANDOM; };
+        }
+        else random = RANDOM_POINTS ? Math.random : () => { return PSEUDO_RANDOM; };
 
         const LOG = false;//log attributes to console
         const LOTS_OF_POINTS = true;
@@ -576,6 +583,8 @@
                         fn random() -> f32 { return ${PSEUDO_RANDOM}; }`
                 break;
             case 1:
+                //Хеширование (Hashing). Простой генератор псевдослучайных чисел (PCG). Permuted Congruential Generator (Перемешанный конгруэнтный генератор).
+                // Функция принимает указатель на состояние и обновляет его внутри
                 ramdom_param = `seed: ptr < function, u32 >`;
                 ramdom_param2 = `seed`;
                 /*Этот метод не дает прибавки в производительности но проигрывает в случайности
@@ -587,9 +596,24 @@
                             }
                 `
                 */
-                random_gpu = `
-                        //Хеширование (Hashing). Простой генератор псевдослучайных чисел (PCG). Permuted Congruential Generator (Перемешанный конгруэнтный генератор).
-                        // Функция принимает указатель на состояние и обновляет его внутри
+                random_gpu = 
+/*                    
+                    `
+                        fn random(${ramdom_param}) -> f32 {
+                            var x = * seed;
+
+                            // Один цикл перемешивания (PCG-подобный)
+                            x = x * 747796405u + 2891336453u;
+                            let word = ((x >> ((x >> 28u) + 4u)) ^ x) * 277803737u;
+                            let result = (word >> 22u) ^ word;
+    
+                            * seed = x; // Сохраняем состояние для следующего вызова
+
+                            // Быстрая конвертация в float 0.0 - 1.0
+                            return bitcast < f32 > ((result >> 9u) | 0x3f800000u) - 1.0;
+                        }`
+*/                        
+                `
                         fn random(${ramdom_param}) -> f32 {
                             // 1. Извлекаем текущее значение, перемешиваем его
                             var x = *seed;
@@ -605,10 +629,11 @@
                         }`
                 break;
             case 2:
-                ramdom_param = ``;
-                ramdom_param2 = ``;
+                ramdom_param = `pointIndex: u32, counter: ptr<function, u32>`;
+                ramdom_param2 = `pointIndex, counter`;
                 random_gpu = `
-                        fn random(pointIndex: u32, counter: ptr<function, u32>) -> f32 {
+//                        fn random(${ramdom_param}) -> f32 { return ${PSEUDO_RANDOM}; }
+                        fn random(${ramdom_param}) -> f32 {
                             let poolSize = arrayLength(&randomPool);
 
                             // 1. Берем текущее значение счетчика
@@ -617,10 +642,12 @@
                             // 2. Вычисляем индекс (смешиваем индекс точки, время и текущий offset)
                             // Используем множители, чтобы "прыжки" по таблице были более хаотичными
                             let idx = (pointIndex + uTime + currentOffset * 13u) % poolSize;
+//let t = uTime;
+//let idx = (pointIndex + currentOffset) % poolSize;
 
                             // 3. Увеличиваем счетчик для следующего вызова
                             *counter = currentOffset + 1u;
-
+//return 0.5;
                             return randomPool[idx];
                         }`
                 break;
@@ -868,29 +895,23 @@
                             let i = id.x;
                             if (i >= POINTS_PER_STEP) { return; }
 
+                            ${RANDOM_POINTS === 2 ? `
                             // Создаем локальный счетчик для вычисления случайного 
-                            var callStep: u32 = 0u;
+                            var callStep: u32 = 0u;` : ``}
 /*
 // Получаем 4 случайных числа для 4D координат
-let r1 = random(i, &callStep);
-let r2 = random(i, &callStep);
-let r3 = random(i, &callStep);
-let r4 = random(i, &callStep);
+let r1 = random2(i, &callStep);
+let r2 = random2(i, &callStep);
+let r3 = random2(i, &callStep);
+let r4 = random2(i, &callStep);
 */
+
 
                             ${RANDOM_POINTS === 1 ? `
                             // Инициализируем локальное состояние один раз
                             var seed = i ^ uTime;` : ``}
 
                             ${DEBUG_MODE ? `if (i == 0u) { isDebugInfo = true; } else { isDebugInfo = false; }` : ``}
-                              
-                            ${DEBUG_MODE ? `if (isDebugInfo) {
-                                debug.i = i;
-                                debug.j = 0;
-                                //debug.value = vec4<f32>(anglesBuf[currOffset + i].altitude, anglesBuf[currOffset + i].latitude, anglesBuf[currOffset + i].longitude, 0.0);
-                                //debug.value = vec4<f32>(r1, r2, r3, r4);
-                                debug.value = vec4<f32>(0.0, 0.0, 0.0, 0.0);
-                            }` : ``}
 
                             let prevOffset = u32(p_param.stepOffset - f32(POINTS_PER_STEP));
                             let currOffset = u32(p_param.stepOffset);
@@ -909,7 +930,7 @@ let r4 = random(i, &callStep);
                                 let arc = PI - hyperbola_gpu((dist / p_param.radiusPrev / 2.0) * PI, i);
 
                                 // Случайное направление для точки j (может быть противоположным для лучшего разведения)
-                                let polarNoise2 = GetRandomVertice(arc, angles2${RANDOM_POINTS === 1 ? `, &seed` : ``});
+                                let polarNoise2 = GetRandomVertice(arc, angles2${RANDOM_POINTS === 1 ? `, &seed` : RANDOM_POINTS === 2 ? `, i, &callStep` : ``});
                                 let noise2 = polarToCartesian(polarNoise2.latitude, polarNoise2.longitude, polarNoise2.altitude, p_param.radiusPrev);
 
                                 // Вектор от i к j
@@ -926,6 +947,15 @@ let r4 = random(i, &callStep);
                                 let m = REPULSION / d2;
                                 force.x += (d.x / dist) * m; force.y += (d.y / dist) * m; force.z += (d.z / dist) * m; force.w += (d.w / dist) * m;
                             }
+
+                            ${DEBUG_MODE ? `if (isDebugInfo) {
+                                debug.i = i;
+                                debug.j = 0;
+                                //debug.value = vec4<f32>(anglesBuf[currOffset + i].altitude, anglesBuf[currOffset + i].latitude, anglesBuf[currOffset + i].longitude, 0.0);
+                                //debug.value = vec4<f32>(r1, r2, r3, r4);
+                                debug.value = vec4<f32>(0.0, 0.0, 0.0, 0.0);
+                            }` : ``}
+
                             
                             // ИНТЕГРАЦИЯ СКОРОСТИ И ПОЗИЦИИ
                             let v_new = velocities[i] * DAMPING + force;
