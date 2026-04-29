@@ -133,17 +133,17 @@
         //const RANDOM_POINTS = 2;
 
         const PSEUDO_RANDOM = 0.5;
-        let random, randomCount = 0;
+        let random;//, randomCount = 0;
         if (DEBUG_MODE) {
             random = RANDOM_POINTS ? () => {
-                randomCount++;
+                //randomCount++;
                 return Math.random();
             } : () => { return PSEUDO_RANDOM; };
         }
         else random = RANDOM_POINTS ? Math.random : () => { return PSEUDO_RANDOM; };
 
         const LOG = false;//log attributes to console
-        const LOTS_OF_POINTS = true;
+        const LOTS_OF_POINTS = false;
         const totalSteps = LOTS_OF_POINTS ? 100 : 10;
         const pointsPerStep = LOTS_OF_POINTS ? 500 : 5;
         const count = totalSteps * pointsPerStep;
