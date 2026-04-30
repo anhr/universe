@@ -112,6 +112,7 @@
         const DEBUG_MODE = true;
 
         //randpm
+        //ВНИМАНИЕ! В yandex браузере на GPU считает гораздо быстрее.
 
         //select one:
 
@@ -132,6 +133,9 @@
         //Этот метод работает гораздо быстрее но случайные числа не сосвем случайные.
         //const RANDOM_POINTS = 2;
 
+        //Метод Weyl Sequence (последовательность Вейля) или просто линейным конгруэнтным методом поверх хеша.
+        //const RANDOM_POINTS = 3;
+
         const PSEUDO_RANDOM = 0.5;
         let random;//, randomCount = 0;
         if (DEBUG_MODE) {
@@ -143,9 +147,9 @@
         else random = RANDOM_POINTS ? Math.random : () => { return PSEUDO_RANDOM; };
 
         const LOG = false;//log attributes to console
-        const LOTS_OF_POINTS = false;
-        const totalSteps = LOTS_OF_POINTS ? 100 : 10;
-        const pointsPerStep = LOTS_OF_POINTS ? 500 : 5;
+        const LOTS_OF_POINTS = true;
+        const totalSteps = LOTS_OF_POINTS ? 1000 : 10;
+        const pointsPerStep = LOTS_OF_POINTS ? 5000 : 5;
         const count = totalSteps * pointsPerStep;
 
         //Hyperbola parametr. See calculateHyperbola.
@@ -626,6 +630,7 @@
 
                             // 3. Возвращаем нормализованное число 0.0 - 1.0
                             return f32(x) / f32(0xffffffffu);
+//return fract(1.5);
                         }`
                 break;
             case 2:
@@ -651,6 +656,35 @@
                             return randomPool[idx];
                         }`
                 break;
+            case 3:
+                //Метод Weyl Sequence (последовательность Вейля) или просто линейным конгруэнтным методом поверх хеша.
+                ramdom_param = `state: ptr<function, f32>`;
+                ramdom_param2 = `state`;
+                random_gpu = `
+                            // Качественный хеш для инициализации (выполняется 1 раз)
+                            fn hash_u32(n: u32) -> u32 {
+                                var x = n;
+                                x = ((x >> 16u) ^ x) * 0x45d9f3bu;
+                                x = ((x >> 16u) ^ x) * 0x45d9f3bu;
+                                x = (x >> 16u) ^ x;
+                                return x;
+                            }
+
+                            // Сверхбыстрая функция random (выполняется многократно)
+                            // Используем f32 для работы с дробной частью через fract
+                            fn random(${ramdom_param}) -> f32 {
+                                // Константа: иррациональное число (например, золотое сечение или корень из 2)
+                                // Это гарантирует, что дробная часть будет меняться максимально хаотично
+                                let phi: f32 = 0.61803398875;
+
+                                // Быстрая арифметика: прибавляем константу
+                                // Это и есть последовательность Вейля: x = fract(x + k)
+                                *state = fract(*state + phi);
+
+                                return *state;
+//return 0.5;
+                            }`
+                break;
             default: console.error('Invalid RANDOM_POINTS = ' + RANDOM_POINTS);
         }
 
@@ -669,19 +703,24 @@
 
         async function findAdapters() {
             const select = document.getElementById('gpuSelect');
-            if (!navigator.gpu) { select.innerHTML = '<option value="-1">WebGPU не поддерживается</option>'; return; }
             try {
+                if (!navigator.gpu) {
+                    throw new Error('WebGPU is not supported');
+//                    select.innerHTML = '<option value="-1">WebGPU не поддерживается</option>';
+                    return;
+                }
                 if (navigator.gpu.enumerateAdapters) availableAdapters = await navigator.gpu.enumerateAdapters();
                 if (availableAdapters.length === 0) {
                     const high = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
                     if (high) availableAdapters.push(high);
+                    else throw new Error('No available adapters');
                 }
                 select.innerHTML = '';
                 for (let i = 0; i < availableAdapters.length; i++) {
                     const displayName = await getSafeAdapterName(availableAdapters[i], i);
                     const opt = document.createElement('option'); opt.value = i; opt.text = displayName; select.appendChild(opt);
                 }
-            } catch (e) { select.innerHTML = '<option value="-1">Ошибка поиска</option>'; }
+            } catch (e) { select.innerHTML = '<option value="-1">' + e.message + '</option>'; }
         }
 
         async function initWebGPU(idx) {
@@ -895,23 +934,37 @@
                             let i = id.x;
                             if (i >= POINTS_PER_STEP) { return; }
 
+                            ${RANDOM_POINTS === 3 ? `
+                            //  Один раз вычисляем качественное зерно через хеш
+                            // Смешиваем ID точки и время
+                            let initial_hash = hash_u32(i ^ uTime);
+
+                            // Превращаем в f32 от 0 до 1 для работы функции random
+                            var state: f32 = f32(initial_hash) / f32(0xffffffffu);` : ``}
                             ${RANDOM_POINTS === 2 ? `
                             // Создаем локальный счетчик для вычисления случайного 
                             var callStep: u32 = 0u;` : ``}
-/*
-// Получаем 4 случайных числа для 4D координат
-let r1 = random2(i, &callStep);
-let r2 = random2(i, &callStep);
-let r3 = random2(i, &callStep);
-let r4 = random2(i, &callStep);
-*/
-
 
                             ${RANDOM_POINTS === 1 ? `
                             // Инициализируем локальное состояние один раз
                             var seed = i ^ uTime;` : ``}
-
+/*
+// Получаем 4 случайных числа
+let r1 = random(&state);
+let r2 = random(&state);
+let r3 = random(&state);
+let r4 = random(&state);
+*/
                             ${DEBUG_MODE ? `if (i == 0u) { isDebugInfo = true; } else { isDebugInfo = false; }` : ``}
+
+                            ${DEBUG_MODE ? `if (isDebugInfo) {
+                                debug.i = i;
+                                debug.j = 0;
+                                //debug.value = vec4<f32>(anglesBuf[currOffset + i].altitude, anglesBuf[currOffset + i].latitude, anglesBuf[currOffset + i].longitude, 0.0);
+                                //debug.value = vec4<f32>(r1, r2, r3, r4);
+                                debug.value = vec4<f32>(0.0, 0.0, 0.0, 0.0);
+                            }` : ``}
+
 
                             let prevOffset = u32(p_param.stepOffset - f32(POINTS_PER_STEP));
                             let currOffset = u32(p_param.stepOffset);
@@ -930,7 +983,10 @@ let r4 = random2(i, &callStep);
                                 let arc = PI - hyperbola_gpu((dist / p_param.radiusPrev / 2.0) * PI, i);
 
                                 // Случайное направление для точки j (может быть противоположным для лучшего разведения)
-                                let polarNoise2 = GetRandomVertice(arc, angles2${RANDOM_POINTS === 1 ? `, &seed` : RANDOM_POINTS === 2 ? `, i, &callStep` : ``});
+                                let polarNoise2 = GetRandomVertice(arc, angles2${
+                                    RANDOM_POINTS === 1 ? `, &seed` :
+                                    RANDOM_POINTS === 2 ? `, i, &callStep` :
+                                    RANDOM_POINTS === 3 ? `, &state` : ``});
                                 let noise2 = polarToCartesian(polarNoise2.latitude, polarNoise2.longitude, polarNoise2.altitude, p_param.radiusPrev);
 
                                 // Вектор от i к j
@@ -947,15 +1003,6 @@ let r4 = random2(i, &callStep);
                                 let m = REPULSION / d2;
                                 force.x += (d.x / dist) * m; force.y += (d.y / dist) * m; force.z += (d.z / dist) * m; force.w += (d.w / dist) * m;
                             }
-
-                            ${DEBUG_MODE ? `if (isDebugInfo) {
-                                debug.i = i;
-                                debug.j = 0;
-                                //debug.value = vec4<f32>(anglesBuf[currOffset + i].altitude, anglesBuf[currOffset + i].latitude, anglesBuf[currOffset + i].longitude, 0.0);
-                                //debug.value = vec4<f32>(r1, r2, r3, r4);
-                                debug.value = vec4<f32>(0.0, 0.0, 0.0, 0.0);
-                            }` : ``}
-
                             
                             // ИНТЕГРАЦИЯ СКОРОСТИ И ПОЗИЦИИ
                             let v_new = velocities[i] * DAMPING + force;
