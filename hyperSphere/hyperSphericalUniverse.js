@@ -19,7 +19,8 @@ import SphericalUniverse from '../sphere/sphericalUniverse.js';
 import HyperSphere3D from '../../../commonNodeJS/master/HyperSphere/hyperSphere3D.js';
 
 //select one:
-import distanceOfVertices from '../../../commonNodeJS/master/HyperSphere/distanceOfVertices/averageVerticesHSphere.js';
+//import distanceOfVertices from '../../../commonNodeJS/master/HyperSphere/distanceOfVertices/averageVerticesHSphere.js';
+import distanceOfVertices from './averageVerticesHUniverse.js';
 //or
 //import distanceOfVertices from '../../../commonNodeJS/master/HyperSphere/distanceOfVertices/middleVerticesHSphere.js';
 
