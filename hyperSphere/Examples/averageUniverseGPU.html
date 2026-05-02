@@ -121,7 +121,7 @@
 
         //Вычисляется случайное число.
         //В GPU для получения случайного числа применяется хеширование(Hashing).Простой генератор псевдослучайных чисел(PCG).Permuted Congruential Generator(Перемешанный конгруэнтный генератор).
-        //Этот метод лучше всего вычисляет случайное число, но требует много времени на вычисления.
+        //Этот метод лучше всего вычисляет случайное число, но требует много времени на вычисления если не оптимизировать Google Chrome. Инструкцию по оттимизации смотри в D:\My documents\MyProjects\webgl\three.js\GitHub\universe\main\hyperSphere\webGPUHUniverse.js
         const RANDOM_POINTS = 1;
 
         //Вычисляется случайное число.
@@ -148,8 +148,8 @@
 
         const LOG = false;//log attributes to console
         const LOTS_OF_POINTS = true;
-        const totalSteps = LOTS_OF_POINTS ? 100 : 10;
-        const pointsPerStep = LOTS_OF_POINTS ? 500 : 5;
+        const totalSteps = LOTS_OF_POINTS ? 1000 : 10;
+        const pointsPerStep = LOTS_OF_POINTS ? 5000 : 5;
         const count = totalSteps * pointsPerStep;
 
         //Hyperbola parametr. See calculateHyperbola.
