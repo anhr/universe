@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>GPU Hyperspherical Universe - Engine</title>
+    <style>
+        body {
+            background: #000;
+            color: #00ffcc;
+            font-family: monospace;
+            padding: 20px;
+            line-height: 1.5;
+        }
+
+        .engine-status {
+            border: 1px solid #00ffcc;
+            padding: 15px;
+            width: 400px;
+        }
+
+        #log {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="engine-status">
+        <h3>ENGINE: averageUniverse</h3>
+        <div>СТАТУС: <span id="status">ОЖИДАНИЕ</span></div>
+        <div>ОТ КОГО: <span id="client">---</span></div>
+        <div>ПРОГРЕСС: <span id="progress">0 / 0 | R: 0.00</span></div>
+    </div>
+    <div id="log"></div>
+
+    <script type="module">
+        const socket = new WebSocket('ws://localhost:8080');
+        socket.binaryType = 'arraybuffer';
+
+        let device, pipeline, bindGroup;
+        let posBuf, velBuf, paramBuf, anglesBufGPU, messageArray, timeBuffer, invCdfBuffer;
+
+        // Константы из вашего алгоритма
+        const DAMPING = 0.95;
+        const REPULSION_BASE = 50;
+
+        async function initWebGPU() {
+            if (!navigator.gpu) return log("WebGPU не поддерживается!");
+            const adapter = await navigator.gpu.requestAdapter();
+            device = await adapter.requestDevice();
+            log("GPU Device готов");
+        }
+
+        socket.onmessage = async (event) => {
+            if (typeof event.data === 'string') {
+                window.currentConfig = JSON.parse(event.data);
+                document.getElementById('status').innerText = "ПОЛУЧЕН КОНФИГ";
+                document.getElementById('client').innerText = event.origin || "Localhost";
+            } else {
+                // Пришли бинарные данные (начальные углы)
+                const initialAngles = new Float32Array(event.data);
+                await runCompute(window.currentConfig, initialAngles);
+            }
+        };
+
+        async function runCompute(config, initialAngles) {
+            log("Запуск вычислений...");
+            const { p, baseRadius, radiusMax, totalSteps, pointsPerStep } = config;
+            const count = totalSteps * pointsPerStep;
+            const radiusStep = (radiusMax - baseRadius) / (totalSteps - 1);
+            const REPULSION_STRENGTH = REPULSION_BASE / pointsPerStep;
+
+            // Здесь вставляется генерация Shader Code из вашего файла[cite: 4]
+            // (Для краткости используем упрощенную структуру, но с вашей математикой)
+            const shaderCode = `
+                struct Params { rPrev: f32, offset: f32 };
+                @group(0) @binding(0) var<storage, read_write> pos: array<vec4<f32>>;
+                @group(0) @binding(1) var<storage, read_write> vel: array<vec4<f32>>;
+                @group(0) @binding(2) var<uniform> params: Params;
+
+                @compute @workgroup_size(64)
+                fn main(@builtin(global_invocation_id) id: vec3<u32>) {
+                    let i = id.x;
+                    if (i >= ${pointsPerStep}u) { return; }
+
+                    let prevOff = u32(params.offset - ${pointsPerStep}.0);
+                    let currOff = u32(params.offset);
+
+                    var p1 = pos[prevOff + i];
+                    var force = vec4<f32>(0.0);
+
+                    // Упрощенный цикл отталкивания[cite: 4]
+                    for(var j=0u; j < ${pointsPerStep}u; j++) {
+                        if(i == j) { continue; }
+                        let p2 = pos[prevOff + j];
+                        let d = p1 - p2;
+                        let dist2 = dot(d, d) + 1e-6;
+                        force += (d / sqrt(dist2)) * (${REPULSION_STRENGTH} / dist2);
+                    }
+
+                    vel[i] = vel[i] * ${DAMPING} + force;
+                    pos[currOff + i] = normalize(p1 + vel[i]) * params.rPrev;
+                }
+            `;
+
+            pipeline = device.createComputePipeline({
+                layout: 'auto',
+                compute: { module: device.createShaderModule({ code: shaderCode }), entryPoint: 'main' }
+            });
+
+            // Инициализация буферов
+            posBuf = device.createBuffer({ size: count * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
+            velBuf = device.createBuffer({ size: pointsPerStep * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
+            paramBuf = device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+
+            // Загрузка начальных позиций (из углов в декартовы)
+            const posData = new Float32Array(count * 4);
+            for(let i=0; i<pointsPerStep; i++) {
+                // Упрощенный перевод для примера (ваша функция polarToCartesian)
+                posData[i*4] = baseRadius * Math.sin(initialAngles[i*3]); // x
+                posData[i*4+3] = baseRadius * Math.cos(initialAngles[i*3]); // w
+            }
+            device.queue.writeBuffer(posBuf, 0, posData);
+
+            bindGroup = device.createBindGroup({
+                layout: pipeline.getBindGroupLayout(0),
+                entries: [
+                    { binding: 0, resource: { buffer: posBuf } },
+                    { binding: 1, resource: { buffer: velBuf } },
+                    { binding: 2, resource: { buffer: paramBuf } }
+                ]
+            });
+
+            let currentR = baseRadius;
+            for (let s = 1; s < totalSteps; s++) {
+                device.queue.writeBuffer(paramBuf, 0, new Float32Array([currentR, s * pointsPerStep]));
+
+                const encoder = device.createCommandEncoder();
+                const pass = encoder.beginComputePass();
+                pass.setPipeline(pipeline);
+                pass.setBindGroup(0, bindGroup);
+                pass.dispatchWorkgroups(Math.ceil(pointsPerStep / 64));
+                pass.end();
+                device.queue.submit([encoder.finish()]);
+
+                currentR += radiusStep;
+
+                // Обновляем UI и шлем прогресс клиенту
+                document.getElementById('progress').innerText = `${s+1} / ${totalSteps} | R: ${currentR.toFixed(2)}`;
+                socket.send(JSON.stringify({ type: 'UPDATE', step: s+1, total: totalSteps, r: currentR }));
+
+                await new Promise(r => setTimeout(r, 50)); // Пауза для наглядности
+            }
+
+            log("Расчет завершен. Отправка данных...");
+            document.getElementById('status').innerText = "ГОТОВО";
+        }
+
+        function log(m) { document.getElementById('log').innerHTML += `<div>> ${m}</div>`; }
+        initWebGPU();
+    </script>
+</body>
+</html>

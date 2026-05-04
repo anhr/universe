@@ -26,3 +26,7 @@ package-lock.json
 
 /.vs
 
+/hyperSphere/UniverseSocketServer/bin
+/hyperSphere/UniverseSocketServer/obj
+/hyperSphere/UniverseSocketServer/.vs
+/hyperSphere/UniverseSocketServer/Downloads
