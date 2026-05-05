@@ -13,10 +13,37 @@ app.UseWebSockets(webSocketOptions);
 // List to track active connections (Client and Engine)
 var connections = new List<WebSocket>();
 
+// —татические переменные дл€ хранени€ активных сокетов
+WebSocket? mainPageSocket = null;
+WebSocket? gpuEngineSocket = null;
+
 app.Map("/ws", async (HttpContext context) => {
     if (context.WebSockets.IsWebSocketRequest)
     {
         using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+
+        // „итаем тип клиента (можно передать через query string: /ws?type=main)
+        var clientType = context.Request.Query["type"];
+
+        if (clientType == "main")
+        {
+            if (mainPageSocket != null && mainPageSocket.State == WebSocketState.Open)
+            {
+                await webSocket.CloseAsync((WebSocketCloseStatus)4001, "Main Page already connected", CancellationToken.None);
+                return;
+            }
+            mainPageSocket = webSocket;
+        }
+        else if (clientType == "gpu")
+        {
+            if (gpuEngineSocket != null && gpuEngineSocket.State == WebSocketState.Open)
+            {
+                await webSocket.CloseAsync((WebSocketCloseStatus)4001, "GPU Engine already connected", CancellationToken.None);
+                return;
+            }
+            gpuEngineSocket = webSocket;
+        }
+
         connections.Add(webSocket);
 
         var buffer = new byte[1024 * 4]; // 4KB buffer
@@ -43,6 +70,8 @@ app.Map("/ws", async (HttpContext context) => {
         finally
         {
             connections.Remove(webSocket);
+            if (webSocket == mainPageSocket) mainPageSocket = null;
+            if (webSocket == gpuEngineSocket) gpuEngineSocket = null;
         }
     }
     else
