@@ -52,7 +52,7 @@ You can verify the active GPU by typing chrome://gpu in the address bar and look
 
 ---
 
-## Complete Guide: Setting Up WebSocket Server for averageUniverse
+## Complete Guide: Setting Up WebSocket Server for Hypersphere Universe Engine
 
 This guide ensures a successful connection between your 4D visualization frontend and the C# backend using **ASP.NET Core** and **IIS**.
 
