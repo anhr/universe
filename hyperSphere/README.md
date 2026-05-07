@@ -70,34 +70,8 @@ To host an ASP.NET Core Web API with WebSockets, you must prepare the Windows en
     *   Download the [**Hosting Bundle**](#guide-installing-and-verifying-net-core-hosting-bundle) for that specific version.
     *   **Verification**: Open **IIS Manager**, select your Server, and open **Modules**. Ensure **AspNetCoreModuleV2** is present.
 
----
-
-### 2. Server-Side Implementation (Program.cs)
-The order of middleware is essential for routing `/ws` correctly.
-
-```csharp
-var builder = WebApplication.CreateBuilder(args);
-var app = builder.Build();
-
-// 1. Enable WebSockets first
-app.UseWebSockets(); 
-
-// 2. Map the route
-app.Map("/ws", async (context) => {
-    if (context.WebSockets.IsWebSocketRequest) {
-        using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-        await HandleCommunication(webSocket); // Your 4D logic here
-    } else {
-        context.Response.StatusCode = StatusCodes.Status400BadRequest;
-    }
-});
-
-app.Run();
-```
-
----
-
 ### 3. Deploying to IIS
+*   ** Go to Visual Sudio and open [UniverseSocketServer](UniverseSocketServer\UniverseSocketServer.csproj) project.
 *   **Publishing**: Do not copy files manually from `bin/Debug`. Use **Right-click Project > Publish > Folder**. This generates the required `web.config` file.
 *   **Web.config Check**: Ensure the generated file contains `hostingModel="inprocess"`. This is required for stable WebSocket connections in IIS.
 *   **Permissions**: Grant **Read & Execute** rights for the site folder to the `IIS AppPool\YourPoolName` user.
@@ -116,7 +90,7 @@ app.Run();
 ---
 
 ### 5. Client-Side Connection
-Use this code on your main web page to start receiving hypersphere data:
+Use this code on your web page to start receiving hypersphere data:
 
 ```javascript
 const serverAddress = 'ws://localhost:5000/ws'; // Port must match IIS Binding
