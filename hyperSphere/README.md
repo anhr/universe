@@ -54,7 +54,7 @@ You can verify the active GPU by typing chrome://gpu in the address bar and look
 
 ## Complete Guide: Setting Up WebSocket Server for Hypersphere Universe Engine
 
-This guide ensures a successful connection between your 4D visualization frontend and the C# backend using **ASP.NET Core** and **IIS**.
+This guide ensures a successful connection between your Hypersphere Universe frontend and the C# backend using **ASP.NET Core** and **IIS**.
 
 ### 1. System Requirements & Environment Setup
 To host an ASP.NET Core Web API with WebSockets, you must prepare the Windows environment.
@@ -62,13 +62,13 @@ To host an ASP.NET Core Web API with WebSockets, you must prepare the Windows en
 *   **Enable IIS and Development Features**:
     1.  Press `Win + R`, type `optionalfeatures`, and press **Enter**.
     2.  Navigate to: **Internet Information Services** > **World Wide Web Services** > **Application Development Features**.
-    3.  **CRITICAL**: Check **WebSocket Protocol**[cite: 1].
-    4.  **CRITICAL**: Check **.NET Extensibility 4.8** (or the latest version) and **ASP.NET 4.8**. This ensures IIS can interface with modern web frameworks[cite: 1].
+    3.  **CRITICAL**: Check **WebSocket Protocol**.
+    4.  **CRITICAL**: Check **.NET Extensibility 4.8** (or the latest version) and **ASP.NET 4.8**. This ensures IIS can interface with modern web frameworks.
 *   **Install .NET Core Hosting Bundle (Includes ASP.NET Core Runtime)**:
-    *   This is the "bridge" between IIS and your code[cite: 1].
-    *   Identify your project version (e.g., **.NET 8.0**) in the `.csproj` file[cite: 1].
-    *   Download the **Hosting Bundle** for that specific version[cite: 1].
-    *   **Verification**: Open **IIS Manager**, select your Server, and open **Modules**. Ensure **AspNetCoreModuleV2** is present[cite: 1].
+    *   This is the "bridge" between IIS and your code.
+    *   Identify your project version (e.g., **.NET 8.0**) in the [UniverseSocketServer.csproj](UniverseSocketServer/UniverseSocketServer.csproj) file.
+    *   Download the **Hosting Bundle** for that specific version.
+    *   **Verification**: Open **IIS Manager**, select your Server, and open **Modules**. Ensure **AspNetCoreModuleV2** is present.
 
 ---
 
@@ -98,20 +98,20 @@ app.Run();
 ---
 
 ### 3. Deploying to IIS
-*   **Publishing**: Do not copy files manually from `bin/Debug`. Use **Right-click Project > Publish > Folder**. This generates the required `web.config` file[cite: 1].
-*   **Web.config Check**: Ensure the generated file contains `hostingModel="inprocess"`. This is required for stable WebSocket connections in IIS[cite: 1].
+*   **Publishing**: Do not copy files manually from `bin/Debug`. Use **Right-click Project > Publish > Folder**. This generates the required `web.config` file.
+*   **Web.config Check**: Ensure the generated file contains `hostingModel="inprocess"`. This is required for stable WebSocket connections in IIS.
 *   **Permissions**: Grant **Read & Execute** rights for the site folder to the `IIS AppPool\YourPoolName` user.
 
 ---
 
 ### 4. Debugging & Verification
-*   **The 500.19 Error**: If you see this in your logs (`C:\inetpub\logs\LogFiles\W3SVC2`), your `web.config` is invalid or the **Hosting Bundle** is missing/mismatched[cite: 1].
+*   **The 500.19 Error**: If you see this in your logs (`C:\inetpub\logs\LogFiles\W3SVC2`), your `web.config` is invalid or the **Hosting Bundle** is missing/mismatched.
 *   **Step-by-Step Debugging**: 
     1.  In Visual Studio, set a **Breakpoint** on `app.Map("/ws", ...)`.
     2.  Change the Debug profile to **Project Name** (Console Mode) instead of IIS Express.
     3.  Press **F5**. If the console says `Now listening on: http://localhost:5000`, the server is alive.
 *   **Manual Test**: Use `curl.exe` in PowerShell:
-    `curl.exe -i -N -H "Upgrade: websocket" -H "Connection: Upgrade" http://localhost:5000/ws`[cite: 1].
+    `curl.exe -i -N -H "Upgrade: websocket" -H "Connection: Upgrade" http://localhost:5000/ws`.
 
 ---
 
@@ -135,7 +135,7 @@ socket.onerror = (e) => console.error("Connection failed. Check IIS status or Ho
 ---
 
 ### Summary Checklist:
-1.  **Windows Features**: WebSocket Protocol and .NET Extensibility enabled[cite: 1].
-2.  **Hosting Bundle**: Installed and verified in IIS Modules[cite: 1].
+1.  **Windows Features**: WebSocket Protocol and .NET Extensibility enabled.
+2.  **Hosting Bundle**: Installed and verified in IIS Modules.
 3.  **Port**: 5000 is open and not blocked by other apps.
 4.  **Route**: `/ws` is consistent in both C# and JS.
