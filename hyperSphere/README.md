@@ -7,6 +7,12 @@ When you click the ► player button located in the lower left corner of the can
 
 Below is a guide on how to use the GPU for iteration.
 
+## Table of Contents
+* [Technical Guide: Enabling GPU for Chrome](#technical-guide-enabling-high-performance-gpu-for-google-chrome)
+* [Complete Guide: Setting Up WebSocket Server](#complete-guide-setting-up-websocket-server-for-hypersphere-universe-engine)
+* [Guide: Installing .NET Core Hosting Bundle](#guide-installing-and-verifying-net-core-hosting-bundle)
+* [Guide: Configuring File System Permissions](#guide-configuring-file-system-permissions-for-iis)
+
 ## Technical Guide: Enabling High-Performance GPU for Google Chrome
 
 If you notice that your WebGPU computations are running slower in Google Chrome compared to other browsers, it is likely because Windows is running Chrome on the integrated (Power Saving) GPU instead of your dedicated (High Performance) Graphics Card.
