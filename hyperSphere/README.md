@@ -179,3 +179,55 @@ If **AspNetCoreModuleV2** is present but you still get errors:
 ---
 
 > **Peer Note:** Always remember that the version on the server must be **equal to or higher** than the version used to compile your project. You can have multiple Hosting Bundles (6.0, 7.0, and 8.0) installed side-by-side without any issues.
+
+
+Setting up file system permissions is often the "hidden" reason why a perfectly coded site fails to load with a **403 Forbidden** or **500.19** error. When running under IIS, the "user" trying to read your files isn't you—it's a special virtual identity created for your Application Pool.
+
+Here is a detailed, professional guide on how to configure these permissions correctly.
+
+---
+
+## Guide: Configuring File System Permissions for IIS
+
+To allow IIS to host your **Hypersphere Universe Engine**, you must grant the Application Pool identity permission to access the physical folder where your published files reside.
+
+### 1. Identify your Application Pool Identity
+Before granting permissions, you need to know the exact name of the identity:
+1.  Open **IIS Manager**.
+2.  Click on **Application Pools** in the left-hand connections tree.
+3.  Note the **UniverseSocketServer** of the pool assigned to your website.
+
+### 2. Granting Folder Permissions
+Follow these steps to grant the necessary access:
+
+1.  **Open Folder Properties**: Navigate to the `UniverseSocketServer` folder where you published your project. Right-click the folder and select **Edit Permissions...**.
+2.  **Security Tab**: Go to the **Security** tab and click the **Edit...** button.
+3.  **Add New User**: Click **Add...**.
+4.  **Enter Identity Name**: 
+    * Ensure the **From this location** field is set to your **local computer name** (not a network domain).
+    * In the text box, type: `IIS AppPool\UniverseSocketServer`.
+5.  **Check Names**: Click the **Check Names** button. 
+    * *Note: The name will not be underlined like a normal user, but it should be accepted if typed correctly.*
+6.  **Assign Rights**: Click **OK**. In the permissions list, ensure the following are checked:
+    * **Read & execute**
+    * **List folder contents**
+    * **Read**
+7.  **Apply**: Click **OK** on all windows.
+
+### 3. Why this is necessary
+By default, Windows folders are private to the user who created them. When IIS attempts to run your `web.config` or load your `.dll` files:
+* It uses the **Application Pool Identity**.
+* Without **Read & Execute** rights, IIS cannot start the process, resulting in an **Access Denied** error.
+* The **Execute** right is specifically required for ASP.NET Core because IIS needs to launch the `dotnet` process to run your server logic.
+
+### 4. Verification
+To verify the permissions are working:
+1.  Go to **IIS Manager**.
+2.  Select your **UniverseSocketServer**.
+3.  On the right-side **Actions** pane, click **Basic Settings...**.
+4.  Click the **Test Settings...** button.
+5.  If you see a green checkmark for **Authentication** and **Authorization**, IIS can successfully access the path.
+
+---
+
+> **Expert Tip:** Avoid the temptation to grant permissions to "Everyone." While it might solve the connection issue, it creates a significant security risk. Always use the specific `IIS AppPool\Name` identity to maintain a secure, isolated environment for your 4D engine.
