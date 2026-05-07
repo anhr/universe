@@ -230,4 +230,4 @@ To verify the permissions are working:
 
 ---
 
-> **Expert Tip:** Avoid the temptation to grant permissions to "Everyone." While it might solve the connection issue, it creates a significant security risk. Always use the specific `IIS AppPool\Name` identity to maintain a secure, isolated environment for your 4D engine.
+> **Expert Tip:** Avoid the temptation to grant permissions to "Everyone." While it might solve the connection issue, it creates a significant security risk. Always use the specific `IIS AppPool\Name` identity to maintain a secure, isolated environment for your **Hypersphere Universe Engine**.
