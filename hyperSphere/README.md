@@ -1,6 +1,7 @@
 ﻿# Hypersphere Universe Engine
 
-Technical Guide: Enabling High-Performance GPU for Google Chrome
+##Technical Guide: Enabling High-Performance GPU for Google Chrome
+
 If you notice that your WebGPU computations are running slower in Google Chrome compared to other browsers, it is likely because Windows is running Chrome on the integrated (Power Saving) GPU instead of your dedicated (High Performance) Graphics Card.
 
 Follow these steps to force Google Chrome to use your high-performance GPU:
