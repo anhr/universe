@@ -72,7 +72,7 @@ To host an ASP.NET Core Web API with WebSockets, you must prepare the Windows en
 
 ### 3. Deploying to IIS
 *   Go to Visual Sudio and open [UniverseSocketServer](UniverseSocketServer/UniverseSocketServer.csproj) project.
-*   **Publishing**: Do not copy files manually from `bin/Debug`. Use **Right-click Project > Publish > Folder**. This generates the required `web.config` file.
+*   **Publishing**: Do not copy files manually from `bin/Debug`. Go to **Solution Explorer** then Right-click the **UniverseSocketServer > Publish > Folder**. This generates the required (web.config)[UniverseSocketServer/bin/Release/net8.0/publish/web.config] file.
 *   **Web.config Check**: Ensure the generated file contains `hostingModel="inprocess"`. This is required for stable WebSocket connections in IIS.
 *   **Permissions**: Grant **Read & Execute** rights for the site folder to the `IIS AppPool\YourPoolName` user.
 
