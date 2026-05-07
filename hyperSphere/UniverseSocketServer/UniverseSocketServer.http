@@ -1,0 +1,6 @@
+@UniverseSocketServer_HostAddress = http://localhost:5059
+
+GET {{UniverseSocketServer_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

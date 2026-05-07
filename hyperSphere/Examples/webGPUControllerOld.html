@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Old GPU Controller </title>
+    <style>
+        body {
+            background: #1a1a1a;
+            color: #eee;
+            font-family: sans-serif;
+            padding: 20px;
+        }
+
+        .config-panel {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            max-width: 550px;
+        }
+
+        .param {
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        input {
+            background: #333;
+            color: #fff;
+            border: 1px solid #444;
+            padding: 5px;
+            width: 100px;
+        }
+
+        button {
+            background: #00ffcc;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        #status {
+            margin-top: 20px;
+            padding: 15px;
+            border-left: 4px solid #00ffcc;
+            background: #222;
+        }
+    </style>
+</head>
+<body>
+    <h2>--- ГЛОБАЛЬНАЯ КОНФИГУРАЦИЯ ---</h2>
+    <div class="config-panel">
+        <div class="param"><span>DEBUG_MODE:</span> <input type="checkbox" id="debug" checked></div>
+        <div class="param"><span>Параметр p (кривизна):</span> <input type="number" id="p_val" value="0.99" step="0.01"></div>
+        <div class="param"><span>Базовый радиус:</span> <input type="number" id="baseR" value="0.1"></div>
+        <div class="param"><span>Макс. радиус:</span> <input type="number" id="radiusMax" value="1.0"></div>
+        <div class="param"><span>Всего шагов (totalSteps):</span> <input type="number" id="totalSteps" value="10"></div>
+        <div class="param"><span>Точек в группе (pointsPerStep):</span> <input type="number" id="pointsPerStep" value="5"></div>
+        <button id="startBtn">ПУСК ВЫЧИСЛЕНИЙ</button>
+    </div>
+
+    <div id="status">
+        <strong>Состояние:</strong> <span id="stateText">Ожидание WebSocket...</span><br>
+        <strong>Прогресс:</strong> <span id="progress">0 / 0</span> | <strong>R:</strong> <span id="curR">0.00</span>
+    </div>
+
+    <script>
+        /*
+---
+
+## Complete Guide: Setting Up WebSocket Server for averageUniverse
+
+This guide ensures a successful connection between your 4D visualization frontend and the C# backend using **ASP.NET Core** and **IIS**.
+
+### 1. System Requirements & Environment Setup
+To host an ASP.NET Core Web API with WebSockets, you must prepare the Windows environment.
+
+*   **Enable IIS and Development Features**:
+    1.  Press `Win + R`, type `optionalfeatures`, and press **Enter**.
+    2.  Navigate to: **Internet Information Services** > **World Wide Web Services** > **Application Development Features**.
+    3.  **CRITICAL**: Check **WebSocket Protocol**[cite: 1].
+    4.  **CRITICAL**: Check **.NET Extensibility 4.8** (or the latest version) and **ASP.NET 4.8**. This ensures IIS can interface with modern web frameworks[cite: 1].
+*   **Install .NET Core Hosting Bundle (Includes ASP.NET Core Runtime)**:
+    *   This is the "bridge" between IIS and your code[cite: 1].
+    *   Identify your project version (e.g., **.NET 8.0**) in the `.csproj` file[cite: 1].
+    *   Download the **Hosting Bundle** for that specific version[cite: 1].
+    *   **Verification**: Open **IIS Manager**, select your Server, and open **Modules**. Ensure **AspNetCoreModuleV2** is present[cite: 1].
+
+---
+
+### 2. Server-Side Implementation (Program.cs)
+The order of middleware is essential for routing `/ws` correctly.
+
+```csharp
+var builder = WebApplication.CreateBuilder(args);
+var app = builder.Build();
+
+// 1. Enable WebSockets first
+app.UseWebSockets(); 
+
+// 2. Map the route
+app.Map("/ws", async (context) => {
+    if (context.WebSockets.IsWebSocketRequest) {
+        using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+        await HandleCommunication(webSocket); // Your 4D logic here
+    } else {
+        context.Response.StatusCode = StatusCodes.Status400BadRequest;
+    }
+});
+
+app.Run();
+```
+
+---
+
+### 3. Deploying to IIS
+*   **Publishing**: Do not copy files manually from `bin/Debug`. Use **Right-click Project > Publish > Folder**. This generates the required `web.config` file[cite: 1].
+*   **Web.config Check**: Ensure the generated file contains `hostingModel="inprocess"`. This is required for stable WebSocket connections in IIS[cite: 1].
+*   **Permissions**: Grant **Read & Execute** rights for the site folder to the `IIS AppPool\YourPoolName` user.
+
+---
+
+### 4. Debugging & Verification
+*   **The 500.19 Error**: If you see this in your logs (`C:\inetpub\logs\LogFiles\W3SVC2`), your `web.config` is invalid or the **Hosting Bundle** is missing/mismatched[cite: 1].
+*   **Step-by-Step Debugging**: 
+    1.  In Visual Studio, set a **Breakpoint** on `app.Map("/ws", ...)`.
+    2.  Change the Debug profile to **Project Name** (Console Mode) instead of IIS Express.
+    3.  Press **F5**. If the console says `Now listening on: http://localhost:5000`, the server is alive.
+*   **Manual Test**: Use `curl.exe` in PowerShell:
+    `curl.exe -i -N -H "Upgrade: websocket" -H "Connection: Upgrade" http://localhost:5000/ws`[cite: 1].
+
+---
+
+### 5. Client-Side Connection
+Use this code on your main web page to start receiving hypersphere data:
+
+```javascript
+const serverAddress = 'ws://localhost:5000/ws'; // Port must match IIS Binding
+const socket = new WebSocket(serverAddress);
+
+// Important: 4D coordinates are sent as binary data
+socket.binaryType = 'arraybuffer';
+
+socket.onopen = () => console.log("averageUniverse: Connection established.");
+socket.onmessage = (event) => {
+    // Logic to update your 3-sphere visualization
+};
+socket.onerror = (e) => console.error("Connection failed. Check IIS status or Hosting Bundle.");
+```
+
+---
+
+### Summary Checklist:
+1.  **Windows Features**: WebSocket Protocol and .NET Extensibility enabled[cite: 1].
+2.  **Hosting Bundle**: Installed and verified in IIS Modules[cite: 1].
+3.  **Port**: 5000 is open and not blocked by other apps.
+4.  **Route**: `/ws` is consistent in both C# and JS.
+        */
+        const serverAddress = 'ws://localhost:5000/ws';//'ws://localhost:8080'; 
+        const socket = new WebSocket(serverAddress);
+        socket.binaryType = 'arraybuffer';
+        
+        const stateText = document.getElementById('stateText');
+        const startBtn = document.getElementById('startBtn');
+        
+        // 1. Обработка ошибок (неверный адрес, отказ в соединении)
+        socket.onerror = (error) => {
+            stateText.innerText = "ОШИБКА: Сервер недоступен или адрес указан неверно.";
+            stateText.style.color = "#ff4444";
+            startBtn.disabled = true;
+            console.error("WebSocket Error:", error);
+        };
+        
+        // 2. Обработка закрытия соединения (сервер отключился в процессе)
+        socket.onclose = (event) => {
+            if (event.wasClean) {
+                stateText.innerText = "The connection was closed successfully.";
+            } else {
+                const rfcLink = "https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1";
+                const mozillaLink = 'https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code'
+                const sError = `The connection was closed. Code: ${event.code}. See RFC: ${rfcLink}, mozilla: ${mozillaLink}` 
+                console.error(sError);
+
+/*                
+                // Если код 1006 — это почти всегда проблема с адресом или тем, что сервер не запущен.
+                if(event.code === 1006) {
+                    alert("Проверьте, запущен ли ваш сервер на localhost:8080 и верный ли адрес в коде.");
+                }
+*/                
+                console.log(`Причина: ${event.reason}`); // Текстовое описание от сервера
+                stateText.innerText = sError;//"СВЯЗЬ ПРЕРВАНА (Сервер упал или ошибка сети).";
+                stateText.style.color = "#ff4444";
+            }
+            startBtn.disabled = true;
+            console.log(`Код закрытия: ${event.code}, причина: ${event.reason}`);
+        };
+/*если оставить этот код, то истина причина ошибки будет забиваться сообщением  "Превышено время ожидания сервера."
+        const connectionTimeout = setTimeout(() => {
+            if (socket.readyState !== WebSocket.OPEN) {
+                stateText.innerText = "Превышено время ожидания сервера.";
+                socket.close(); // Принудительно закрываем попытку
+            }
+        }, 5000); // Ждем 5 секунд и сдаемся
+*/
+        // 3. Успешное подключение
+        socket.onopen = () => {
+//            clearTimeout(connectionTimeout); // Успели! Отменяем таймер.
+            stateText.innerText = "Связь установлена. Готов к работе.";
+            stateText.style.color = "#00ffcc";
+            startBtn.disabled = false;
+        };
+        
+        document.getElementById('startBtn').onclick = () => {
+            const pps = parseInt(document.getElementById('pointsPerStep').value);
+            const total = parseInt(document.getElementById('totalSteps').value);
+
+            // Генерируем начальные углы для первой группы
+            const initialAngles = new Float32Array(pps * 3);
+            for (let i = 0; i < initialAngles.length; i++) initialAngles[i] = (Math.random() * Math.PI) - (Math.PI / 2);
+
+            const config = {
+                type: 'START_COMPUTE',
+                debug: document.getElementById('debug').checked,
+                p: parseFloat(document.getElementById('p_val').value),
+                baseRadius: parseFloat(document.getElementById('baseR').value),
+                radiusMax: parseFloat(document.getElementById('radiusMax').value),
+                totalSteps: total,
+                pointsPerStep: pps
+            };
+
+            socket.send(JSON.stringify(config));
+            socket.send(initialAngles.buffer);
+            document.getElementById('stateText').innerText = "Запрос отправлен на averageUniverse...";
+        };
+
+        socket.onmessage = (e) => {
+            if (typeof e.data === 'string') {
+                const msg = JSON.parse(e.data);
+                if (msg.type === 'UPDATE') {
+                    document.getElementById('progress').innerText = `${msg.step} / ${msg.total}`;
+                    document.getElementById('curR').innerText = msg.r.toFixed(3);
+                }
+            }
+        };
+    </script>
+</body>
+</html>
