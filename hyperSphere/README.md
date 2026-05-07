@@ -67,7 +67,7 @@ To host an ASP.NET Core Web API with WebSockets, you must prepare the Windows en
 *   **Install .NET Core Hosting Bundle (Includes ASP.NET Core Runtime)**:
     *   This is the "bridge" between IIS and your code.
     *   Identify your project version (e.g., **.NET 8.0**) in the [UniverseSocketServer.csproj](UniverseSocketServer/UniverseSocketServer.csproj) file.
-    *   Download the **Hosting Bundle**[Hosting Bundle](#guide-installing-and-verifying-net-core-hosting-bundle) for that specific version.
+    *   Download the [**Hosting Bundle**](#guide-installing-and-verifying-net-core-hosting-bundle) for that specific version.
     *   **Verification**: Open **IIS Manager**, select your Server, and open **Modules**. Ensure **AspNetCoreModuleV2** is present.
 
 ---
