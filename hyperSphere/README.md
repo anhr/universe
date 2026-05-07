@@ -139,3 +139,69 @@ socket.onerror = (e) => console.error("Connection failed. Check IIS status or Ho
 2.  **Hosting Bundle**: Installed and verified in IIS Modules.
 3.  **Port**: 5000 is open and not blocked by other apps.
 4.  **Route**: `/ws` is consistent in both C# and JS.
+
+---
+
+## Guide: Installing and Verifying .NET Core Hosting Bundle
+
+
+This is a crucial part of the setup. If the **Hosting Bundle** is missing or mismatched, IIS will simply return a **500.19 Error** because it doesn't know how to talk to .NET.
+
+Here is the professional guide in English for your documentation.
+
+The **.NET Core Hosting Bundle** is a collection of components required to run ASP.NET Core applications (like your **Hypersphere Universe Engine**) behind IIS. It includes the .NET Runtime and the **ASP.NET Core Module (ANCM)**.
+
+### 1. When to Install the Hosting Bundle?
+You must install or update the Hosting Bundle in the following scenarios:
+* **Fresh Setup**: When setting up a new Windows Server or Windows 11 machine for IIS hosting.
+* **Version Upgrade**: If you upgrade your project (e.g., moving from **.NET 6** to **.NET 8**).
+* **HTTP Error 500.19**: If your website fails to start and logs indicate that the "AspNetCoreModuleV2" is missing.
+
+---
+
+### 2. How to Identify the Required Version
+Before downloading, you must check which version of .NET your project uses:
+1.  Open your project in **Visual Studio**.
+2.  Right-click your project name and select **Edit Project File**.
+3.  Look for the `<TargetFramework>` tag:
+    * `<TargetFramework>net8.0</TargetFramework>` $\rightarrow$ You need **Hosting Bundle 8.0**.
+    * `<TargetFramework>net6.0</TargetFramework>` $\rightarrow$ You need **Hosting Bundle 6.0**.
+
+---
+
+### 3. Installation Steps
+1.  **Download**: Go to the [official .NET download page](https://dotnet.microsoft.com/download/dotnet). 
+2.  **Select Version**: Click on the version that matches your project (e.g., .NET 8.0).
+3.  **Find the Bundle**: Look for the **Windows** column and find the link labeled **Hosting Bundle**.
+4.  **Run Installer**: Execute the `.exe` file on the server machine.
+5.  **Restart IIS**: This is mandatory to register the new module. Open **PowerShell as Administrator** and run:
+    ```powershell
+    iisreset
+    ```
+
+---
+
+### 4. Verification (How to check if it's working)
+After installation, you should verify that IIS has successfully loaded the module.
+
+#### **Method A: Check IIS Modules**
+1.  Open **IIS Manager** (`inetmgr`).
+2.  Click on your **Server Name** in the left connections tree.
+3.  In the center pane, double-click on **Modules**.
+4.  Look for **AspNetCoreModuleV2**. If it is in the list, the installation was successful.
+
+#### **Method B: Check Installed Programs**
+1.  Go to **Control Panel > Programs and Features**.
+2.  Search for **Microsoft .NET Core [Version] - Windows Server Hosting**.
+
+---
+
+### 5. Troubleshooting: "The Module is installed but it still fails"
+If **AspNetCoreModuleV2** is present but you still get errors:
+* **Architecture Mismatch**: Ensure you installed the "Hosting Bundle" which includes both x86 and x64 components.
+* **App Pool Settings**: Ensure your **Application Pool** for the site is set to **No Managed Code**.
+* **Repair**: If you installed .NET *before* enabling the IIS role in Windows Features, the module might not register correctly. Run the Hosting Bundle installer again and select **Repair**.
+
+---
+
+> **Peer Note:** Always remember that the version on the server must be **equal to or higher** than the version used to compile your project. You can have multiple Hosting Bundles (6.0, 7.0, and 8.0) installed side-by-side without any issues.
