@@ -1,4 +1,6 @@
 using System.Net.WebSockets;
+using System.Text;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
@@ -33,15 +35,31 @@ app.Map("/ws", async (HttpContext context) => {
                 return;
             }
             mainPageSocket = webSocket;
+
+            // Проверяем готовность Engine
+            if (gpuEngineSocket == null || gpuEngineSocket.State != WebSocketState.Open)
+            {
+                await SendStatus(webSocket, 0, "Waiting for Hypersphere Universe Engine...");
+            }
+            else
+            {
+                await SendStatus(webSocket, 1, "Ready to work.");
+            }
         }
         else if (clientType == "gpu")
         {
             if (gpuEngineSocket != null && gpuEngineSocket.State == WebSocketState.Open)
             {
-                await webSocket.CloseAsync((WebSocketCloseStatus)4001, "GPU Engine already connected", CancellationToken.None);
+                await webSocket.CloseAsync((WebSocketCloseStatus)4001, "Hypersphere Universe Engine already connected", CancellationToken.None);
                 return;
             }
             gpuEngineSocket = webSocket;
+
+            // Уведомляем главную страницу, что Engine подключен
+            if (mainPageSocket != null && mainPageSocket.State == WebSocketState.Open)
+            {
+                await SendStatus(mainPageSocket, 1, "Ready to work.");
+            }
         }
 
         connections.Add(webSocket);
@@ -71,7 +89,11 @@ app.Map("/ws", async (HttpContext context) => {
         {
             connections.Remove(webSocket);
             if (webSocket == mainPageSocket) mainPageSocket = null;
-            if (webSocket == gpuEngineSocket) gpuEngineSocket = null;
+            if (webSocket == gpuEngineSocket)
+            {
+                gpuEngineSocket = null;
+                if (mainPageSocket != null) await SendStatus(mainPageSocket, 0, "Engine disconnected. Waiting...");
+            }
         }
     }
     else
@@ -79,5 +101,14 @@ app.Map("/ws", async (HttpContext context) => {
         context.Response.StatusCode = StatusCodes.Status400BadRequest;
     }
 });
+async Task SendStatus(WebSocket socket, int code, string message)
+{
+    if (socket.State == WebSocketState.Open)
+    {
+        var data = JsonSerializer.Serialize(new { type = "STATUS", code, message = $"Connection established. {message}" });
+        var buffer = Encoding.UTF8.GetBytes(data);
+        await socket.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, CancellationToken.None);
+    }
+}
 
 app.Run();

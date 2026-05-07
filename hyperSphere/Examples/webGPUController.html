@@ -1294,7 +1294,20 @@
         
                     socket.send(JSON.stringify(config));
                 };
-/*
+                socket.onmessage = (event) => {
+                    if (typeof event.data === 'string') {
+                        const data = JSON.parse(event.data);
+
+                        if (data.type === "STATUS") {
+                            const stateText = document.getElementById('stateText');
+                            stateText.innerText = data.message;
+
+                            // Используем 0 и 1 для управления цветом
+                            stateText.style.color = (data.code === 1) ? "#00ffcc" : "#ff4444";
+                        }
+                    }
+                };
+ /*
                 const idx = parseInt(document.getElementById('gpuSelect').value);
                 if (idx === -1) { alert("Выберите карту"); document.querySelectorAll('button').forEach(b => b.disabled = false); return; }
                 await initWebGPU(idx);
