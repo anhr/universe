@@ -1308,9 +1308,9 @@
                     const initialAngles = new Float32Array(pointsPerStep * 3);
                     for (let i = 0; i < initialAngles.length; i++) initialAngles[i] = (Math.random() * Math.PI) - (Math.PI / 2);
 */                    
-                    const itemSize = 3, initialAngles = new Float32Array(pointsPerStep * itemSize);
+                    const anglesItemSize = 4, initialAngles = new Float32Array(pointsPerStep * anglesItemSize);
                     for (let i = 0; i < config.pointsPerStep; i++) {
-                        let index = i * itemSize;
+                        let index = i * anglesItemSize;
                         initialAngles[index++] = angles[i].latitude; initialAngles[index++] = angles[i].longitude; initialAngles[index++] = angles[i].altitude;
                     }
                     socket.send(initialAngles.buffer);

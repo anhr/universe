@@ -1017,11 +1017,13 @@ let r4 = random(&state);
             anglesBufGPU = device.createBuffer({ size: count * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
 
             const initialPos = new Float32Array(count * 4);
-            const initialAngles = new Float32Array(count * 4);
+//            const initialAngles = new Float32Array(count * 4);
+            const anglesItemSize = 4, initialAngles = new Float32Array(pointsPerStep * anglesItemSize);
             for (let i = 0; i < pointsPerStep; i++) {
-                const p = polarToCartesian(angles[i].latitude, angles[i].longitude, angles[i].altitude, baseRadius), index = i * 4;
+                const p = polarToCartesian(angles[i].latitude, angles[i].longitude, angles[i].altitude, baseRadius);
+                let index = i * anglesItemSize;
                 initialPos[index] = p.x; initialPos[index + 1] = p.y; initialPos[index + 2] = p.z; initialPos[index + 3] = p.w;
-                initialAngles[index] = angles[i].latitude; initialAngles[index + 1] = angles[i].longitude; initialAngles[index + 2] = angles[i].altitude;
+                initialAngles[index++] = angles[i].latitude; initialAngles[index++] = angles[i].longitude; initialAngles[index++] = angles[i].altitude;
             }
             device.queue.writeBuffer(posBuf, 0, initialPos);
             device.queue.writeBuffer(anglesBufGPU, 0, initialAngles);
