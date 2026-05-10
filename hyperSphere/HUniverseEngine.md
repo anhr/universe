@@ -19,7 +19,7 @@ Below is a guide on how to use the GPU for iteration.
 First, [setting up WebSocket Server](#complete-guide-setting-up-websocket-server-for-hypersphere-universe-engine).
 
 Then open the [GPU Hyperspherical Universe - Engine](webGPUHUniverse.html) page.
-The **Hypersphere Universe Engine** is ready for use if you see `Socket Status: Connection established. Ready for computation.` in the [webGPUHUniverse.html](webGPUHUniverse.html) page.
+The **Hypersphere Universe Engine** is ready for use if you see `Socket Status: Connection established. Ready for computation.` in the [GPU Hyperspherical Universe - Engine](webGPUHUniverse.html) page.
 Please refer to this guide if you see a different status.
 
 Now you can use **Hypersphere Universe Engine** to quickly calculate the positions of the vertices of the hyperspherical universe.

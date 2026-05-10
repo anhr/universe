@@ -36,6 +36,7 @@
 <body>
     <div class="engine-status">
         <h3>ENGINE: Hypersphere Universe</h3>
+        <div>VIDEO CARD: <select id="gpuSelect"><option value="-1">Search for video cards...</option></select></div>
         <div>STATUS: <span id="status">IDLE</span></div>
         <div>SOURCE: <span id="client">---</span></div>
         <div>PROGRESS: <span id="progress">0 / 0 | R: 0.00</span></div>
@@ -46,159 +47,899 @@
     <div id="log"></div>
 
     <script type="module">
-        const socket = new WebSocket('ws://localhost:5000/ws?type=gpu');
-        socket.binaryType = 'arraybuffer';
+        
+        const π = Math.PI;//, sin = Math.sin, cos = Math.cos;
+        let angles, count;
 
-        const stateText = document.getElementById('stateText');
+        //WebGPU start
+        
+        let device, pipeline, posBuf, velBuf, paramBuf, debugBuf, messageArray, anglesBufGPU, bindGroup, timeBuffer;
+        const availableAdapters = [];
 
-        // 1. Error handling (incorrect address, connection refused)
-        socket.onerror = (error) => {
-            stateText.innerText = "ERROR: Server unreachable or incorrect address.";
-            stateText.style.color = "#ff4444";
-            console.error("WebSocket Error:", error);
-        };
-
-        // 2. Connection closure handling
-        socket.onclose = (event) => {
-            if (event.wasClean) {
-                stateText.innerText = event.reason ? event.reason : "The connection was closed successfully.";
-                if (event.code === 4001) stateText.style.color = "#ff4444";  // Эта страница уже открыта
-            } else {
-                const rfcLink = "https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1";
-                const mozillaLink = 'https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code';
-                const errorDetail = event.reason ? `Reason: ${event.reason}` : `Error Code: ${event.code}`;
-                const sError = `The connection was closed. ${errorDetail}. See RFC: ${rfcLink}, mozilla: ${mozillaLink}` 
-                console.error(sError);
-
-//                if (event.reason) console.log(`Reason: ${event.reason}`);
-                stateText.innerText = sError;
-                stateText.style.color = "#ff4444";
-            }
-            console.log(`Close code: ${event.code}, reason: ${event.reason}`);
-        };
-
-        // 3. Successful connection
-        socket.onopen = () => {
-            stateText.innerText = "Connection established. Ready for computation.";
-            stateText.style.color = "#00ffcc";
-        };
-
-        let device, pipeline, bindGroup;
-        let posBuf, velBuf, paramBuf;
-
-        const DAMPING = 0.95;
-        const REPULSION_BASE = 50;
-
-        async function initWebGPU() {
-            if (!navigator.gpu) return log("WebGPU not supported!");
-            const adapter = await navigator.gpu.requestAdapter();
-            device = await adapter.requestDevice();
-            log("GPU Device Ready");
+        async function getSafeAdapterName(adapter, index) {
+            if (!adapter) return `${index + 1}. Unknown device`;
+            let name = "WebGPU Adapter";
+            if (adapter.info) name = adapter.info.description || adapter.info.vendor || name;
+            return `${index + 1}. ${name}`;
         }
 
-        socket.onmessage = async (event) => {
-            if (typeof event.data === 'string') {
-                window.currentConfig = JSON.parse(event.data);
-                document.getElementById('status').innerText = "CONFIG RECEIVED";
-                document.getElementById('client').innerText = event.origin || "Localhost";
-                log("Configuration loaded.");
-            } else {
-                // Binary data received (Initial 3-Sphere angles)
-                const initialAngles = new Float32Array(event.data);
-                await runCompute(window.currentConfig, initialAngles);
+        async function findAdapters() {
+            availableAdapters.length = 0;
+            const select = document.getElementById('gpuSelect');
+            try {
+                if (!navigator.gpu) {
+                    //for testing open this page on Google Chrome under Android
+                    throw new Error('WebGPU is not supported');
+                    return;
+                }
+                if (navigator.gpu.enumerateAdapters) availableAdapters = await navigator.gpu.enumerateAdapters();
+                if (availableAdapters.length === 0) {
+                    const high = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
+                    if (high) availableAdapters.push(high);
+                    else throw new Error('No available adapters');
+                }
+                select.innerHTML = '';
+                for (let i = 0; i < availableAdapters.length; i++) {
+                    const displayName = await getSafeAdapterName(availableAdapters[i], i);
+                    const opt = document.createElement('option'); opt.value = i; opt.text = displayName; select.appendChild(opt);
+                }
+            } catch (e) {
+                select.innerHTML = '<option value="-1">' + e.message + '</option>';
+/*
+                stateText.innerText = "WebGPU ERROR: " + e.message;
+                stateText.style.color = errorStatusColor;
+*/
+                setState("WebGPU ERROR: " + e.message, true);
+                return false;
             }
-        };
+            return true;
+        }
 
-        async function runCompute(config, initialAngles) {
-            log("Starting GPU computation...");
-            const { baseRadius, radiusMax, totalSteps, pointsPerStep } = config;
-            const count = totalSteps * pointsPerStep;
-            const radiusStep = (radiusMax - baseRadius) / (totalSteps - 1);
-            const REPULSION_STRENGTH = REPULSION_BASE / pointsPerStep;
-
-            const shaderCode = `
-                    struct Params { rPrev: f32, offset: f32 };
-                    @group(0) @binding(0) var<storage, read_write> pos: array<vec4<f32>>;
-                    @group(0) @binding(1) var<storage, read_write> vel: array<vec4<f32>>;
-                    @group(0) @binding(2) var<uniform> params: Params;
-
-                    @compute @workgroup_size(64)
-                    fn main(@builtin(global_invocation_id) id: vec3<u32>) {
-                        let i = id.x;
-                        if (i >= ${pointsPerStep}u) { return; }
-
-                        let prevOff = u32(params.offset - ${pointsPerStep}.0);
-                        let currOff = u32(params.offset);
-
-                        var p1 = pos[prevOff + i];
-                        var force = vec4<f32>(0.0);
-
-                        for(var j=0u; j < ${pointsPerStep}u; j++) {
-                            if(i == j) { continue; }
-                            let p2 = pos[prevOff + j];
-                            let d = p1 - p2;
-                            let dist2 = dot(d, d) + 1e-6;
-                            force += (d / sqrt(dist2)) * (${REPULSION_STRENGTH} / dist2);
-                        }
-
-                        vel[i] = vel[i] * ${DAMPING} + force;
-                        pos[currOff + i] = normalize(p1 + vel[i]) * params.rPrev;
-                    }
-                `;
-
-            pipeline = device.createComputePipeline({
-                layout: 'auto',
-                compute: { module: device.createShaderModule({ code: shaderCode }), entryPoint: 'main' }
-            });
-
-            posBuf = device.createBuffer({ size: count * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
-            velBuf = device.createBuffer({ size: pointsPerStep * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
-            paramBuf = device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
-
-            const posData = new Float32Array(count * 4);
-            // Conversion logic (simplified placeholder for your polarToCartesian)
-            for (let i = 0; i < pointsPerStep; i++) {
-                posData[i * 4] = baseRadius * Math.sin(initialAngles[i * 3]);
-                posData[i * 4 + 3] = baseRadius * Math.cos(initialAngles[i * 3]);
+        const runAuto = async () => {
+//            document.querySelectorAll('button').forEach(b => b.disabled = true);
+            const start = performance.now();
+            const idx = parseInt(document.getElementById('gpuSelect').value);
+            if (idx === -1) {
+//                alert("Select a video card");
+                const message = "Select a video card";
+                setState(message, true);
+/*                
+                const config = {
+                    type: 'STATUS',
+                    code: 0,//error
+                    message: 'Hypersphere Universe Engine: ' + message
+                };
+                socket.send(JSON.stringify(config));
+*/                
+                return;
             }
-            device.queue.writeBuffer(posBuf, 0, posData);
+            await initWebGPU(idx);
+            while (currentStep < totalSteps) {
 
-            bindGroup = device.createBindGroup({
-                layout: pipeline.getBindGroupLayout(0),
-                entries: [
-                    { binding: 0, resource: { buffer: posBuf } },
-                    { binding: 1, resource: { buffer: velBuf } },
-                    { binding: 2, resource: { buffer: paramBuf } }
-                ]
-            });
+                //Для генератора случайных чисел
+                device.queue.writeBuffer(timeBuffer, 0, new Uint32Array([Math.floor(performance.now() * timeMultiplier)]));
 
-            let currentR = baseRadius;
-            for (let s = 1; s < totalSteps; s++) {
-                device.queue.writeBuffer(paramBuf, 0, new Float32Array([currentR, s * pointsPerStep]));
-
+                const newRadius = radiusPrev + radiusStep;
+                device.queue.writeBuffer(paramBuf, 0, new Float32Array([radiusPrev, currentStep * pointsPerStep]));
                 const encoder = device.createCommandEncoder();
                 const pass = encoder.beginComputePass();
-                pass.setPipeline(pipeline);
-                pass.setBindGroup(0, bindGroup);
+                pass.setPipeline(pipeline); pass.setBindGroup(0, bindGroup);
                 pass.dispatchWorkgroups(Math.ceil(pointsPerStep / 64));
                 pass.end();
                 device.queue.submit([encoder.finish()]);
-
-                currentR += radiusStep;
-
-                // Update UI and send progress to client
-                document.getElementById('progress').innerText = `${s + 1} / ${totalSteps} | R: ${currentR.toFixed(2)}`;
-                socket.send(JSON.stringify({ type: 'UPDATE', step: s + 1, total: totalSteps, r: currentR }));
-
-                await new Promise(r => setTimeout(r, 50));
+                if (DEBUG_MODE) await readDebugValue(currentStep);
+                else await readMessageValue(currentStep);
+                updateDisplay();
+                radiusPrev = newRadius; currentStep++;
             }
 
-            log("Computation finished. Data broadcasted.");
-            document.getElementById('status').innerText = "DONE";
+            //                if (DEBUG_MODE) await readDebugValue(currentStep);
+            await readMessageValue(currentStep);
+            await finalSyncGPU(); updateDisplay();
+            const end = performance.now();
+            document.getElementById('timeResult').innerText = `Итог (${mode}): ${((end - start) / 1000).toFixed(3)} сек.`;
+            document.querySelectorAll('button').forEach(b => b.disabled = false);
+        };
+
+        async function initWebGPU(idx) {
+            if (device) {
+                device.destroy();
+                if (!await findAdapters()) return;
+            }
+            const adapter = availableAdapters[idx];
+            device = await adapter.requestDevice();
+            //            document.getElementById('activeGpu').innerText = `Активен: ${await getSafeAdapterName(adapter, idx)}`;
+
+            //for random function in WebGPU
+
+            let random_gpu, ramdom_param, ramdom_param2;
+            switch (config.RANDOM_POINTS) {
+                case 0:
+                    ramdom_param = ``;
+                    ramdom_param2 = ``;
+                    random_gpu = `
+                            fn random() -> f32 { return ${config.PSEUDO_RANDOM}; }`
+                    break;
+                case 1:
+                    //Хеширование (Hashing). Простой генератор псевдослучайных чисел (PCG). Permuted Congruential Generator (Перемешанный конгруэнтный генератор).
+                    // Функция принимает указатель на состояние и обновляет его внутри
+                    ramdom_param = `seed: ptr < function, u32 >`;
+                    ramdom_param2 = `seed`;
+                    random_gpu =
+                        `
+                            fn random(${ramdom_param}) -> f32 {
+                                // 1. Извлекаем текущее значение, перемешиваем его
+                                var x = *seed;
+                                x = ((x >> 16u) ^ x) * 0x45d9f3bu;
+                                x = ((x >> 16u) ^ x) * 0x45d9f3bu;
+                                x = (x >> 16u) ^ x;
+
+                                // 2. Сохраняем обновленное состояние обратно
+                                *seed = x;
+
+                                // 3. Возвращаем нормализованное число 0.0 - 1.0
+                                return f32(x) / f32(0xffffffffu);
+                            }`
+                    break;
+                case 2:
+                    ramdom_param = `pointIndex: u32, counter: ptr<function, u32>`;
+                    ramdom_param2 = `pointIndex, counter`;
+                    random_gpu = `
+                            fn random(${ramdom_param}) -> f32 {
+                                let poolSize = arrayLength(&randomPool);
+
+                                // 1. Берем текущее значение счетчика
+                                let currentOffset = *counter;
+
+                                // 2. Вычисляем индекс (смешиваем индекс точки, время и текущий offset)
+                                // Используем множители, чтобы "прыжки" по таблице были более хаотичными
+                                let idx = (pointIndex + uTime + currentOffset * 13u) % poolSize;
+
+                                // 3. Увеличиваем счетчик для следующего вызова
+                                *counter = currentOffset + 1u;
+                                return randomPool[idx];
+                            }`
+                    break;
+                case 3:
+                    //Метод Weyl Sequence (последовательность Вейля) или просто линейным конгруэнтным методом поверх хеша.
+                    ramdom_param = `state: ptr<function, f32>`;
+                    ramdom_param2 = `state`;
+                    random_gpu = `
+                                // Качественный хеш для инициализации (выполняется 1 раз)
+                                fn hash_u32(n: u32) -> u32 {
+                                    var x = n;
+                                    x = ((x >> 16u) ^ x) * 0x45d9f3bu;
+                                    x = ((x >> 16u) ^ x) * 0x45d9f3bu;
+                                    x = (x >> 16u) ^ x;
+                                    return x;
+                                }
+
+                                // Сверхбыстрая функция random (выполняется многократно)
+                                // Используем f32 для работы с дробной частью через fract
+                                fn random(${ramdom_param}) -> f32 {
+                                    // Константа: иррациональное число (например, золотое сечение или корень из 2)
+                                    // Это гарантирует, что дробная часть будет меняться максимально хаотично
+                                    let phi: f32 = 0.61803398875;
+
+                                    // Быстрая арифметика: прибавляем константу
+                                    // Это и есть последовательность Вейля: x = fract(x + k)
+                                    *state = fract(*state + phi);
+
+                                    return *state;
+                                }`
+                    break;
+                default: console.error('Invalid RANDOM_POINTS = ' + RANDOM_POINTS);
+            }
+            let hyperbola_gpu;
+            const calculateHyperbola = (p) => {
+
+                // Крайние случаи
+                if (p === 0) {
+                    // Прямая линия: y = x (через точки (0,0) и (π,π))
+                    hyperbola_gpu = `
+                                fn hyperbola_gpu(arc: f32, i: u32) -> f32 {
+                                    return arc;
+                                }`;
+                    return;// (arc) => { return arc; }
+                }
+
+                if (p === 1) {
+                    // Два отрезка: вертикальный и горизонтальный
+                    hyperbola_gpu = `
+                                fn hyperbola_gpu(arc: f32, i: u32) -> f32 {
+                                    if (arc == 0) { return 0.0; }
+                                    return PI;
+                                }`;
+                    return;/* (arc) => {
+
+                        if (arc === 0) return 0
+                        return π;
+
+                    }
+                    */
+                }
+
+                // Общий случай: гипербола вида y = a/(x - h) + k
+                // У нас есть две точки: (0,0) и (π,π)
+                // и дополнительное условие: при x = 0, y = 0
+                // при x = π, y = π
+
+                // Из точки (0,0): 0 = a/(0 - h) + k => k = a/h
+
+                // Из точки (π,π): π = a/(π - h) + a/h
+
+                // Вводим параметр p для контроля кривизны
+                // Будем использовать p для определения положения асимптоты h
+                // При p -> 0: h -> -∞ (гипербола вырождается в прямую)
+                // При p -> 1: h -> 0 (гипербола вырождается в вертикальную линию)
+
+                // Свяжем h с p: h = - (1-p)/p * C, где C некоторая константа
+                // Чтобы при p=1, h=0; при p=0, h=-∞
+                // Возьмем C = π/2 для хорошей визуализации
+
+                const C = π / 2;
+
+                // Избегаем деления на ноль при p=0 (уже обработано выше)
+                let h;
+                if (p < 0.001) {
+                    // Для очень малых p используем линейную аппроксимацию
+                    h = -C / p;
+                } else {
+                    h = -C * (1 - p) / p;
+                }
+
+                // Вычисляем a из уравнения π = a/(π - h) + a/h
+                // a = π / (1/(π - h) + 1/h) = π / ((h + π - h)/(h(π - h))) = π * h(π - h) / π = h(π - h)
+                // Упростим: a = h * (PI - h)
+
+                const a = h * (π - h);
+
+                // Вычисляем k
+                const k = a / h;
+                hyperbola_gpu = `
+                            fn hyperbola_gpu(x: f32, i: u32) -> f32 {
+                                if (abs(x - (${h})) < 0.001) {
+                                    messageBuffer.errorCode = 1u; // Код ошибки 1 = "hyperbola_gpu: Under construction"
+                                    messageBuffer.i = i;
+                                    messageBuffer.value = x;
+                                    return PI;
+                                }
+                                return ${a} / (x - (${h})) + (${k});
+                            }`;
+                return /*(x) => {
+
+                    // Гипербола
+
+                    // Генерируем точки слева от асимптоты (если асимптота слева от 0)
+                    // В нашем случае h всегда отрицательное, так что асимптота слева от 0
+                    // Проверяем, что не попадаем в асимптоту
+                    if (Math.abs(x - h) < 0.001) {
+
+                        console.error(sRandomVertice + ': calculateHyperbola. Under consraction');
+                        return x;
+
+                    }
+                    return a / (x - h) + k;
+
+                }
+*/
+
+            }
+            calculateHyperbola(config.p);
+
+            let bindingId = 0;
+
+            // ГЕНЕРАЦИЯ ШЕЙДЕРА (МЕТАПРОГРАММИРОВАНИЕ)
+            const dynamicShaderCode = `
+                            /* СТРУКТУРЫ ДАННЫХ */
+                            struct Params {
+                                radiusPrev: f32,      // Предыдущий радиус сферы
+                                stepOffset: f32   // Индекс начала текущей группы
+                            };
+
+                            struct PolarAngles {
+                                latitude: f32, longitude: f32, altitude: f32, _pad: f32
+                            };
+
+                            struct Message {
+                                errorCode: u32,
+                                i: u32,
+                                value: f32,
+                            };
+
+                            struct StartingPointParams {
+                                lat: f32,
+                                alt: f32,
+                                P: vec4<f32>,
+                                tangentBasis: mat3x4<f32>
+                            };
+
+                            ${config.DEBUG_MODE ?
+                    `
+                            struct Debug {
+                                value: vec4<f32>,
+                                i: u32,
+                                j: u32
+                            };
+                            `
+                    : ``}
+
+                            /* ПРИВЯЗКИ */
+                            @group(0) @binding(${bindingId++}) var<storage, read_write> positions: array<vec4<f32>>;
+                            @group(0) @binding(${bindingId++}) var<storage, read_write> velocities: array<vec4<f32>>;
+                            @group(0) @binding(${bindingId++}) var<uniform> p_param: Params;
+                            @group(0) @binding(${bindingId++}) var<storage, read_write> anglesBuf: array<PolarAngles>;
+                            @group(0) @binding(${bindingId++}) var<storage, read_write> messageBuffer: Message;
+                            ${config.RANDOM_POINTS != 0 ? `@group(0) @binding(${bindingId++}) var<uniform> uTime: u32; //Для генератора случайных чисел` : ``}
+                            ${config.RANDOM_POINTS === 2 ? `@group(0) @binding(${bindingId++}) var<storage, read> randomPool: array<f32>;// Используем динамический размер массива для гибкости` : ``}
+                            @group(0) @binding(${bindingId++}) var<storage, read> invCdfLut: array<f32>; // Таблица для ускорения inverseCDF_S3
+                            ${config.DEBUG_MODE ? `@group(0) @binding(${bindingId++}) var<storage, read_write> debug: Debug;` : ``}
+
+                            /* ВШИТЫЕ КОНСТАНТЫ (Generated by JS) */
+                            const PI: f32 = ${π};
+                            const DAMPING: f32 = ${config.DAMPING.toFixed(8)};
+                            const REPULSION: f32 = ${config.REPULSION_STRENGTH.toFixed(8)};
+                            const POINTS_PER_STEP: u32 = ${Math.floor(config.pointsPerStep)}u;
+
+                            ${random_gpu}
+
+                            ${hyperbola_gpu}
+
+                            fn inverseCDF_S3(u: f32) -> f32 {
+                                // Оптимизация LUT: Линейная интерполяция значений из таблицы
+                                let lutSize = arrayLength(&invCdfLut);
+                                let pos = u * f32(lutSize - 1u);
+                                let i0 = u32(floor(pos));
+                                let i1 = min(i0 + 1u, lutSize - 1u);
+                                let fract_part = pos - f32(i0);
+                                return mix(invCdfLut[i0], invCdfLut[i1], fract_part);
+                            }
+
+                            fn getDistance(dist: f32, R: f32, arc: f32, ${ramdom_param}) -> f32 {
+                                if (arc == 0.0) { return 0.0; }
+                                let y = 1.0 / arc - 1.0 / PI;
+                                return dist / (1.0 + (y * R * random(${ramdom_param2})));
+                            }
+
+                            // 2. Создание ортонормированного базиса в касательном пространстве
+                            fn createTangentBasis(latitude: f32, longitude: f32, altitude: f32) -> mat3x4<f32> {
+                                let a = altitude; let b = PI / 2.0 - latitude; let c = longitude;
+                                let sina = sin(a); let cosa = cos(a); let sinb = sin(b); let cosb = cos(b); let sinc = sin(c); let cosc = cos(c);
+
+                                // e1 - направление увеличения altitude
+                                let e1 = normalize(vec4<f32>(-sina, cosa*cosb, cosa*sinb*cosc, cosa*sinb*sinc));
+
+                                // e2 - направление увеличения b (уменьшения latitude)
+                                var e2 = vec4<f32>(0.0, -sina*sinb, sina*cosb*cosc, sina*cosb*sinc);
+                                let n2 = length(e2);
+                                if (n2 > 1e-10) { e2 = e2 / n2; } else { e2 = vec4<f32>(0.0, 0.0, 0.0, 0.0); }
+
+                                // e3 - направление увеличения longitude
+                                var e3 = vec4<f32>(0.0, 0.0, -sina*sinb*sinc, sina*sinb*cosc);
+                                let n3 = length(e3);
+                                if (n3 > 1e-10) { e3 = e3 / n3; } else { e2 = vec4<f32>(0.0, 0.0, 0.0, 0.0); }
+
+                                return mat3x4<f32>(e1, e2, e3);
+                            }
+                            fn calculateNewPoint(startingPointParams: StartingPointParams, distance: f32, eta: f32, psi: f32, R: f32, ${ramdom_param}) -> PolarAngles {
+
+                                // Исходная точка
+                                let P = startingPointParams.P;
+
+                                // Касательный базис
+                                let e1 = startingPointParams.tangentBasis[0]; let e2 = startingPointParams.tangentBasis[1]; let e3 = startingPointParams.tangentBasis[2];
+
+                                //Компилятор оптимизирует эту строку и не будет по нескольку раз вычислять одинаковые тригонометрические функции
+                                let u = cos(eta) * e1 + sin(eta) * cos(psi) * e2 + sin(eta) * sin(psi) * e3;
+
+                                let delta = distance / R;
+
+                                // Обратное преобразование в углы
+                                var angles = cartesianToPolarRandom(cos(delta) * P + R * sin(delta) * u);
+
+                                if (abs((abs(startingPointParams.lat) - PI / 2)) < 1e-12) { angles.longitude = random(${ramdom_param2}) * 2 * PI - PI; }//Противоположная вершина находится на полюсе
+
+                                return angles;
+                            }
+                            fn getStartingPointParams(oppositeVertice: PolarAngles) -> StartingPointParams {
+                                let lat = oppositeVertice.latitude; let lon = oppositeVertice.longitude; let alt = oppositeVertice.altitude;
+
+                                // Исходная точка
+                                let objectP = polarToCartesian(lat, lon, alt, 1.0); let P = vec4<f32>(objectP.w, objectP.z, objectP.x, objectP.y);
+
+
+                                // Касательный базис
+                                let tangentBasis = createTangentBasis(lat, lon, alt);
+
+                                return StartingPointParams(lat, alt, P, tangentBasis);
+                            }
+
+                            fn getRandomAngles(startingPointParams: StartingPointParams, arc: f32, ${ramdom_param}) -> PolarAngles {
+
+                                // Правильное распределение для равномерного покрытия:
+                                // Вероятность попасть в сферическую шапочку радиуса d пропорциональна sin^3(d/R)
+                                let R = 1.0; let distance = getDistance(R * inverseCDF_S3(random(${ramdom_param2})), R, arc, ${ramdom_param2}) * 2;
+
+                                let angles = calculateNewPoint(
+                                    startingPointParams,
+                                    distance,//максимальная дистанция находится на противоположной стороне гиперсферы
+                                    acos(2.0 * random(${ramdom_param2}) - 1),//eta. первый угол направления (полярный угол). 0 ≤ eta ≤ π
+                                    random(${ramdom_param2}) * 2 * PI,//psi. второй угол направления (азимутальный угол). 0 ≤ psi < 2π или -π ≤ psi ≤ π
+                                    R,
+                                    ${ramdom_param2}
+                                );
+                                return angles;
+                            }
+
+                            fn GetRandomVertice(arc: f32, oppositeVertice: PolarAngles, ${ramdom_param}) -> PolarAngles {
+                                return getRandomAngles(getStartingPointParams(oppositeVertice), arc, ${ramdom_param2});
+                            }
+
+                            /* МАТЕМАТИКА ВНУТРИ GPU */
+                            fn cartesianToPolar(v: vec4<f32>) -> PolarAngles {
+                                let R = length(v);
+                                if (R < 1e-10) {
+
+                                    messageBuffer.errorCode = 2u; // Код ошибки 2 = "cartesianToPolar: Under construction"
+                                    messageBuffer.i = 0;
+                                    messageBuffer.value = R;
+
+                                    return PolarAngles(0.0, 0.0, 0.0, 0.0);
+                                }
+                                let alt = acos(clamp(v.w / R, -1.0, 1.0));
+
+                                let rXYZ = length(v.xyz);
+                                // Если rXYZ близок к 0, значит точка лежит на оси W,
+                                // и широта с долготой не определены (принимаем за 0)
+                                if (rXYZ < 1e-10) {
+                                    return PolarAngles(0.0, 0.0, alt, 0.0);
+                                }
+
+                                let lat = asin(clamp(v.z / rXYZ, -1.0, 1.0));
+                                let lon = atan2(v.y, v.x);
+                                return PolarAngles(lat, lon, alt, 0.0);
+                            }
+
+                            fn cartesianToPolarRandom(Q: vec4<f32>) -> PolarAngles {
+                                return cartesianToPolar(vec4<f32>(Q[2], Q[3], Q[1], Q[0] ));
+                            }
+
+                            fn polarToCartesian(lat: f32, lon: f32, alt: f32, r: f32) -> vec4<f32> {
+                                let r_xyz = r * sin(alt);
+                                return vec4<f32>(r_xyz * cos(lat) * cos(lon), r_xyz * cos(lat) * sin(lon), r_xyz * sin(lat), r * cos(alt));
+                            }
+
+                            ${config.DEBUG_MODE ? `var<private> isDebugInfo: bool = false;` : ``}
+
+                            @compute @workgroup_size(64)
+                            fn main(@builtin(global_invocation_id) id: vec3<u32>) {
+                                let i = id.x;
+                                if (i >= POINTS_PER_STEP) { return; }
+
+                                ${config.RANDOM_POINTS === 3 ? `
+                                //  Один раз вычисляем качественное зерно через хеш
+                                // Смешиваем ID точки и время
+                                let initial_hash = hash_u32(i ^ uTime);
+
+                                // Превращаем в f32 от 0 до 1 для работы функции random
+                                var state: f32 = f32(initial_hash) / f32(0xffffffffu);` : ``}
+                                ${config.RANDOM_POINTS === 2 ? `
+                                // Создаем локальный счетчик для вычисления случайного
+                                var callStep: u32 = 0u;` : ``}
+
+                                ${config.RANDOM_POINTS === 1 ? `
+                                // Инициализируем локальное состояние один раз
+                                var seed = i ^ uTime;` : ``}
+/*
+// Получаем 4 случайных числа
+let r1 = random(&state);
+let r2 = random(&state);
+let r3 = random(&state);
+let r4 = random(&state);
+*/
+                                ${config.DEBUG_MODE ? `if (i == 0u) { isDebugInfo = true; } else { isDebugInfo = false; }` : ``}
+
+                                ${config.DEBUG_MODE ? `if (isDebugInfo) {
+                                    debug.i = i;
+                                    debug.j = 0;
+                                    //debug.value = vec4<f32>(anglesBuf[currOffset + i].altitude, anglesBuf[currOffset + i].latitude, anglesBuf[currOffset + i].longitude, 0.0);
+                                    //debug.value = vec4<f32>(r1, r2, r3, r4);
+                                    debug.value = vec4<f32>(0.0, 0.0, 0.0, 0.0);
+                                }` : ``}
+
+
+                                let prevOffset = u32(p_param.stepOffset - f32(POINTS_PER_STEP));
+                                let currOffset = u32(p_param.stepOffset);
+
+                                let p1 = positions[prevOffset + i];
+
+                                // СБОР СИЛ
+                                var force = vec4<f32>(0.0);
+                                for (var j = 0u; j < POINTS_PER_STEP; j++) {
+                                    if (i == j) { continue; }
+                                    //${config.DEBUG_MODE ? `if ((i == 0u) && (j == 1u)) { isDebugInfo = true; } else { isDebugInfo = false; }` : ``}
+                                    let p2 = positions[prevOffset + j];
+                                    let angles2 = cartesianToPolar(p2);
+                                    var d = p1 - p2;
+                                    var dist = length(d);
+                                    let arc = PI - hyperbola_gpu((dist / p_param.radiusPrev / 2.0) * PI, i);
+
+                                    // Случайное направление для точки j (может быть противоположным для лучшего разведения)
+                                    let polarNoise2 = GetRandomVertice(arc, angles2${config.RANDOM_POINTS === 1 ? `, &seed` :
+                    config.RANDOM_POINTS === 2 ? `, i, &callStep` :
+                        config.RANDOM_POINTS === 3 ? `, &state` : ``});
+                                    let noise2 = polarToCartesian(polarNoise2.latitude, polarNoise2.longitude, polarNoise2.altitude, p_param.radiusPrev);
+
+                                    // Вектор от i к j
+                                    d = p1 - noise2;
+                                    let d2 = dot(d, d);
+                                    dist = sqrt(d2);
+                                    if (dist == 0) {
+                                        messageBuffer.errorCode = 3u; // Код ошибки 3 = "main: Invalid dist"
+                                        messageBuffer.i = 0;
+                                        messageBuffer.value = dist;
+                                        return;
+                                    }
+
+                                    let m = REPULSION / d2;
+                                    force.x += (d.x / dist) * m; force.y += (d.y / dist) * m; force.z += (d.z / dist) * m; force.w += (d.w / dist) * m;
+                                }
+
+                                // ИНТЕГРАЦИЯ СКОРОСТИ И ПОЗИЦИИ
+                                let v_new = velocities[i] * DAMPING + force;
+                                velocities[i] = v_new;
+                                let next_pos_unit = normalize(p1 + v_new);
+                                positions[currOffset + i] = next_pos_unit * p_param.radiusPrev;
+                                anglesBuf[currOffset + i] = cartesianToPolar(next_pos_unit);
+
+                            }
+                        `;
+
+            pipeline = device.createComputePipeline({
+                layout: 'auto', compute: { module: device.createShaderModule({ code: dynamicShaderCode }), entryPoint: 'main' }
+            });
+            posBuf = device.createBuffer({ size: count * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
+            velBuf = device.createBuffer({ size: config.pointsPerStep * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
+            paramBuf = device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+            debugBuf = device.createBuffer({ size: 32, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
+            messageArray = device.createBuffer({ size: 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
+
+            // Создаем буфер для одного числа u32. Этот буфер используется для генератора случайных чисел в GPU.
+            timeBuffer = device.createBuffer({ size: 4, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+
+            anglesBufGPU = device.createBuffer({ size: count * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
+
+            const initialPos = new Float32Array(count * 4);
+            const initialAngles = new Float32Array(count * 4);
+            for (let i = 0; i < config.pointsPerStep; i++) {
+                const p = polarToCartesian(angles[i].latitude, angles[i].longitude, angles[i].altitude, config.baseRadius), index = i * 4;
+                initialPos[index] = p.x; initialPos[index + 1] = p.y; initialPos[index + 2] = p.z; initialPos[index + 3] = p.w;
+                initialAngles[index] = angles[i].latitude; initialAngles[index + 1] = angles[i].longitude; initialAngles[index + 2] = angles[i].altitude;
+            }
+            device.queue.writeBuffer(posBuf, 0, initialPos);
+            device.queue.writeBuffer(anglesBufGPU, 0, initialAngles);
+
+            //Создание буфера случайных чисел, которые затем будут использоваться в WebGPU вместо герерации случайного числа в WebGPU
+
+            // Функция проверки, является ли число простым
+            function isPrime(n) {
+                for (let i = 2, s = Math.sqrt(n); i <= s; i++) {
+                    if (n % i === 0) return false;
+                }
+                return n > 1;
+            }
+
+            // Находим ближайшее простое число к целевому значению
+            function getNearestPrime(target) {
+                let n = Math.floor(target);
+                while (!isPrime(n)) { n++; }
+                return n;
+            }
+
+            // Подготовка данных LUT
+            const totalPoints = config.pointsPerStep * config.totalSteps;; // Ваше текущее число точек
+            // Размер буфера: 25% от количества точек, но не более 4096
+            // Если totalPoints = 5000, то target = 1250. Ближайшее простое будет 1259.
+            const lutSize = getNearestPrime(Math.min(totalPoints * 0.25, 4096));
+
+            const randomData = new Float32Array(lutSize);
+            for (let i = 0; i < lutSize; i++) {
+                randomData[i] = Math.random();
+            }
+
+            if (config.RANDOM_POINTS === 2) {
+                // Создание буфера случайныз чисел на GPU
+                const randomBuffer = device.createBuffer({
+                    size: randomData.byteLength,
+                    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+                });
+                device.queue.writeBuffer(randomBuffer, 0, randomData);
+            }
+
+            // --- ПРЕДРАСЧЕТ inverseCDF_S3 LUT ---
+            const invCdfLutSize = 1024;
+            const invCdfData = new Float32Array(invCdfLutSize);
+            for (let i = 0; i < invCdfLutSize; i++) {
+                const u = i / (invCdfLutSize - 1);
+                invCdfData[i] = inverseCDF_S3(u);
+            }
+            const invCdfBuffer = device.createBuffer({
+                size: invCdfData.byteLength,
+                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+            });
+            device.queue.writeBuffer(invCdfBuffer, 0, invCdfData);
+
+            bindingId = 0;
+            const entries = [
+                { binding: bindingId++, resource: { buffer: posBuf } },
+                { binding: bindingId++, resource: { buffer: velBuf } },
+                { binding: bindingId++, resource: { buffer: paramBuf } },
+                { binding: bindingId++, resource: { buffer: anglesBufGPU } },
+                { binding: bindingId++, resource: { buffer: messageArray } },
+            ]
+            if (RANDOM_POINTS != 0) entries.push({ binding: bindingId++, resource: { buffer: timeBuffer } });
+            if (RANDOM_POINTS === 2) entries.push({ binding: bindingId++, resource: { buffer: randomBuffer } });// Буфер LUT
+            entries.push({ binding: bindingId++, resource: { buffer: invCdfBuffer } }); // Новый буфер LUT для inverseCDF
+            if (DEBUG_MODE) entries.push({ binding: bindingId++, resource: { buffer: debugBuf } });
+            bindGroup = device.createBindGroup({ layout: pipeline.getBindGroupLayout(0), entries: entries });
         }
 
-        function log(m) { document.getElementById('log').innerHTML += `<div>> ${m}</div>`; }
-        initWebGPU();
+        //WebGPU end
+
+        // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ МАТЕМАТИКИ ---
+        
+        const polarToCartesian = (la, lo, al, r = 1) => {
+            const r_xyz = r * Math.sin(al);
+            return { x: r_xyz * Math.cos(la) * Math.cos(lo), y: r_xyz * Math.cos(la) * Math.sin(lo), z: r_xyz * Math.sin(la), w: r * Math.cos(al) };
+        };
+        
+        /**
+         * Функция распределения (CDF) для расстояния на S³
+         */
+        const CDF_S3 = (theta) => {
+            // CDF(θ) = (3θ - 3sinθcosθ + 2sin³θ) / 4
+            const sinTheta = Math.sin(theta);
+            const cosTheta = Math.cos(theta);
+            const sin3Theta = sinTheta * sinTheta * sinTheta;
+
+            return (3 * theta - 3 * sinTheta * cosTheta + 2 * sin3Theta) / 4;
+        }
+        
+        /**
+         * Обратная функция распределения для равномерной выборки на S³
+         * Для равномерного распределения на 3-сфере от северного полюса:
+         * Плотность: f(θ) ∝ sin³(θ), где θ = distance/R
+         * CDF: F(θ) = (3θ - 3sinθcosθ + 2sin³θ) / 4
+         * Здесь используем численное решение обратной функции
+         */
+        const inverseCDF_S3 = (u) => {
+            // u ∈ [0, 1] равномерно
+            // Ищем θ такой, что CDF(θ) = u, θ ∈ [0, π]
+
+            // Численное решение методом бисекции
+            let low = 0;
+            let high = Math.PI;
+            const tolerance = 1e-10;
+            const maxIterations = 100;
+
+            for (let i = 0; i < maxIterations; i++) {
+                const mid = (low + high) / 2;
+                const cdfValue = CDF_S3(mid);
+
+                if (Math.abs(cdfValue - u) < tolerance) {
+                    return mid;
+                }
+
+                if (cdfValue < u) {
+                    low = mid;
+                } else {
+                    high = mid;
+                }
+            }
+
+            return (low + high) / 2;
+        }
+        
+        const setState = (text, boError = false) => {
+            const stateText = document.getElementById('stateText');
+            stateText.innerText = text;
+            stateText.style.color = boError ? "#ff4444" : "#00ffcc";
+            if(!boError || !socket || socket.readyState != WebSocket.OPEN) return;
+            const config = {
+                type: 'STATUS',
+                code: 0,//error
+                message: 'Hypersphere Universe Engine: ' + text
+            };
+            socket.send(JSON.stringify(config));
+//            socket.close(4002, 'Hypersphere Universe Engine: ' + text);
+        }
+
+        let socket;
+        
+        if (await findAdapters()) {
+
+            socket = new WebSocket('ws://localhost:5000/ws?type=gpu');
+            socket.binaryType = 'arraybuffer';
+
+//            const stateText = document.getElementById('stateText');
+
+            // 1. Error handling (incorrect address, connection refused)
+            socket.onerror = (error) => {
+/*
+                stateText.innerText = "ERROR: Server unreachable or incorrect address.";
+                stateText.style.color = errorStatusColor;
+*/
+                setState("ERROR: Server unreachable or incorrect address.", true);
+                console.error("WebSocket Error:", error);
+            };
+
+            // 2. Connection closure handling
+            socket.onclose = (event) => {
+                if (event.wasClean) {
+/*
+                    stateText.innerText = event.reason ? event.reason : "The connection was closed successfully.";
+                    if (event.code === 4001) stateText.style.color = errorStatusColor;  // Эта страница уже открыта
+*/
+                    setState(event.reason ? event.reason : "The connection was closed successfully.",
+                        event.code === 4001 ? true :// Эта страница уже открыта
+                        false
+                    );
+                } else {
+                    const rfcLink = "https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1";
+                    const mozillaLink = 'https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code';
+                    const errorDetail = event.reason ? `Reason: ${event.reason}` : `Error Code: ${event.code}`;
+                    const sError = `The connection was closed. ${errorDetail}. See RFC: ${rfcLink}, mozilla: ${mozillaLink}`
+                    console.error(sError);
+/*
+                    stateText.innerText = sError;
+                    stateText.style.color = errorStatusColor;
+*/
+                    setState(sError, true);
+                }
+                console.log(`Close code: ${event.code}, reason: ${event.reason}`);
+            };
+
+            // 3. Successful connection
+            socket.onopen = () => {
+/*
+                stateText.innerText = "Connection established. Ready for computation.";
+                stateText.style.color = successStatusColor;
+*/
+                setState("Connection established. Ready for computation.");
+            };
+            /*
+                    let device, pipeline, bindGroup;
+                    let posBuf, velBuf, paramBuf;
+            
+                    const DAMPING = 0.95;
+                    const REPULSION_BASE = 50;
+            
+                    async function initWebGPU() {
+                        if (!navigator.gpu) return log("WebGPU not supported!");
+                        const adapter = await navigator.gpu.requestAdapter();
+                        device = await adapter.requestDevice();
+                        log("GPU Device Ready");
+                    }
+            */
+            socket.onmessage = async (event) => {
+                if (typeof event.data === 'string') {
+                    window.config = JSON.parse(event.data);
+                    count = config.totalSteps * config.pointsPerStep;
+                    document.getElementById('status').innerText = "CONFIG RECEIVED";
+                    document.getElementById('client').innerText = event.origin || "Localhost";
+                    log("Configuration loaded.");
+                } else {
+                    // Binary data received
+                    const initialAngles = new Float32Array(event.data);
+                    angles = new Array(count).fill(null).map(() => ({ latitude: 0, longitude: 0, altitude: 0 }));
+                    const anglesItemSize = 3;
+                    for (let i = 0; i < config.pointsPerStep; i++) {
+                        const anglesItem = angles[i];
+                        let index = i * anglesItemSize;
+                        anglesItem.latitude = initialAngles[index++];
+                        anglesItem.longitude = initialAngles[index++];
+                        anglesItem.altitude = initialAngles[index++];
+                    }
+//                    await runCompute(window.currentConfig, initialAngles);
+                    try {
+                        await runAuto();
+                    } catch (e) {
+                        setState("WebGPU ERROR: " + e.message, true);
+                    }
+                }
+            };
+            /*
+                    async function runCompute(config, initialAngles) {
+                        log("Starting GPU computation...");
+                        const { baseRadius, radiusMax, totalSteps, pointsPerStep } = config;
+                        const count = totalSteps * pointsPerStep;
+                        const radiusStep = (radiusMax - baseRadius) / (totalSteps - 1);
+                        const REPULSION_STRENGTH = REPULSION_BASE / pointsPerStep;
+            
+                        const shaderCode = `
+                                struct Params { rPrev: f32, offset: f32 };
+                                @group(0) @binding(0) var<storage, read_write> pos: array<vec4<f32>>;
+                                @group(0) @binding(1) var<storage, read_write> vel: array<vec4<f32>>;
+                                @group(0) @binding(2) var<uniform> params: Params;
+            
+                                @compute @workgroup_size(64)
+                                fn main(@builtin(global_invocation_id) id: vec3<u32>) {
+                                    let i = id.x;
+                                    if (i >= ${pointsPerStep}u) { return; }
+            
+                                    let prevOff = u32(params.offset - ${pointsPerStep}.0);
+                                    let currOff = u32(params.offset);
+            
+                                    var p1 = pos[prevOff + i];
+                                    var force = vec4<f32>(0.0);
+            
+                                    for(var j=0u; j < ${pointsPerStep}u; j++) {
+                                        if(i == j) { continue; }
+                                        let p2 = pos[prevOff + j];
+                                        let d = p1 - p2;
+                                        let dist2 = dot(d, d) + 1e-6;
+                                        force += (d / sqrt(dist2)) * (${REPULSION_STRENGTH} / dist2);
+                                    }
+            
+                                    vel[i] = vel[i] * ${DAMPING} + force;
+                                    pos[currOff + i] = normalize(p1 + vel[i]) * params.rPrev;
+                                }
+                            `;
+            
+                        pipeline = device.createComputePipeline({
+                            layout: 'auto',
+                            compute: { module: device.createShaderModule({ code: shaderCode }), entryPoint: 'main' }
+                        });
+            
+                        posBuf = device.createBuffer({ size: count * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
+                        velBuf = device.createBuffer({ size: pointsPerStep * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
+                        paramBuf = device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+            
+                        const posData = new Float32Array(count * 4);
+                        // Conversion logic (simplified placeholder for your polarToCartesian)
+                        for (let i = 0; i < pointsPerStep; i++) {
+                            posData[i * 4] = baseRadius * Math.sin(initialAngles[i * 3]);
+                            posData[i * 4 + 3] = baseRadius * Math.cos(initialAngles[i * 3]);
+                        }
+                        device.queue.writeBuffer(posBuf, 0, posData);
+            
+                        bindGroup = device.createBindGroup({
+                            layout: pipeline.getBindGroupLayout(0),
+                            entries: [
+                                { binding: 0, resource: { buffer: posBuf } },
+                                { binding: 1, resource: { buffer: velBuf } },
+                                { binding: 2, resource: { buffer: paramBuf } }
+                            ]
+                        });
+            
+                        let currentR = baseRadius;
+                        for (let s = 1; s < totalSteps; s++) {
+                            device.queue.writeBuffer(paramBuf, 0, new Float32Array([currentR, s * pointsPerStep]));
+            
+                            const encoder = device.createCommandEncoder();
+                            const pass = encoder.beginComputePass();
+                            pass.setPipeline(pipeline);
+                            pass.setBindGroup(0, bindGroup);
+                            pass.dispatchWorkgroups(Math.ceil(pointsPerStep / 64));
+                            pass.end();
+                            device.queue.submit([encoder.finish()]);
+            
+                            currentR += radiusStep;
+            
+                            // Update UI and send progress to client
+                            document.getElementById('progress').innerText = `${s + 1} / ${totalSteps} | R: ${currentR.toFixed(2)}`;
+                            socket.send(JSON.stringify({ type: 'UPDATE', step: s + 1, total: totalSteps, r: currentR }));
+            
+                            await new Promise(r => setTimeout(r, 50));
+                        }
+            
+                        log("Computation finished. Data broadcasted.");
+                        document.getElementById('status').innerText = "DONE";
+                    }
+            */
+            function log(m) { document.getElementById('log').innerHTML += `<div>> ${m}</div>`; }
+            //        initWebGPU();
+        }
     </script>
 </body>
 </html>

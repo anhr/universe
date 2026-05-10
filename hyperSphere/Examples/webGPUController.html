@@ -127,12 +127,12 @@
         //select one:
 
         //Случайная точка не вычисляется. Вместо этого возвращается PSEUDO_RANDOM
-        //const RANDOM_POINTS = 0;
+        const RANDOM_POINTS = 0;
 
         //Вычисляется случайное число.
         //В GPU для получения случайного числа применяется хеширование(Hashing).Простой генератор псевдослучайных чисел(PCG).Permuted Congruential Generator(Перемешанный конгруэнтный генератор).
         //Этот метод лучше всего вычисляет случайное число, но требует много времени на вычисления если не оптимизировать Google Chrome. Инструкцию по оттимизации смотри в D:\My documents\MyProjects\webgl\three.js\GitHub\universe\main\hyperSphere\webGPUHUniverse.js
-        const RANDOM_POINTS = 1;
+        //const RANDOM_POINTS = 1;
 
         //Вычисляется случайное число.
         //Анализ производительности вычислений в GPU показал, что генерация случайного числа внутри WebGPU по методу хеширования(Hashing) (RANDOM_POINTS = 1) крайне затратно.
@@ -157,8 +157,8 @@
 
         const LOG = false;//log attributes to console
         const LOTS_OF_POINTS = false;
-        const totalSteps = LOTS_OF_POINTS ? 1000 : 10;
-        const pointsPerStep = LOTS_OF_POINTS ? 5000 : 5;
+        const totalSteps = LOTS_OF_POINTS ? 100 : 10;
+        const pointsPerStep = LOTS_OF_POINTS ? 500 : 5;
         const count = totalSteps * pointsPerStep;
 
         //Hyperbola parametr. See calculateHyperbola.
@@ -1230,12 +1230,17 @@
             document.getElementById('radVal').innerText = radiusPrev.toFixed(2);
         }
 
+        let socket;
         const runAuto = async (mode) => {
             document.querySelectorAll('button').forEach(b => b.disabled = true);
             const start = performance.now();
             if (mode === 'GPU') {
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                    socket.close(1000,//статус нормальное закрытие
+                                 "Reconnecting for new computation...");
+                }
                 const serverAddress = 'ws://localhost:5000/ws?type=main';
-                const socket = new WebSocket(serverAddress);
+                socket = new WebSocket(serverAddress);
                 socket.binaryType = 'arraybuffer';
         
                 const stateText = document.getElementById('stateText');
@@ -1282,17 +1287,33 @@
                     stateText.innerText = "Связь установлена. Готов к работе.";
                     stateText.style.color = "#00ffcc";
 //                    startBtn.disabled = false;
+
                     const config = {
                         type: 'START_COMPUTE',
-                        debug: DEBUG_MODE,
-                        p: 0.99,
-                        baseRadius: 0.1,
-                        radiusMax: 1.0,
-                        totalSteps: 100,
-                        pointsPerStep: 500
+                        DEBUG_MODE: DEBUG_MODE,
+                        RANDOM_POINTS: RANDOM_POINTS,
+                        DAMPING: DAMPING,
+                        REPULSION_STRENGTH: REPULSION_STRENGTH,
+                        PSEUDO_RANDOM: PSEUDO_RANDOM,
+                        p: p,
+                        baseRadius: baseRadius,
+                        radiusMax: radiusMax,
+                        totalSteps: totalSteps,
+                        pointsPerStep: pointsPerStep
                     };
-        
                     socket.send(JSON.stringify(config));
+
+/*                    
+                    // Генерируем начальные углы для первой группы
+                    const initialAngles = new Float32Array(pointsPerStep * 3);
+                    for (let i = 0; i < initialAngles.length; i++) initialAngles[i] = (Math.random() * Math.PI) - (Math.PI / 2);
+*/                    
+                    const itemSize = 3, initialAngles = new Float32Array(pointsPerStep * itemSize);
+                    for (let i = 0; i < config.pointsPerStep; i++) {
+                        let index = i * itemSize;
+                        initialAngles[index++] = angles[i].latitude; initialAngles[index++] = angles[i].longitude; initialAngles[index++] = angles[i].altitude;
+                    }
+                    socket.send(initialAngles.buffer);
                 };
                 socket.onmessage = (event) => {
                     if (typeof event.data === 'string') {
