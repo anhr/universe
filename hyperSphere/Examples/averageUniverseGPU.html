@@ -1141,6 +1141,7 @@ let r4 = random(&state);
                 let messageString;
                 switch (messageCode) {
                     case 1: messageString = 'hyperbola_gpu: Under construction.'; break;
+                    case 2: messageString = 'cartesianToPolar: Under construction. R: ' + new Float32Array(mappedRange)[2]; break;
                     default: messageString = 'Unknown code: ' + messageCode;
                 }
                 console.error(`[GPU Step ${step}] ` + messageString + ' i: ' + message[1] + ' x: ' + new Float32Array(mappedRange)[2]);
@@ -1161,6 +1162,7 @@ let r4 = random(&state);
                 if (i >= pointsPerStep) {
                     const pointAngles = angles[i]
                     pointAngles.latitude = data[i * 4]; pointAngles.longitude = data[i * 4 + 1]; pointAngles.altitude = data[i * 4 + 2];
+console.log('i = ' + i + ' angles: ' + JSON.stringify(pointAngles))
                     const s = Math.floor(i / pointsPerStep);
                     const r = baseRadius + s * radiusStep;
                     setAttributes(pointAngles, r, i);
