@@ -941,15 +941,6 @@ let r4 = random(&state);
 */
                                 ${DEBUG_MODE ? `if (i == 0u) { isDebugInfo = true; } else { isDebugInfo = false; }` : ``}
 
-                                ${DEBUG_MODE ? `if (isDebugInfo) {
-                                    debug.i = i;
-                                    debug.j = 0;
-                                    //debug.value = vec4<f32>(anglesBuf[currOffset + i].altitude, anglesBuf[currOffset + i].latitude, anglesBuf[currOffset + i].longitude, 0.0);
-                                    //debug.value = vec4<f32>(r1, r2, r3, r4);
-                                    debug.value = vec4<f32>(0.0, 0.0, 0.0, 0.0);
-                                }` : ``}
-
-
                                 let prevOffset = u32(p_param.stepOffset - f32(POINTS_PER_STEP));
                                 let currOffset = u32(p_param.stepOffset);
 
@@ -993,6 +984,15 @@ let r4 = random(&state);
                                 let next_pos_unit = normalize(p1 + v_new);
                                 positions[currOffset + i] = next_pos_unit * p_param.radiusPrev;
                                 anglesBuf[currOffset + i] = cartesianToPolar(next_pos_unit);
+
+                                ${DEBUG_MODE ? `if (isDebugInfo) {
+                                    debug.i = i;
+                                    debug.j = 0;
+                                    //debug.value = vec4<f32>(anglesBuf[currOffset + i].altitude, anglesBuf[currOffset + i].latitude, anglesBuf[currOffset + i].longitude, 0.0);
+                                    //debug.value = vec4<f32>(r1, r2, r3, r4);
+                                    debug.value = vec4<f32>(positions[currOffset + i].x, positions[currOffset + i].y, positions[currOffset + i].z, positions[currOffset + i].w);
+                                }` : ``}
+
 
                             }
                         `;
