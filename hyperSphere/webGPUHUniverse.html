@@ -39,7 +39,8 @@
         <div>VIDEO CARD: <select id="gpuSelect"><option value="-1">Search for video cards...</option></select></div>
         <div>STATUS: <span id="status">IDLE</span></div>
         <div>SOURCE: <span id="client">---</span></div>
-        <div>PROGRESS: <span id="progress">0 / 0 | R: 0.00</span></div>
+        <!--<div>PROGRESS: <span id="progress">0 / 0 | R: 0.00</span></div>-->
+        <div>PROGRESS: <span id="stepCounter">0</span> / <span id="totalStepsDisplay">0</span> | R: <span id="radVal">0.00</span> </div>
         <div id="socket-status">
             <strong>Socket Status:</strong> <span id="stateText">Waiting for connection to server...</span><br>
         </div>
@@ -48,14 +49,97 @@
 
     <script type="module">
         
-        const π = Math.PI;//, sin = Math.sin, cos = Math.cos;
-        let angles, count;
+        const π = Math.PI;
+        let angles, count, currentStep = 1, radiusPrev, radiusStep;
 
         //WebGPU start
         
         let device, pipeline, posBuf, velBuf, paramBuf, debugBuf, messageArray, anglesBufGPU, bindGroup, timeBuffer;
         const availableAdapters = [];
+        
+        // Если ваш GPU-цикл runAuto работает очень быстро (например, 200 FPS), то за одну миллисекунду может пройти несколько кадров.
+        // В этом случае в течение этой миллисекунды uTime будет одинаковым целым числом, и все кадры внутри этого промежутка выдадут идентичные «случайные» числа.
+        // Что избежать этого умножаем на 1000, чтобы превратить миллисекунды в микросекунды.
+        const timeMultiplier = 1000;
 
+        async function finalSyncGPU() {
+            const readBuf = device.createBuffer({ size: count * 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+            const enc = device.createCommandEncoder();
+            enc.copyBufferToBuffer(anglesBufGPU, 0, readBuf, 0, count * 16);
+            device.queue.submit([enc.finish()]);
+            await readBuf.mapAsync(GPUMapMode.READ);
+            const data = new Float32Array(readBuf.getMappedRange());
+            for (let i = config.pointsPerStep; i < count; i++) {
+                const pointAngles = angles[i]
+                let index = i * 4;
+                pointAngles.latitude = data[index++]; pointAngles.longitude = data[index++]; pointAngles.altitude = data[index++];
+                const s = Math.floor(i / config.pointsPerStep);
+                const r = config.baseRadius + s * radiusStep;
+                setAttributes(pointAngles, r, i);
+            }
+            posAttr.needsUpdate = true; colorAttr.needsUpdate = true;
+            readBuf.unmap(); readBuf.destroy();
+
+        }
+
+        async function readMessageValue(step) {
+            const readBuf = device.createBuffer({ size: 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+            const encoder = device.createCommandEncoder();
+
+            // 1. Кодируем команду копирования из GPU-буфера в доступный для чтения буфер
+            encoder.copyBufferToBuffer(
+                messageArray, // Ваш исходный буфер из шейдера
+                0,
+                readBuf,  // Вспомогательный буфер с GPUBufferUsage.MAP_READ
+                0,
+                // Размер в байтах (u32 + u32 + f32 = 12 байт)
+                4//errorCode
+                + 4//i
+                + 4//value
+            );
+
+            device.queue.submit([encoder.finish()]);
+            await readBuf.mapAsync(GPUMapMode.READ);
+
+            const mappedRange = readBuf.getMappedRange();
+
+            // 3. Создаем типизированный массив на основе данных буфера
+            const message = new Uint32Array(mappedRange), messageCode = message[0];
+
+            if (messageCode != 0) {
+                let messageString;
+                switch (messageCode) {
+                    case 1: messageString = 'hyperbola_gpu: Under construction.'; break;
+                    default: messageString = 'Unknown code: ' + messageCode;
+                }
+                console.error(`[GPU Step ${step}] ` + messageString + ' i: ' + message[1] + ' x: ' + new Float32Array(mappedRange)[2]);
+            }
+
+            readBuf.unmap(); readBuf.destroy();
+        }
+
+        async function readDebugValue(step) {
+            const readBuf = device.createBuffer({ size: 24, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+            const encoder = device.createCommandEncoder();
+            encoder.copyBufferToBuffer(debugBuf, 0, readBuf, 0,
+                16//value
+                + 4//i
+                + 4//j
+                //+ 8//Padding (смещение 24, размер 8) — чтобы общий размер структуры был кратен 16.
+            );
+            device.queue.submit([encoder.finish()]);
+            await readBuf.mapAsync(GPUMapMode.READ);
+
+            const mappedRange = readBuf.getMappedRange();
+            const f = new Float32Array(mappedRange);
+            const u = new Uint32Array(mappedRange);
+
+            // ВЫВОД ВСЕХ 4 КООРДИНАТ
+            console.log(`[GPU Step ${step}] i =  ${u[4]}, j = ${u[5]}, x=${f[0]}, y=${f[1]}, z=${f[2]}, w=${f[3]}`);
+
+            readBuf.unmap(); readBuf.destroy();
+        }
+        
         async function getSafeAdapterName(adapter, index) {
             if (!adapter) return `${index + 1}. Unknown device`;
             let name = "WebGPU Adapter";
@@ -114,26 +198,28 @@
                 return;
             }
             await initWebGPU(idx);
-            while (currentStep < totalSteps) {
+            radiusPrev = config.baseRadius;
+            radiusStep = (config.radiusMax - config.baseRadius) / (config.totalSteps - 1);
+            document.getElementById('totalStepsDisplay').innerText = config.totalSteps;
+            while (currentStep < config.totalSteps) {
 
                 //Для генератора случайных чисел
                 device.queue.writeBuffer(timeBuffer, 0, new Uint32Array([Math.floor(performance.now() * timeMultiplier)]));
 
                 const newRadius = radiusPrev + radiusStep;
-                device.queue.writeBuffer(paramBuf, 0, new Float32Array([radiusPrev, currentStep * pointsPerStep]));
+                device.queue.writeBuffer(paramBuf, 0, new Float32Array([radiusPrev, currentStep * config.pointsPerStep]));
                 const encoder = device.createCommandEncoder();
                 const pass = encoder.beginComputePass();
                 pass.setPipeline(pipeline); pass.setBindGroup(0, bindGroup);
-                pass.dispatchWorkgroups(Math.ceil(pointsPerStep / 64));
+                pass.dispatchWorkgroups(Math.ceil(config.pointsPerStep / 64));
                 pass.end();
                 device.queue.submit([encoder.finish()]);
-                if (DEBUG_MODE) await readDebugValue(currentStep);
+                if (config.DEBUG_MODE) await readDebugValue(currentStep);
                 else await readMessageValue(currentStep);
                 updateDisplay();
                 radiusPrev = newRadius; currentStep++;
             }
 
-            //                if (DEBUG_MODE) await readDebugValue(currentStep);
             await readMessageValue(currentStep);
             await finalSyncGPU(); updateDisplay();
             const end = performance.now();
@@ -677,14 +763,25 @@ let r4 = random(&state);
                 { binding: bindingId++, resource: { buffer: anglesBufGPU } },
                 { binding: bindingId++, resource: { buffer: messageArray } },
             ]
-            if (RANDOM_POINTS != 0) entries.push({ binding: bindingId++, resource: { buffer: timeBuffer } });
-            if (RANDOM_POINTS === 2) entries.push({ binding: bindingId++, resource: { buffer: randomBuffer } });// Буфер LUT
+            if (config.RANDOM_POINTS != 0) entries.push({ binding: bindingId++, resource: { buffer: timeBuffer } });
+            if (config.RANDOM_POINTS === 2) entries.push({ binding: bindingId++, resource: { buffer: randomBuffer } });// Буфер LUT
             entries.push({ binding: bindingId++, resource: { buffer: invCdfBuffer } }); // Новый буфер LUT для inverseCDF
-            if (DEBUG_MODE) entries.push({ binding: bindingId++, resource: { buffer: debugBuf } });
+            if (config.DEBUG_MODE) entries.push({ binding: bindingId++, resource: { buffer: debugBuf } });
             bindGroup = device.createBindGroup({ layout: pipeline.getBindGroupLayout(0), entries: entries });
         }
 
         //WebGPU end
+
+        function updateDisplay() {
+            document.getElementById('stepCounter').innerText = currentStep;
+            document.getElementById('radVal').innerText = radiusPrev.toFixed(2);
+            const progress = {
+                type: 'PROGRESS',
+                currentStep: currentStep,
+                radiusPrev: radiusPrev,
+            };
+            socket.send(JSON.stringify(progress));
+        }
 
         // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ МАТЕМАТИКИ ---
         

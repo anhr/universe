@@ -94,7 +94,7 @@
             <button id="gpuBtn">Старт (GPU)</button>
         </div>
         <div id="info">
-            Шаг: <span id="stepCounter">1</span> / <span id="totalStepsDisplay">100</span> | R: <span id="radVal">0.10</span>
+            Шаг: <span id="stepCounter">0</span> / <span id="totalStepsDisplay">0</span> | R: <span id="radVal">0.0</span>
             <span id="timeResult" class="timer"></span>
             <span id="activeGpu"></span>
         </div>
@@ -1303,11 +1303,6 @@
                     };
                     socket.send(JSON.stringify(config));
 
-/*                    
-                    // Генерируем начальные углы для первой группы
-                    const initialAngles = new Float32Array(pointsPerStep * 3);
-                    for (let i = 0; i < initialAngles.length; i++) initialAngles[i] = (Math.random() * Math.PI) - (Math.PI / 2);
-*/                    
                     const anglesItemSize = 4, initialAngles = new Float32Array(pointsPerStep * anglesItemSize);
                     for (let i = 0; i < config.pointsPerStep; i++) {
                         let index = i * anglesItemSize;
@@ -1325,7 +1320,11 @@
 
                             // Используем 0 и 1 для управления цветом
                             stateText.style.color = (data.code === 1) ? "#00ffcc" : "#ff4444";
-                        }
+                        } else if (data.type === "PROGRESS") {
+                            currentStep = data.currentStep;
+                            radiusPrev = data.radiusPrev;
+                            updateDisplay();
+                        } else console.error('socket message: Invalid data.type: ' + data.type);
                     }
                 };
  /*
