@@ -223,7 +223,7 @@
             const R = Math.sqrt(xyz + w * w);
 
             if (R < 1e-10) {
-                console.error(sCartesianToAngles + ': Under constraction');
+                console.error('cartesianToPolar: Invalid R = ' + R + '. Under constraction');
                 return { altitude: 0, latitude: 0, longitude: 0 };
             }
 
