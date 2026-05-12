@@ -988,7 +988,8 @@ let r4 = random(&state);
                                     debug.i = i;
                                     debug.j = currOffset;
                                     //debug.value = vec4<f32>(r1, r2, r3, r4);
-                                    debug.value = positions[currOffset + i];
+                                    debug.value = vec4<f32>(0.1, 0.2, 0.3, 0.4);
+                                    //debug.value = positions[currOffset + i];
                                 }` : ``}
 
 
