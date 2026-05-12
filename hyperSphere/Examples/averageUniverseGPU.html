@@ -1151,13 +1151,38 @@ let r4 = random(&state);
         }
 
         async function finalSyncGPU() {
+/*            
+            await posBuf.mapAsync(GPUMapMode.READ);
+            const pos = new Float32Array(posBuf.getMappedRange());
+*/            
+            const posReadBuf = device.createBuffer({ size: count * 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+            const posEnc = device.createCommandEncoder();
+            posEnc.copyBufferToBuffer(posBuf, 0, posReadBuf, 0, count * 16);
+            device.queue.submit([posEnc.finish()]);
+            await posReadBuf.mapAsync(GPUMapMode.READ);
+            const posData = new Float32Array(posReadBuf.getMappedRange());
+            for (let i = pointsPerStep; i < count; i++) {
+                let index = i * 4;
+                const itemAngles = cartesianToPolar({
+                    x: posData[index++],
+                    y: posData[index++],
+                    z: posData[index++],
+                    w: posData[index++],
+                });
+                const pointAngles = angles[i];
+                pointAngles.latitude = itemAngles.latitude; pointAngles.longitude = itemAngles.longitude; pointAngles.altitude = itemAngles.altitude;
+console.log('i = ' + i + ' angles: ' + JSON.stringify(pointAngles))
+                const s = Math.floor(i / pointsPerStep);
+                const r = baseRadius + s * radiusStep;
+                setAttributes(pointAngles, r, i);
+            }
+/*
             const readBuf = device.createBuffer({ size: count * 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
             const enc = device.createCommandEncoder();
             enc.copyBufferToBuffer(anglesBufGPU, 0, readBuf, 0, count * 16);
             device.queue.submit([enc.finish()]);
             await readBuf.mapAsync(GPUMapMode.READ);
             const data = new Float32Array(readBuf.getMappedRange());
-            //            const color = new THREE.Color();
             for (let i = 0; i < count; i++) {
                 if (i >= pointsPerStep) {
                     const pointAngles = angles[i]
@@ -1166,15 +1191,9 @@ console.log('i = ' + i + ' angles: ' + JSON.stringify(pointAngles))
                     const s = Math.floor(i / pointsPerStep);
                     const r = baseRadius + s * radiusStep;
                     setAttributes(pointAngles, r, i);
-                    /*
-                                        const p = polarToCartesian(angles[i].latitude, angles[i].longitude, angles[i].altitude, r);
-                                        posAttr.setXYZ(i, p.x, p.y, p.z);
-                                        const t = (p.w + radiusMax) / (2 * radiusMax);
-                                        color.setHSL(0.7 * (1 - t), 1, 0.5);
-                                        colorAttr.setXYZ(i, color.r, color.g, color.b);
-                    */
                 }
             }
+*/            
             posAttr.needsUpdate = true; colorAttr.needsUpdate = true;
             readBuf.unmap(); readBuf.destroy();
 
