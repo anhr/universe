@@ -981,6 +981,7 @@ let r4 = random(&state);
                                 velocities[i] = v_new;
                                 let next_pos_unit = normalize(p1 + v_new);
                                 positions[currOffset + i] = next_pos_unit * p_param.radiusPrev;
+                                cartesianToPolar(next_pos_unit);
 //                                anglesBuf[currOffset + i] = cartesianToPolar(next_pos_unit);
 
                                 ${DEBUG_MODE ? `if (i == 0u) { isDebugInfo = true; } else { isDebugInfo = false; }` : ``}
