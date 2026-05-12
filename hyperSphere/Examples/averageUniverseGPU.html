@@ -1151,6 +1151,13 @@ let r4 = random(&state);
         }
 
         async function finalSyncGPU() {
+            const posReadBuf = device.createBuffer({ size: count * 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+            const posEnc = device.createCommandEncoder();
+            posEnc.copyBufferToBuffer(posBuf, 0, posReadBuf, 0, count * 16);
+            device.queue.submit([posEnc.finish()]);
+            await posReadBuf.mapAsync(GPUMapMode.READ);
+            const posData = new Float32Array(posReadBuf.getMappedRange());
+            
             const readBuf = device.createBuffer({ size: count * 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
             const enc = device.createCommandEncoder();
             enc.copyBufferToBuffer(anglesBufGPU, 0, readBuf, 0, count * 16);
