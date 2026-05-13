@@ -55,7 +55,7 @@
 
         //WebGPU start
         
-        let device, pipeline, posBuf, velBuf, paramBuf, debugBuf, messageArray, anglesBufGPU, bindGroup, timeBuffer;
+        let device, pipeline, posBuf, velBuf, paramBuf, debugBuf, messageArray, bindGroup, timeBuffer;//, anglesBufGPU
         const availableAdapters = [];
         
         // Если ваш GPU-цикл runAuto работает очень быстро (например, 200 FPS), то за одну миллисекунду может пройти несколько кадров.
@@ -484,7 +484,7 @@
                             @group(0) @binding(${bindingId++}) var<storage, read_write> positions: array<vec4<f32>>;
                             @group(0) @binding(${bindingId++}) var<storage, read_write> velocities: array<vec4<f32>>;
                             @group(0) @binding(${bindingId++}) var<uniform> p_param: Params;
-                            @group(0) @binding(${bindingId++}) var<storage, read_write> anglesBuf: array<PolarAngles>;
+//                            @group(0) @binding() var<storage, read_write> anglesBuf: array<PolarAngles>;
                             @group(0) @binding(${bindingId++}) var<storage, read_write> messageBuffer: Message;
                             ${config.RANDOM_POINTS != 0 ? `@group(0) @binding(${bindingId++}) var<uniform> uTime: u32; //Для генератора случайных чисел` : ``}
                             ${config.RANDOM_POINTS === 2 ? `@group(0) @binding(${bindingId++}) var<storage, read> randomPool: array<f32>;// Используем динамический размер массива для гибкости` : ``}
@@ -658,7 +658,6 @@ let r4 = random(&state);
                                 ${config.DEBUG_MODE ? `if (isDebugInfo) {
                                     debug.i = i;
                                     debug.j = 0;
-                                    //debug.value = vec4<f32>(anglesBuf[currOffset + i].altitude, anglesBuf[currOffset + i].latitude, anglesBuf[currOffset + i].longitude, 0.0);
                                     //debug.value = vec4<f32>(r1, r2, r3, r4);
                                     debug.value = vec4<f32>(0.0, 0.0, 0.0, 0.0);
                                 }` : ``}
@@ -706,7 +705,7 @@ let r4 = random(&state);
                                 velocities[i] = v_new;
                                 let next_pos_unit = normalize(p1 + v_new);
                                 positions[currOffset + i] = next_pos_unit * p_param.radiusPrev;
-                                anglesBuf[currOffset + i] = cartesianToPolar(next_pos_unit);
+//                                anglesBuf[currOffset + i] = cartesianToPolar(next_pos_unit);
 
                             }
                         `;
@@ -723,7 +722,7 @@ let r4 = random(&state);
             // Создаем буфер для одного числа u32. Этот буфер используется для генератора случайных чисел в GPU.
             timeBuffer = device.createBuffer({ size: 4, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
 
-            anglesBufGPU = device.createBuffer({ size: count * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
+//            anglesBufGPU = device.createBuffer({ size: count * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
 
             const initialPos = new Float32Array(count * 4);
             const initialAngles = new Float32Array(count * 4);
@@ -733,7 +732,7 @@ let r4 = random(&state);
                 initialAngles[index] = angles[i].latitude; initialAngles[index + 1] = angles[i].longitude; initialAngles[index + 2] = angles[i].altitude;
             }
             device.queue.writeBuffer(posBuf, 0, initialPos);
-            device.queue.writeBuffer(anglesBufGPU, 0, initialAngles);
+//            device.queue.writeBuffer(anglesBufGPU, 0, initialAngles);
 
             //Создание буфера случайных чисел, которые затем будут использоваться в WebGPU вместо герерации случайного числа в WebGPU
 
@@ -790,7 +789,7 @@ let r4 = random(&state);
                 { binding: bindingId++, resource: { buffer: posBuf } },
                 { binding: bindingId++, resource: { buffer: velBuf } },
                 { binding: bindingId++, resource: { buffer: paramBuf } },
-                { binding: bindingId++, resource: { buffer: anglesBufGPU } },
+//                { binding: bindingId++, resource: { buffer: anglesBufGPU } },
                 { binding: bindingId++, resource: { buffer: messageArray } },
             ]
             if (config.RANDOM_POINTS != 0) entries.push({ binding: bindingId++, resource: { buffer: timeBuffer } });
