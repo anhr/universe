@@ -71,6 +71,7 @@
             await posReadBuf.mapAsync(GPUMapMode.READ);
             const posData = new Float32Array(posReadBuf.getMappedRange());
             socket.send(posData.buffer);
+            log('Data is ready.');
 /*            
             for (let i = config.pointsPerStep; i < count; i++) {
                 let index = i * 4;
@@ -147,6 +148,7 @@
         }
 
         async function readDebugValue(step) {
+            if(!config.DEBUG_MODE) return;
             const readBuf = device.createBuffer({ size: 24, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
             const encoder = device.createCommandEncoder();
             encoder.copyBufferToBuffer(debugBuf, 0, readBuf, 0,
@@ -207,9 +209,10 @@
             return true;
         }
 
+        let start;
         const runAuto = async () => {
 //            document.querySelectorAll('button').forEach(b => b.disabled = true);
-            const start = performance.now();
+            start = performance.now();
             const idx = parseInt(document.getElementById('gpuSelect').value);
             if (idx === -1) {
 //                alert("Select a video card");
@@ -250,9 +253,8 @@
 
             await readMessageValue(currentStep);
             await finalSyncGPU(); updateDisplay();
-            const end = performance.now();
-            document.getElementById('timeResult').innerText = `${((end - start) / 1000).toFixed(3)} sec.`;
 //            document.querySelectorAll('button').forEach(b => b.disabled = false);
+            updateDisplay();
         };
 
         async function initWebGPU(idx) {
@@ -796,6 +798,7 @@ let r4 = random(&state);
             entries.push({ binding: bindingId++, resource: { buffer: invCdfBuffer } }); // Новый буфер LUT для inverseCDF
             if (config.DEBUG_MODE) entries.push({ binding: bindingId++, resource: { buffer: debugBuf } });
             bindGroup = device.createBindGroup({ layout: pipeline.getBindGroupLayout(0), entries: entries });
+            log("GPU Device Ready");
         }
 
         //WebGPU end
@@ -809,6 +812,11 @@ let r4 = random(&state);
                 radiusPrev: radiusPrev,
             };
             socket.send(JSON.stringify(progress));
+            
+            const end = performance.now();
+            const time = (end - start) / 1000;
+            document.getElementById('timeResult').innerText = `${(time).toFixed(3)} sec.`;
+//            socket.send(JSON.stringify({ type: 'TIME', time: time, }));
         }
 
         // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ МАТЕМАТИКИ ---
@@ -925,7 +933,7 @@ let r4 = random(&state);
             };
 
             // 3. Successful connection
-            socket.onopen = () => {
+            socket.onopen = (event) => {
 /*
                 stateText.innerText = "Connection established. Ready for computation.";
                 stateText.style.color = successStatusColor;
@@ -951,8 +959,9 @@ let r4 = random(&state);
                     window.config = JSON.parse(event.data);
                     count = config.totalSteps * config.pointsPerStep;
                     document.getElementById('status').innerText = "CONFIG RECEIVED";
-                    document.getElementById('client').innerText = event.origin || "Localhost";
-                    log("Configuration loaded.");
+                    const clientText = event.origin || "Localhost";
+                    document.getElementById('client').innerText = clientText;
+                    log('The session has begun. ' + clientText);//"Configuration loaded.");
                 } else {
                     // Binary data received
                     const initialAngles = new Float32Array(event.data);
@@ -1062,9 +1071,9 @@ let r4 = random(&state);
                         document.getElementById('status').innerText = "DONE";
                     }
             */
-            function log(m) { document.getElementById('log').innerHTML += `<div>> ${m}</div>`; }
             //        initWebGPU();
         }
+        function log(m) { document.getElementById('log').innerHTML += `<div>> ${m}</div>`; }
     </script>
 </body>
 </html>

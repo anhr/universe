@@ -120,7 +120,7 @@
         const π = Math.PI, sin = Math.sin, cos = Math.cos;
 
         // --- ГЛОБАЛЬНАЯ КОНФИГУРАЦИЯ ---
-        const DEBUG_MODE = true;
+        const DEBUG_MODE = false;
 
         //randpm
 
@@ -157,8 +157,8 @@
 
         const LOG = false;//log attributes to console
         const LOTS_OF_POINTS = false;
-        const totalSteps = LOTS_OF_POINTS ? 100 : 10;
-        const pointsPerStep = LOTS_OF_POINTS ? 500 : 5;
+        const totalSteps = LOTS_OF_POINTS ? 1000 : 10;
+        const pointsPerStep = LOTS_OF_POINTS ? 5000 : 5;
         const count = totalSteps * pointsPerStep;
 
         //Hyperbola parametr. See calculateHyperbola.
@@ -1228,12 +1228,13 @@
         function updateDisplay() {
             document.getElementById('stepCounter').innerText = currentStep;
             document.getElementById('radVal').innerText = radiusPrev.toFixed(2);
+            document.getElementById('timeResult').innerText = `Итог: ${((performance.now() - start) / 1000).toFixed(3)} сек.`;
         }
 
-        let socket;
+        let socket, start;
         const runAuto = async (mode) => {
             document.querySelectorAll('button').forEach(b => b.disabled = true);
-            const start = performance.now();
+            start = performance.now();
             if (mode === 'GPU') {
                 if (socket && socket.readyState === WebSocket.OPEN) {
                     socket.close(1000,//статус нормальное закрытие
@@ -1314,6 +1315,27 @@
                     if (typeof event.data === 'string') {
                         const data = JSON.parse(event.data);
 
+                        switch (data.type) {
+                            case "STATUS":
+                                const stateText = document.getElementById('stateText');
+                                stateText.innerText = data.message;
+    
+                                // Используем 0 и 1 для управления цветом
+                                stateText.style.color = (data.code === 1) ? "#00ffcc" : "#ff4444";
+                                break;
+                            case "PROGRESS":
+                                currentStep = data.currentStep;
+                                radiusPrev = data.radiusPrev;
+                                updateDisplay();
+                                break;
+/*                                
+                            case "TIME":
+                                document.getElementById('timeResult').innerText = `Итог (${mode}): ${data.time.toFixed(3)} сек.`;
+                                break;
+*/                                
+                            default: console.error('socket message: Invalid data.type: ' + data.type);
+                        }
+/*                        
                         if (data.type === "STATUS") {
                             const stateText = document.getElementById('stateText');
                             stateText.innerText = data.message;
@@ -1325,6 +1347,7 @@
                             radiusPrev = data.radiusPrev;
                             updateDisplay();
                         } else console.error('socket message: Invalid data.type: ' + data.type);
+*/                        
                     } else if (typeof event.data === 'object'){
                         //Vertices positions
                         const posData = new Float32Array(event.data);
@@ -1338,12 +1361,13 @@
                             });
                             const pointAngles = angles[i];
                             pointAngles.latitude = itemAngles.latitude; pointAngles.longitude = itemAngles.longitude; pointAngles.altitude = itemAngles.altitude;
-console.log('i = ' + i + ' angles: ' + JSON.stringify(pointAngles))
+//console.log('i = ' + i + ' angles: ' + JSON.stringify(pointAngles))
                             const s = Math.floor(i / pointsPerStep);
                             const r = baseRadius + s * radiusStep;
                             setAttributes(pointAngles, r, i);
                         }
                         posAttr.needsUpdate = true; colorAttr.needsUpdate = true;
+                        document.getElementById('timeResult').innerText = `Итог (${mode}): ${((performance.now() - start) / 1000).toFixed(3)} сек.`;
                     } else console.error('socket message: Invalid event.data type: ' + (typeof event.data));
                 };
  /*
