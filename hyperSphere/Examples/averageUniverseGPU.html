@@ -1172,7 +1172,7 @@ let r4 = random(&state);
                 });
                 const pointAngles = angles[i];
                 pointAngles.latitude = itemAngles.latitude; pointAngles.longitude = itemAngles.longitude; pointAngles.altitude = itemAngles.altitude;
-console.log('i = ' + i + ' angles: ' + JSON.stringify(pointAngles))
+//console.log('i = ' + i + ' angles: ' + JSON.stringify(pointAngles))
                 const s = Math.floor(i / pointsPerStep);
                 const r = baseRadius + s * radiusStep;
                 setAttributes(pointAngles, r, i);
