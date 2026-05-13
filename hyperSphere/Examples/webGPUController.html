@@ -86,9 +86,10 @@
 
     <div id="ui">
         <div class="controls">
+            <!--
             <select id="gpuSelect">
                 <option value="-1">Поиск видеокарт...</option>
-            </select>
+            </select>-->
             <button id="stepBtn">Шаг (CPU)</button>
             <button id="startBtn">Старт (CPU)</button>
             <button id="gpuBtn">Старт (GPU)</button>
@@ -1361,7 +1362,7 @@
                             });
                             const pointAngles = angles[i];
                             pointAngles.latitude = itemAngles.latitude; pointAngles.longitude = itemAngles.longitude; pointAngles.altitude = itemAngles.altitude;
-//console.log('i = ' + i + ' angles: ' + JSON.stringify(pointAngles))
+console.log('i = ' + i + ' angles: ' + JSON.stringify(pointAngles))
                             const s = Math.floor(i / pointsPerStep);
                             const r = baseRadius + s * radiusStep;
                             setAttributes(pointAngles, r, i);
