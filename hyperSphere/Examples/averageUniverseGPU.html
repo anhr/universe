@@ -147,7 +147,7 @@
         else random = RANDOM_POINTS ? Math.random : () => { return PSEUDO_RANDOM; };
 
         const LOG = false;//log attributes to console
-        const LOTS_OF_POINTS = true;
+        const LOTS_OF_POINTS = false;
         const totalSteps = LOTS_OF_POINTS ? 1000 : 10;
         const pointsPerStep = LOTS_OF_POINTS ? 5000 : 5;
         const count = totalSteps * pointsPerStep;
@@ -220,7 +220,7 @@
             const R = Math.sqrt(xyz + w * w);
 
             if (R < 1e-10) {
-                console.error(sCartesianToAngles + ': Under constraction');
+                console.error('cartesianToPolar: Invalid R = ' + R + '. Under constraction');
                 return { altitude: 0, latitude: 0, longitude: 0 };
                 //        		return angles([0, 0, 0]);
             }
@@ -572,8 +572,7 @@
         }
 
         // --- WebGPU: СЕРДЦЕ СИСТЕМЫ ---
-        let device, pipeline, posBuf, velBuf, paramBuf, debugBuf, messageArray,
-            anglesBufGPU, bindGroup;
+        let device, pipeline, posBuf, velBuf, paramBuf, debugBuf, messageArray, bindGroup;//, anglesBufGPU
         let availableAdapters = [];
 
         //for random function in WebGPU
@@ -770,7 +769,7 @@
                             @group(0) @binding(${bindingId++}) var<storage, read_write> positions: array<vec4<f32>>;
                             @group(0) @binding(${bindingId++}) var<storage, read_write> velocities: array<vec4<f32>>;
                             @group(0) @binding(${bindingId++}) var<uniform> p_param: Params;
-                            @group(0) @binding(${bindingId++}) var<storage, read_write> anglesBuf: array<PolarAngles>;
+//                            @group(0) @binding() var<storage, read_write> anglesBuf: array<PolarAngles>;
                             @group(0) @binding(${bindingId++}) var<storage, read_write> messageBuffer: Message;
                             ${RANDOM_POINTS != 0 ? `@group(0) @binding(${bindingId++}) var<uniform> uTime: u32; //Для генератора случайных чисел` : ``}
                             ${RANDOM_POINTS === 2 ? `@group(0) @binding(${bindingId++}) var<storage, read> randomPool: array<f32>;// Используем динамический размер массива для гибкости` : ``}
@@ -939,7 +938,6 @@ let r2 = random(&state);
 let r3 = random(&state);
 let r4 = random(&state);
 */
-                                ${DEBUG_MODE ? `if (i == 0u) { isDebugInfo = true; } else { isDebugInfo = false; }` : ``}
 
                                 let prevOffset = u32(p_param.stepOffset - f32(POINTS_PER_STEP));
                                 let currOffset = u32(p_param.stepOffset);
@@ -983,7 +981,18 @@ let r4 = random(&state);
                                 velocities[i] = v_new;
                                 let next_pos_unit = normalize(p1 + v_new);
                                 positions[currOffset + i] = next_pos_unit * p_param.radiusPrev;
-                                anglesBuf[currOffset + i] = cartesianToPolar(next_pos_unit);
+                                cartesianToPolar(next_pos_unit);
+//                                anglesBuf[currOffset + i] = cartesianToPolar(next_pos_unit);
+
+                                ${DEBUG_MODE ? `if (i == 0u) { isDebugInfo = true; } else { isDebugInfo = false; }` : ``}
+                                ${DEBUG_MODE ? `if (isDebugInfo) {
+                                    debug.i = i;
+                                    debug.j = currOffset;
+                                    //debug.value = vec4<f32>(r1, r2, r3, r4);
+                                    debug.value = vec4<f32>(0.1, 0.2, 0.3, 0.4);
+                                    //debug.value = positions[currOffset + i];
+                                }` : ``}
+
 
                                 ${DEBUG_MODE ? `if (isDebugInfo) {
                                     debug.i = i;
@@ -1014,19 +1023,20 @@ let r4 = random(&state);
             // Создание буфера для чтения debug данных на CPU
             //            readDebugBuf = device.createBuffer({ size: 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
 
-            anglesBufGPU = device.createBuffer({ size: count * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
+//            anglesBufGPU = device.createBuffer({ size: count * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
 
-            const initialPos = new Float32Array(count * 4);
+            const posItemSize = 4, initialPos = new Float32Array(count * posItemSize);
 //            const initialAngles = new Float32Array(count * 4);
-            const anglesItemSize = 4, initialAngles = new Float32Array(pointsPerStep * anglesItemSize);
+//            const anglesItemSize = 4, initialAngles = new Float32Array(pointsPerStep * anglesItemSize);
             for (let i = 0; i < pointsPerStep; i++) {
                 const p = polarToCartesian(angles[i].latitude, angles[i].longitude, angles[i].altitude, baseRadius);
-                let index = i * anglesItemSize;
+                let index = i * posItemSize;
                 initialPos[index] = p.x; initialPos[index + 1] = p.y; initialPos[index + 2] = p.z; initialPos[index + 3] = p.w;
-                initialAngles[index++] = angles[i].latitude; initialAngles[index++] = angles[i].longitude; initialAngles[index++] = angles[i].altitude;
+//                let index = i * anglesItemSize;
+//                initialAngles[index++] = angles[i].latitude; initialAngles[index++] = angles[i].longitude; initialAngles[index++] = angles[i].altitude;
             }
             device.queue.writeBuffer(posBuf, 0, initialPos);
-            device.queue.writeBuffer(anglesBufGPU, 0, initialAngles);
+//            device.queue.writeBuffer(anglesBufGPU, 0, initialAngles);
 
             //Создание буфера случайных чисел, которые затем будут использоваться в WebGPU вместо герерации случайного числа в WebGPU
 
@@ -1081,7 +1091,7 @@ let r4 = random(&state);
                 { binding: bindingId++, resource: { buffer: posBuf } },
                 { binding: bindingId++, resource: { buffer: velBuf } },
                 { binding: bindingId++, resource: { buffer: paramBuf } },
-                { binding: bindingId++, resource: { buffer: anglesBufGPU } },
+//                { binding: bindingId++, resource: { buffer: anglesBufGPU } },
                 { binding: bindingId++, resource: { buffer: messageArray } },
             ]
             if (RANDOM_POINTS != 0) entries.push({ binding: bindingId++, resource: { buffer: timeBuffer } });
@@ -1152,20 +1162,38 @@ let r4 = random(&state);
 
         async function finalSyncGPU() {
 /*            
+            await posBuf.mapAsync(GPUMapMode.READ);
+            const pos = new Float32Array(posBuf.getMappedRange());
+*/            
             const posReadBuf = device.createBuffer({ size: count * 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
             const posEnc = device.createCommandEncoder();
             posEnc.copyBufferToBuffer(posBuf, 0, posReadBuf, 0, count * 16);
             device.queue.submit([posEnc.finish()]);
             await posReadBuf.mapAsync(GPUMapMode.READ);
             const posData = new Float32Array(posReadBuf.getMappedRange());
-*/            
+            for (let i = pointsPerStep; i < count; i++) {
+                let index = i * 4;
+                const itemAngles = cartesianToPolar({
+                    x: posData[index++],
+                    y: posData[index++],
+                    z: posData[index++],
+                    w: posData[index++],
+                });
+                const pointAngles = angles[i];
+                pointAngles.latitude = itemAngles.latitude; pointAngles.longitude = itemAngles.longitude; pointAngles.altitude = itemAngles.altitude;
+//console.log('i = ' + i + ' angles: ' + JSON.stringify(pointAngles))
+                const s = Math.floor(i / pointsPerStep);
+                const r = baseRadius + s * radiusStep;
+                setAttributes(pointAngles, r, i);
+            }
+            posReadBuf.unmap(); posReadBuf.destroy();
+/*
             const readBuf = device.createBuffer({ size: count * 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
             const enc = device.createCommandEncoder();
             enc.copyBufferToBuffer(anglesBufGPU, 0, readBuf, 0, count * 16);
             device.queue.submit([enc.finish()]);
             await readBuf.mapAsync(GPUMapMode.READ);
             const data = new Float32Array(readBuf.getMappedRange());
-            //            const color = new THREE.Color();
             for (let i = 0; i < count; i++) {
                 if (i >= pointsPerStep) {
                     const pointAngles = angles[i]
@@ -1174,17 +1202,11 @@ let r4 = random(&state);
                     const s = Math.floor(i / pointsPerStep);
                     const r = baseRadius + s * radiusStep;
                     setAttributes(pointAngles, r, i);
-                    /*
-                                        const p = polarToCartesian(angles[i].latitude, angles[i].longitude, angles[i].altitude, r);
-                                        posAttr.setXYZ(i, p.x, p.y, p.z);
-                                        const t = (p.w + radiusMax) / (2 * radiusMax);
-                                        color.setHSL(0.7 * (1 - t), 1, 0.5);
-                                        colorAttr.setXYZ(i, color.r, color.g, color.b);
-                    */
                 }
             }
-            posAttr.needsUpdate = true; colorAttr.needsUpdate = true;
             readBuf.unmap(); readBuf.destroy();
+*/            
+            posAttr.needsUpdate = true; colorAttr.needsUpdate = true;
 
         }
 

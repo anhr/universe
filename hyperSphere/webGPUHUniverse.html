@@ -41,6 +41,7 @@
         <div>SOURCE: <span id="client">---</span></div>
         <!--<div>PROGRESS: <span id="progress">0 / 0 | R: 0.00</span></div>-->
         <div>PROGRESS: <span id="stepCounter">0</span> / <span id="totalStepsDisplay">0</span> | R: <span id="radVal">0.00</span> </div>
+        <div>TIME: <span id="timeResult" class="timer"></span></div>
         <div id="socket-status">
             <strong>Socket Status:</strong> <span id="stateText">Waiting for connection to server...</span><br>
         </div>
@@ -50,11 +51,11 @@
     <script type="module">
         
         const π = Math.PI;
-        let angles, count, currentStep = 1, radiusPrev, radiusStep;
+        let angles, count, currentStep, radiusPrev, radiusStep;
 
         //WebGPU start
         
-        let device, pipeline, posBuf, velBuf, paramBuf, debugBuf, messageArray, anglesBufGPU, bindGroup, timeBuffer;
+        let device, pipeline, posBuf, velBuf, paramBuf, debugBuf, messageArray, bindGroup, timeBuffer;//, anglesBufGPU
         const availableAdapters = [];
         
         // Если ваш GPU-цикл runAuto работает очень быстро (например, 200 FPS), то за одну миллисекунду может пройти несколько кадров.
@@ -63,6 +64,33 @@
         const timeMultiplier = 1000;
 
         async function finalSyncGPU() {
+            const posReadBuf = device.createBuffer({ size: count * 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+            const posEnc = device.createCommandEncoder();
+            posEnc.copyBufferToBuffer(posBuf, 0, posReadBuf, 0, count * 16);
+            device.queue.submit([posEnc.finish()]);
+            await posReadBuf.mapAsync(GPUMapMode.READ);
+            const posData = new Float32Array(posReadBuf.getMappedRange());
+            socket.send(posData.buffer);
+            log('Data is ready.');
+/*            
+            for (let i = config.pointsPerStep; i < count; i++) {
+                let index = i * 4;
+                const itemAngles = cartesianToPolar({
+                    x: posData[index++],
+                    y: posData[index++],
+                    z: posData[index++],
+                    w: posData[index++],
+                });
+                const pointAngles = angles[i];
+                pointAngles.latitude = itemAngles.latitude; pointAngles.longitude = itemAngles.longitude; pointAngles.altitude = itemAngles.altitude;
+//console.log('i = ' + i + ' angles: ' + JSON.stringify(pointAngles))
+                const s = Math.floor(i / pointsPerStep);
+                const r = baseRadius + s * radiusStep;
+                setAttributes(pointAngles, r, i);
+            }
+*/            
+            posReadBuf.unmap(); posReadBuf.destroy();
+/*            
             const readBuf = device.createBuffer({ size: count * 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
             const enc = device.createCommandEncoder();
             enc.copyBufferToBuffer(anglesBufGPU, 0, readBuf, 0, count * 16);
@@ -77,8 +105,9 @@
                 const r = config.baseRadius + s * radiusStep;
                 setAttributes(pointAngles, r, i);
             }
-            posAttr.needsUpdate = true; colorAttr.needsUpdate = true;
             readBuf.unmap(); readBuf.destroy();
+*/            
+//            posAttr.needsUpdate = true; colorAttr.needsUpdate = true;
 
         }
 
@@ -119,6 +148,7 @@
         }
 
         async function readDebugValue(step) {
+            if(!config.DEBUG_MODE) return;
             const readBuf = device.createBuffer({ size: 24, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
             const encoder = device.createCommandEncoder();
             encoder.copyBufferToBuffer(debugBuf, 0, readBuf, 0,
@@ -179,9 +209,10 @@
             return true;
         }
 
+        let start;
         const runAuto = async () => {
 //            document.querySelectorAll('button').forEach(b => b.disabled = true);
-            const start = performance.now();
+            start = performance.now();
             const idx = parseInt(document.getElementById('gpuSelect').value);
             if (idx === -1) {
 //                alert("Select a video card");
@@ -222,9 +253,8 @@
 
             await readMessageValue(currentStep);
             await finalSyncGPU(); updateDisplay();
-            const end = performance.now();
-            document.getElementById('timeResult').innerText = `Итог (${mode}): ${((end - start) / 1000).toFixed(3)} сек.`;
-            document.querySelectorAll('button').forEach(b => b.disabled = false);
+//            document.querySelectorAll('button').forEach(b => b.disabled = false);
+            updateDisplay();
         };
 
         async function initWebGPU(idx) {
@@ -454,7 +484,7 @@
                             @group(0) @binding(${bindingId++}) var<storage, read_write> positions: array<vec4<f32>>;
                             @group(0) @binding(${bindingId++}) var<storage, read_write> velocities: array<vec4<f32>>;
                             @group(0) @binding(${bindingId++}) var<uniform> p_param: Params;
-                            @group(0) @binding(${bindingId++}) var<storage, read_write> anglesBuf: array<PolarAngles>;
+//                            @group(0) @binding() var<storage, read_write> anglesBuf: array<PolarAngles>;
                             @group(0) @binding(${bindingId++}) var<storage, read_write> messageBuffer: Message;
                             ${config.RANDOM_POINTS != 0 ? `@group(0) @binding(${bindingId++}) var<uniform> uTime: u32; //Для генератора случайных чисел` : ``}
                             ${config.RANDOM_POINTS === 2 ? `@group(0) @binding(${bindingId++}) var<storage, read> randomPool: array<f32>;// Используем динамический размер массива для гибкости` : ``}
@@ -628,7 +658,6 @@ let r4 = random(&state);
                                 ${config.DEBUG_MODE ? `if (isDebugInfo) {
                                     debug.i = i;
                                     debug.j = 0;
-                                    //debug.value = vec4<f32>(anglesBuf[currOffset + i].altitude, anglesBuf[currOffset + i].latitude, anglesBuf[currOffset + i].longitude, 0.0);
                                     //debug.value = vec4<f32>(r1, r2, r3, r4);
                                     debug.value = vec4<f32>(0.0, 0.0, 0.0, 0.0);
                                 }` : ``}
@@ -676,7 +705,7 @@ let r4 = random(&state);
                                 velocities[i] = v_new;
                                 let next_pos_unit = normalize(p1 + v_new);
                                 positions[currOffset + i] = next_pos_unit * p_param.radiusPrev;
-                                anglesBuf[currOffset + i] = cartesianToPolar(next_pos_unit);
+//                                anglesBuf[currOffset + i] = cartesianToPolar(next_pos_unit);
 
                             }
                         `;
@@ -693,17 +722,17 @@ let r4 = random(&state);
             // Создаем буфер для одного числа u32. Этот буфер используется для генератора случайных чисел в GPU.
             timeBuffer = device.createBuffer({ size: 4, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
 
-            anglesBufGPU = device.createBuffer({ size: count * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
+//            anglesBufGPU = device.createBuffer({ size: count * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
 
             const initialPos = new Float32Array(count * 4);
-            const initialAngles = new Float32Array(count * 4);
+//            const initialAngles = new Float32Array(count * 4);
             for (let i = 0; i < config.pointsPerStep; i++) {
                 const p = polarToCartesian(angles[i].latitude, angles[i].longitude, angles[i].altitude, config.baseRadius), index = i * 4;
                 initialPos[index] = p.x; initialPos[index + 1] = p.y; initialPos[index + 2] = p.z; initialPos[index + 3] = p.w;
-                initialAngles[index] = angles[i].latitude; initialAngles[index + 1] = angles[i].longitude; initialAngles[index + 2] = angles[i].altitude;
+//                initialAngles[index] = angles[i].latitude; initialAngles[index + 1] = angles[i].longitude; initialAngles[index + 2] = angles[i].altitude;
             }
             device.queue.writeBuffer(posBuf, 0, initialPos);
-            device.queue.writeBuffer(anglesBufGPU, 0, initialAngles);
+//            device.queue.writeBuffer(anglesBufGPU, 0, initialAngles);
 
             //Создание буфера случайных чисел, которые затем будут использоваться в WebGPU вместо герерации случайного числа в WebGPU
 
@@ -722,20 +751,21 @@ let r4 = random(&state);
                 return n;
             }
 
-            // Подготовка данных LUT
-            const totalPoints = config.pointsPerStep * config.totalSteps;; // Ваше текущее число точек
-            // Размер буфера: 25% от количества точек, но не более 4096
-            // Если totalPoints = 5000, то target = 1250. Ближайшее простое будет 1259.
-            const lutSize = getNearestPrime(Math.min(totalPoints * 0.25, 4096));
-
-            const randomData = new Float32Array(lutSize);
-            for (let i = 0; i < lutSize; i++) {
-                randomData[i] = Math.random();
-            }
-
+            let randomBuffer;
             if (config.RANDOM_POINTS === 2) {
+                // Подготовка данных LUT
+                const totalPoints = config.pointsPerStep * config.totalSteps;; // Ваше текущее число точек
+                // Размер буфера: 25% от количества точек, но не более 4096
+                // Если totalPoints = 5000, то target = 1250. Ближайшее простое будет 1259.
+                const lutSize = getNearestPrime(Math.min(totalPoints * 0.25, 4096));
+    
+                const randomData = new Float32Array(lutSize);
+                for (let i = 0; i < lutSize; i++) {
+                    randomData[i] = Math.random();
+                }
+
                 // Создание буфера случайныз чисел на GPU
-                const randomBuffer = device.createBuffer({
+                randomBuffer = device.createBuffer({
                     size: randomData.byteLength,
                     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
                 });
@@ -760,7 +790,7 @@ let r4 = random(&state);
                 { binding: bindingId++, resource: { buffer: posBuf } },
                 { binding: bindingId++, resource: { buffer: velBuf } },
                 { binding: bindingId++, resource: { buffer: paramBuf } },
-                { binding: bindingId++, resource: { buffer: anglesBufGPU } },
+//                { binding: bindingId++, resource: { buffer: anglesBufGPU } },
                 { binding: bindingId++, resource: { buffer: messageArray } },
             ]
             if (config.RANDOM_POINTS != 0) entries.push({ binding: bindingId++, resource: { buffer: timeBuffer } });
@@ -768,6 +798,7 @@ let r4 = random(&state);
             entries.push({ binding: bindingId++, resource: { buffer: invCdfBuffer } }); // Новый буфер LUT для inverseCDF
             if (config.DEBUG_MODE) entries.push({ binding: bindingId++, resource: { buffer: debugBuf } });
             bindGroup = device.createBindGroup({ layout: pipeline.getBindGroupLayout(0), entries: entries });
+            log("GPU Device Ready");
         }
 
         //WebGPU end
@@ -781,6 +812,11 @@ let r4 = random(&state);
                 radiusPrev: radiusPrev,
             };
             socket.send(JSON.stringify(progress));
+            
+            const end = performance.now();
+            const time = (end - start) / 1000;
+            document.getElementById('timeResult').innerText = `${(time).toFixed(3)} sec.`;
+//            socket.send(JSON.stringify({ type: 'TIME', time: time, }));
         }
 
         // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ МАТЕМАТИКИ ---
@@ -897,7 +933,7 @@ let r4 = random(&state);
             };
 
             // 3. Successful connection
-            socket.onopen = () => {
+            socket.onopen = (event) => {
 /*
                 stateText.innerText = "Connection established. Ready for computation.";
                 stateText.style.color = successStatusColor;
@@ -920,16 +956,32 @@ let r4 = random(&state);
             */
             socket.onmessage = async (event) => {
                 if (typeof event.data === 'string') {
-                    window.config = JSON.parse(event.data);
-                    count = config.totalSteps * config.pointsPerStep;
-                    document.getElementById('status').innerText = "CONFIG RECEIVED";
-                    document.getElementById('client').innerText = event.origin || "Localhost";
-                    log("Configuration loaded.");
+                    const data = JSON.parse(event.data);
+                    switch (data.type) {
+                        case "START_COMPUTE":
+                            window.config = data;
+                            count = config.totalSteps * config.pointsPerStep;
+                            document.getElementById('status').innerText = "CONFIG RECEIVED";
+                            const clientText = event.origin || "Localhost";
+                            document.getElementById('client').innerText = clientText;
+                            currentStep = 1;
+                            log('Start compute. Source: ' + clientText);//"Configuration loaded.");
+                            break;
+                        case "MAIN_DISCONNECTED":
+                            //Главная страница отсоеденилась от сервера. Если идут вычисления, то остановить их.
+//                            await readMessageValue(currentStep);
+//                            await finalSyncGPU();
+//                            updateDisplay();
+                            currentStep = config.totalSteps - 1;
+                            log('Main page disconnected.');
+                            break;
+                        default: console.error('socket message: Invalid data.type: ' + data.type);
+                    }
                 } else {
                     // Binary data received
                     const initialAngles = new Float32Array(event.data);
                     angles = new Array(count).fill(null).map(() => ({ latitude: 0, longitude: 0, altitude: 0 }));
-                    const anglesItemSize = 3;
+                    const anglesItemSize = 4;
                     for (let i = 0; i < config.pointsPerStep; i++) {
                         const anglesItem = angles[i];
                         let index = i * anglesItemSize;
@@ -1034,9 +1086,9 @@ let r4 = random(&state);
                         document.getElementById('status').innerText = "DONE";
                     }
             */
-            function log(m) { document.getElementById('log').innerHTML += `<div>> ${m}</div>`; }
             //        initWebGPU();
         }
+        function log(m) { document.getElementById('log').innerHTML += `<div>> ${m}</div>`; }
     </script>
 </body>
 </html>
