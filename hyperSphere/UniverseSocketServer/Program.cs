@@ -1,3 +1,4 @@
+using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -88,7 +89,16 @@ app.Map("/ws", async (HttpContext context) => {
         finally
         {
             connections.Remove(webSocket);
-            if (webSocket == mainPageSocket) mainPageSocket = null;
+            if (webSocket == mainPageSocket)
+            {
+                mainPageSocket = null;
+                if (gpuEngineSocket != null && gpuEngineSocket.State == WebSocketState.Open)
+                {
+                    //Уведомляем Hupersphere Universe Engine что главная страница отключена. Это позволяет остановить вычисления
+                    var data = JsonSerializer.Serialize(new { type = "MAIN_DISCONNECTED" });
+                    await gpuEngineSocket.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(data)), WebSocketMessageType.Text, true, CancellationToken.None);
+                }
+            }
             if (webSocket == gpuEngineSocket)
             {
                 gpuEngineSocket = null;

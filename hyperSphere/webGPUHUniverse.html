@@ -956,13 +956,27 @@ let r4 = random(&state);
             */
             socket.onmessage = async (event) => {
                 if (typeof event.data === 'string') {
-                    window.config = JSON.parse(event.data);
-                    count = config.totalSteps * config.pointsPerStep;
-                    document.getElementById('status').innerText = "CONFIG RECEIVED";
-                    const clientText = event.origin || "Localhost";
-                    document.getElementById('client').innerText = clientText;
-                    currentStep = 1;
-                    log('Start compute. Source: ' + clientText);//"Configuration loaded.");
+                    const data = JSON.parse(event.data);
+                    switch (data.type) {
+                        case "START_COMPUTE":
+                            window.config = data;
+                            count = config.totalSteps * config.pointsPerStep;
+                            document.getElementById('status').innerText = "CONFIG RECEIVED";
+                            const clientText = event.origin || "Localhost";
+                            document.getElementById('client').innerText = clientText;
+                            currentStep = 1;
+                            log('Start compute. Source: ' + clientText);//"Configuration loaded.");
+                            break;
+                        case "MAIN_DISCONNECTED":
+                            //Главная страница отсоеденилась от сервера. Если идут вычисления, то остановить их.
+//                            await readMessageValue(currentStep);
+//                            await finalSyncGPU();
+//                            updateDisplay();
+                            currentStep = config.totalSteps - 1;
+                            log('Main page disconnected.');
+                            break;
+                        default: console.error('socket message: Invalid data.type: ' + data.type);
+                    }
                 } else {
                     // Binary data received
                     const initialAngles = new Float32Array(event.data);
