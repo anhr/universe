@@ -1253,7 +1253,7 @@
         
                 // 1. Обработка ошибок (неверный адрес, отказ в соединении)
                 socket.onerror = (error) => {
-                    stateText.innerText = "ОШИБКА: Сервер недоступен или адрес указан неверно.";
+                    stateText.innerText = error.target.url + " ОШИБКА: Сервер недоступен или адрес указан неверно.";
                     stateText.style.color = "#ff4444";
 //                    startBtn.disabled = true;
                     console.error("WebSocket Error:", error);
