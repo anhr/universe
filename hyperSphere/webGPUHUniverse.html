@@ -898,11 +898,7 @@ let r4 = random(&state);
 
             // 1. Error handling (incorrect address, connection refused)
             socket.onerror = (error) => {
-/*
-                stateText.innerText = "ERROR: Server unreachable or incorrect address.";
-                stateText.style.color = errorStatusColor;
-*/
-                setState("ERROR: Server unreachable or incorrect address.", true);
+                setState(error.target.url + " ERROR: Server unreachable or incorrect address.", true);
                 console.error("WebSocket Error:", error);
             };
 
