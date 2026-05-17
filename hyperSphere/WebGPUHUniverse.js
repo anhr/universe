@@ -17,43 +17,49 @@ const sWebGPU = 'WebGPU';
 
 class WebGPUHUniverse {
 
-	constructor(onerror) {
+	constructor(/*onerror*/) {
 
-/*		
+		this.compute = () => {}
 		this.socketStatus = {
-			code: 0,//0 - start connection, 1 - Successful connection, 2 - error
-			errorText: '',
+			code: 0,//0 - start connection,
+					//1 - Successful connection
+					//2 - socket error
+					//3 - Abnormal close connection.
+					//4 - The connection was closed successfully.
+			
+			message: '',
+			set: (codeNew, messageNew = '') => { this.socketStatus.code = codeNew; this.socketStatus.message = messageNew; }
 		};
-*/		
 		const serverAddress = 'ws://localhost2:5000/ws?type=main';
 		const socket = new WebSocket(serverAddress);
 		socket.binaryType = 'arraybuffer';
 
 		// 1. Обработка ошибок (неверный адрес, отказ в соединении)
 		socket.onerror = (error) => {
-			onerror();
+//			onerror();
 /*			
 			this.socketStatus.code = 2;//error
-			this.socketStatus.errorText = error.target.url + " ERROR: Server unreachable or incorrect address.";
+			this.socketStatus.message = error.target.url + " ERROR: Server unreachable or incorrect address.";
 */			
+			this.socketStatus.set(2, error.target.url + " ERROR: Server unreachable or incorrect address.");//error
 		};
 
 		// 2. Обработка закрытия соединения (сервер отключился в процессе)
 		socket.onclose = (event) => {
 			if (event.wasClean) {
-				stateText.innerText = event.reason ? event.reason : "The connection was closed successfully.";
+//				stateText.innerText = event.reason ? event.reason : "The connection was closed successfully.";
+				this.socketStatus.set(4);//The connection was closed successfully.
 				if (event.code === 4001) stateText.style.color = "#ff4444";  // Эта страница уже открыта
 			} else {
 				const rfcLink = "https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1";
 				const mozillaLink = 'https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code'
 				const errorDetail = event.reason ? `Reason: ${event.reason}` : `Error Code: ${event.code}`;
-				const sError = `The connection was closed. ${errorDetail}. See RFC: ${rfcLink}, mozilla: ${mozillaLink}`
-				console.error(sError);
+				const sError = event.target.url + ` The connection was closed. ${errorDetail}. See RFC: ${rfcLink}, mozilla: ${mozillaLink}`
+//				console.error(sError);
 
-				stateText.innerText = sError;//"СВЯЗЬ ПРЕРВАНА (Сервер упал или ошибка сети).";
-				stateText.style.color = "#ff4444";
+				this.socketStatus.set(3, sError);//Abnormal close connection.
 			}
-			console.log(`Код закрытия: ${event.code}, причина: ${event.reason}`);
+//			console.log(`Код закрытия: ${event.code}, причина: ${event.reason}`);
 		};
 		/*если оставить этот код, то истина причина ошибки будет забиваться сообщением  "Превышено время ожидания сервера."
 		const connectionTimeout = setTimeout(() => {

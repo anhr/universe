@@ -16,8 +16,8 @@
 import averageVertices from '../../../commonNodeJS/master/HyperSphere/distanceOfVertices/averageVerticesHSphere.js';
 import WebGPUHUniverse from './webGPUHUniverse.js';
 
-//averageVertices.webGPU = new WebGPUHUniverse();
-averageVertices.WebGPU = WebGPUHUniverse;
+averageVertices.webGPU = new WebGPUHUniverse();
+//averageVertices.WebGPU = WebGPUHUniverse;
 /*
 const sAverageVerticesHUniverse = 'averageVerticesHUniverse';
 
