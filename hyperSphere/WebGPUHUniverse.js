@@ -33,9 +33,13 @@ class WebGPUHUniverse {
 			set: (codeNew, messageNew = '') => { socketStatus.code = codeNew; socketStatus.message = messageNew; }
 		};
 */		
-		this.compute = (computeCPU) => {
+		this.compute = (computeCPU, config) => {
 			if (!socket) {
-				socket = new WebSocket(serverAddress);
+				try {
+					socket = new WebSocket(serverAddress);
+				} catch (e) {
+					console.log('connect to ' + serverAddress + ' faled.')
+				}
 				socket.binaryType = 'arraybuffer';
 
 				// 1. Обработка ошибок (неверный адрес, отказ в соединении)
@@ -62,6 +66,7 @@ class WebGPUHUniverse {
 				};
 				// 3. Успешное подключение
 				socket.onopen = () => {
+/*					
 					const config = {
 						type: 'START_COMPUTE',
 						DEBUG_MODE: DEBUG_MODE,
@@ -75,6 +80,7 @@ class WebGPUHUniverse {
 						totalSteps: totalSteps,
 						pointsPerStep: pointsPerStep
 					};
+*/					
 					socket.send(JSON.stringify(config));
 
 					const anglesItemSize = 4, initialAngles = new Float32Array(pointsPerStep * anglesItemSize);
