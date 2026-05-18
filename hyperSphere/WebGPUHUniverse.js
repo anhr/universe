@@ -19,8 +19,9 @@ class WebGPUHUniverse {
 
 	constructor(/*onerror*/) {
 
-		const serverAddress = 'ws://localhost2:5000/ws?type=main';
+		const serverAddress = 'ws://localhost:5000/ws?type=main';
 		let socket;
+/*		
 		const socketStatus = {
 			code: 0,//0 - start connection,
 					//1 - Successful connection
@@ -31,6 +32,7 @@ class WebGPUHUniverse {
 			message: '',
 			set: (codeNew, messageNew = '') => { socketStatus.code = codeNew; socketStatus.message = messageNew; }
 		};
+*/		
 		this.compute = (computeCPU) => {
 			if (!socket) {
 				socket = new WebSocket(serverAddress);
@@ -38,14 +40,14 @@ class WebGPUHUniverse {
 
 				// 1. Обработка ошибок (неверный адрес, отказ в соединении)
 				socket.onerror = (error) => {
-					socketStatus.set(2, error.target.url + " ERROR: Server unreachable or incorrect address.");//error
+//					socketStatus.set(2, error.target.url + " ERROR: Server unreachable or incorrect address.");//error
 					computeCPU();//Не удалось соедениться с сервером вычислений на GPU. Делаем вычисления на CPU.
 				};
 
 				// 2. Обработка закрытия соединения (сервер отключился в процессе)
 				socket.onclose = (event) => {
 					if (event.wasClean) {
-						socketStatus.set(4);//The connection was closed successfully.
+//						socketStatus.set(4);//The connection was closed successfully.
 						if (event.code === 4001) stateText.style.color = "#ff4444";  // Эта страница уже открыта
 					} else {
 						const rfcLink = "https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1";
@@ -54,15 +56,12 @@ class WebGPUHUniverse {
 						const sError = event.target.url + ` The connection was closed. ${errorDetail}. See RFC: ${rfcLink}, mozilla: ${mozillaLink}`
 						//				console.error(sWebGPU + ': ' + sError);
 
-						socketStatus.set(3, sError);//Abnormal close connection.
+//						socketStatus.set(3, sError);//Abnormal close connection.
 					}
 					//			console.log(sWebGPU + `: Код закрытия: ${event.code}, причина: ${event.reason}`);
 				};
 				// 3. Успешное подключение
 				socket.onopen = () => {
-					stateText.innerText = "Связь установлена. Готов к работе.";
-					stateText.style.color = "#00ffcc";
-
 					const config = {
 						type: 'START_COMPUTE',
 						DEBUG_MODE: DEBUG_MODE,
