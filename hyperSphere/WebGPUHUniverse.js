@@ -62,11 +62,25 @@ class WebGPUHUniverse {
 				elTitle.innerHTML = 'GPU<div id="socket-status">'
 						+ '<strong>Server Address:</strong> <span>' + serverAddress + '</span><br>'
 						+ '<strong>Socket Status:</strong> <span id="stateText">Waiting for connection to server...</span><br>'
-						+ '<button type="button" id="btnCPU" title="Use CPU for compute" style="display: none;">CPU</button>'
+						+ '<strong>Step:</strong> <span id="stepCounter">0</span> / <span id="totalStepsDisplay">0</span> | R: <span id="radVal">0.0</span><br>'
+						+ '<strong>Elapse Time:</strong> <span id="timeResult">---</span> sec.<br>'
+/*					
+						+ '<div id="info">Step: <span id="stepCounter">0</span> / <span id="totalStepsDisplay">0</span> | R: <span id="radVal">0.0</span>'
+				        + '    <span id="timeResult" class="timer"></span>'
+//				        + '    <span id="activeGpu"></span>'
+				        + '</div>'
+*/						
+						+ '<button type="button" id="btnCPU" title="Use CPU for computation" style="display: none;">CPU</button>'
 					+ '</div>';
 				
 				const btnCPU = elTitle.querySelector("#btnCPU");
 				btnCPU.onclick = onclickCPU;
+
+				//info
+				const stepCounter = elTitle.querySelector("#stepCounter");
+				const radVal = elTitle.querySelector("#radVal");
+				const timeResult = elTitle.querySelector("#timeResult");
+	            const start = performance.now();
 				
 				elTitle.style.color = 'black';
 				elProgress.appendChild(elTitle);
@@ -104,6 +118,16 @@ class WebGPUHUniverse {
 				const elRow = document.createElement('tr');
 				elRow.appendChild(elProgress);
 				elcontainer.appendChild(elRow);
+
+				//Progress window end
+				
+		        let currentStep = 1;
+		        let radiusPrev = config.baseRadius;
+		        const updateDisplay = () => {
+		            stepCounter.innerText = currentStep;
+		            radVal.innerText = radiusPrev.toFixed(2);
+		            timeResult.innerText = `${((performance.now() - start) / 1000).toFixed(3)}`;
+		        }
 				
 				socket = new WebSocket(serverAddress);
 				socket.binaryType = 'arraybuffer';
@@ -208,15 +232,13 @@ class WebGPUHUniverse {
 						}
 					} else if (typeof event.data === 'object') {
 						//Vertices positions
+						const position = settings.bufferGeometry.attributes.position.array = new Float32Array(event.data);
+						position.needsUpdate = true;
+/*						
 						const posData = new Float32Array(event.data);
-						for (let i = config.pointsPerStep; i < count; i++) {
+						for (let i = config.pointsPerStep; i < (config.totalSteps * config.pointsPerStep); i++) {
 							let index = i * 4;
-							const itemAngles = cartesianToPolar({
-								x: posData[index++],
-								y: posData[index++],
-								z: posData[index++],
-								w: posData[index++],
-							});
+							const itemAngles = cartesianToPolar({ x: posData[index++], y: posData[index++], z: posData[index++], w: posData[index++],});
 							const pointAngles = angles[i];
 							pointAngles.latitude = itemAngles.latitude; pointAngles.longitude = itemAngles.longitude; pointAngles.altitude = itemAngles.altitude;
 							//console.log('i = ' + i + ' angles: ' + JSON.stringify(pointAngles))
@@ -225,7 +247,8 @@ class WebGPUHUniverse {
 							setAttributes(pointAngles, r, i);
 						}
 						posAttr.needsUpdate = true; colorAttr.needsUpdate = true;
-						document.getElementById('timeResult').innerText = `Итог (${mode}): ${((performance.now() - start) / 1000).toFixed(3)} сек.`;
+*/						
+						updateDisplay();
 					} else console.error(sWebGPU + ': socket message: Invalid event.data type: ' + (typeof event.data));
 				};
 				return;

@@ -41,7 +41,7 @@
         <div>SOURCE: <span id="client">---</span></div>
         <!--<div>PROGRESS: <span id="progress">0 / 0 | R: 0.00</span></div>-->
         <div>PROGRESS: <span id="stepCounter">0</span> / <span id="totalStepsDisplay">0</span> | R: <span id="radVal">0.00</span> </div>
-        <div>TIME: <span id="timeResult" class="timer"></span></div>
+        <div>ELAPSE TIME: <span id="timeResult" class="timer">---</span></div>
         <div id="socket-status">
             <strong>Socket Status:</strong> <span id="stateText">Waiting for connection to server...</span><br>
         </div>
@@ -881,7 +881,7 @@ let r4 = random(&state);
             const config = {
                 type: 'STATUS',
                 code: 0,//error
-                message: 'Hypersphere Universe Engine: ' + text
+                message: 'ENGINE: ' + text
             };
             socket.send(JSON.stringify(config));
 //            socket.close(4002, 'Hypersphere Universe Engine: ' + text);
@@ -951,46 +951,51 @@ let r4 = random(&state);
                     }
             */
             socket.onmessage = async (event) => {
-                if (typeof event.data === 'string') {
-                    const data = JSON.parse(event.data);
-                    switch (data.type) {
-                        case "START_COMPUTE":
-                            window.config = data;
-                            count = config.totalSteps * config.pointsPerStep;
-                            document.getElementById('status').innerText = "CONFIG RECEIVED";
-                            const clientText = event.origin || "Localhost";
-                            document.getElementById('client').innerText = clientText;
-                            currentStep = 1;
-                            log('Start compute. Source: ' + clientText);//"Configuration loaded.");
-                            break;
-                        case "MAIN_DISCONNECTED":
-                            //Главная страница отсоеденилась от сервера. Если идут вычисления, то остановить их.
-//                            await readMessageValue(currentStep);
-//                            await finalSyncGPU();
-//                            updateDisplay();
-                            currentStep = config.totalSteps - 1;
-                            log('Main page disconnected.');
-                            break;
-                        default: console.error('socket message: Invalid data.type: ' + data.type);
+                const sError = "WebGPU ERROR: ";
+                try {
+                    if (typeof event.data === 'string') {
+                        const data = JSON.parse(event.data);
+                        switch (data.type) {
+                            case "START_COMPUTE":
+                                window.config = data;
+                                count = config.totalSteps * config.pointsPerStep;
+                                document.getElementById('status').innerText = "CONFIG RECEIVED";
+                                const clientText = event.origin || "Localhost";
+                                document.getElementById('client').innerText = clientText;
+                                currentStep = 1;
+                                log('Start compute. Source: ' + clientText);//"Configuration loaded.");
+                                break;
+                            case "MAIN_DISCONNECTED":
+                                //Главная страница отсоеденилась от сервера. Если идут вычисления, то остановить их.
+                                //                            await readMessageValue(currentStep);
+                                //                            await finalSyncGPU();
+                                //                            updateDisplay();
+                                currentStep = config.totalSteps - 1;
+                                log('Main page disconnected.');
+                                break;
+                            default: console.error('socket message: Invalid data.type: ' + data.type);
+                        }
+                    } else {
+                        // Binary data received
+                        const initialAngles = new Float32Array(event.data);
+                        angles = new Array(count).fill(null).map(() => ({ latitude: 0, longitude: 0, altitude: 0 }));
+                        const anglesItemSize = 4;
+                        for (let i = 0; i < config.pointsPerStep; i++) {
+                            const anglesItem = angles[i];
+                            let index = i * anglesItemSize;
+                            anglesItem.latitude = initialAngles[index++];
+                            anglesItem.longitude = initialAngles[index++];
+                            anglesItem.altitude = initialAngles[index++];
+                        }
+                        //                    await runCompute(window.currentConfig, initialAngles);
+                        try {
+                            await runAuto();
+                        } catch (e) {
+                            setState(sError + e.message, true);
+                        }
                     }
-                } else {
-                    // Binary data received
-                    const initialAngles = new Float32Array(event.data);
-                    angles = new Array(count).fill(null).map(() => ({ latitude: 0, longitude: 0, altitude: 0 }));
-                    const anglesItemSize = 4;
-                    for (let i = 0; i < config.pointsPerStep; i++) {
-                        const anglesItem = angles[i];
-                        let index = i * anglesItemSize;
-                        anglesItem.latitude = initialAngles[index++];
-                        anglesItem.longitude = initialAngles[index++];
-                        anglesItem.altitude = initialAngles[index++];
-                    }
-//                    await runCompute(window.currentConfig, initialAngles);
-                    try {
-                        await runAuto();
-                    } catch (e) {
-                        setState("WebGPU ERROR: " + e.message, true);
-                    }
+                } catch (e) {
+                    setState(sError + e.message, true);
                 }
             };
             /*
