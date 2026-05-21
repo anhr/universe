@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>GPU Hyperspherical Universe - Engine</title>
+    <title>GPU Engine</title>
     <style>
         body {
             background: #000;
@@ -56,7 +56,7 @@
         //WebGPU start
         
         let device, pipeline, posBuf, velBuf, paramBuf, debugBuf, messageArray, bindGroup, timeBuffer;//, anglesBufGPU
-        const availableAdapters = [];
+        let availableAdapters = [];
         
         // Если ваш GPU-цикл runAuto работает очень быстро (например, 200 FPS), то за одну миллисекунду может пройти несколько кадров.
         // В этом случае в течение этой миллисекунды uTime будет одинаковым целым числом, и все кадры внутри этого промежутка выдадут идентичные «случайные» числа.
@@ -259,7 +259,8 @@
 
         async function initWebGPU(idx) {
             if (device) {
-                device.destroy();
+                cleanupGpuResources();
+//                device.destroy();
                 if (!await findAdapters()) return;
             }
             const adapter = availableAdapters[idx];
@@ -410,7 +411,7 @@
 
                 const a = h * (π - h);
 
-                // Вычисляем k
+                // Вычисляем к
                 const k = a / h;
                 hyperbola_gpu = `
                             fn hyperbola_gpu(x: f32, i: u32) -> f32 {
@@ -431,7 +432,7 @@
                     // Проверяем, что не попадаем в асимптоту
                     if (Math.abs(x - h) < 0.001) {
 
-                        console.error(sRandomVertice + ': calculateHyperbola. Under consraction');
+                        console.error(sRandomVertice + ': calculateHyperbola. Under constraction');
                         return x;
 
                     }
@@ -1055,7 +1056,8 @@ let r4 = random(&state);
             
                         bindGroup = device.createBindGroup({
                             layout: pipeline.getBindGroupLayout(0),
-                            entries: [
+                            entries:
+                            [
                                 { binding: 0, resource: { buffer: posBuf } },
                                 { binding: 1, resource: { buffer: velBuf } },
                                 { binding: 2, resource: { buffer: paramBuf } }
@@ -1090,6 +1092,40 @@ let r4 = random(&state);
             //        initWebGPU();
         }
         function log(m) { document.getElementById('log').innerHTML += `<div>> ${m}</div>`; }
+        // Безопасная функция для уничтожения буферов
+        function destroyIfBuffer(buf) {
+            if (!buf) return;
+            try {
+                if (typeof buf.destroy === 'function') {
+                    buf.destroy();
+                }
+            } catch (e) {
+                // Некоторые ранние реализации могут выбрасывать — логируем, но продолжаем
+                console.warn('Buffer destroy error (ignored):', e);
+            }
+        }
+        // Удобная функция очистки всех используемых буферов/ресурсов
+        function cleanupGpuResources() {
+            destroyIfBuffer(posBuf);
+            destroyIfBuffer(velBuf);
+            destroyIfBuffer(paramBuf);
+            destroyIfBuffer(debugBuf);
+            destroyIfBuffer(messageArray);
+            destroyIfBuffer(timeBuffer);
+            // Обнуляем ссылки
+            posBuf = velBuf = paramBuf = debugBuf = messageArray = timeBuffer = null;
+            // Сброс bindGroup / pipeline (они не имеют destroy в спецификации)
+            bindGroup = pipeline = null;
+            // Не вызываем device.destroy() — вместо этого просто забываем ссылку
+            // и даём браузеру управлять lifecycle; если реализация поддерживает,
+            // можно проверить и вызвать, но это не стандартно.
+            try { if (device && typeof device.destroy === 'function') device.destroy(); } catch(e) {}
+            // обязательно обнуляем ссылку на device
+            device = null;
+        }
+        window.addEventListener('beforeunload', () => {
+            cleanupGpuResources();
+        });
     </script>
 </body>
 </html>

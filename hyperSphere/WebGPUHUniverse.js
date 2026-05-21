@@ -249,6 +249,7 @@ class WebGPUHUniverse {
 						posAttr.needsUpdate = true; colorAttr.needsUpdate = true;
 */						
 						updateDisplay();
+						socket.close();
 					} else console.error(sWebGPU + ': socket message: Invalid event.data type: ' + (typeof event.data));
 				};
 				return;
