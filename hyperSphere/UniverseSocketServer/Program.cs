@@ -40,7 +40,7 @@ app.Map("/ws", async (HttpContext context) => {
             // Проверяем готовность Engine
             if (gpuEngineSocket == null || gpuEngineSocket.State != WebSocketState.Open)
             {
-                await SendStatus(webSocket, 0, "Waiting for Hypersphere Universe Engine...");
+                await SendStatus(webSocket, 2, "");//Waiting for Hypersphere Universe Engine...
             }
             else
             {
@@ -113,6 +113,10 @@ app.Map("/ws", async (HttpContext context) => {
 });
 async Task SendStatus(WebSocket socket, int code, string message)
 {
+    //code description
+    //0    error
+    //1    Ready to work.
+    //2    Waiting for Hypersphere Universe Engine...
     if (socket.State == WebSocketState.Open)
     {
         var data = JsonSerializer.Serialize(new { type = "STATUS", code, message = $"Connection established. {message}" });

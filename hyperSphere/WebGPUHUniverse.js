@@ -21,31 +21,97 @@ class WebGPUHUniverse {
 
 		const serverAddress = 'ws://localhost:5000/ws?type=main';
 		let socket;
-/*		
-		const socketStatus = {
-			code: 0,//0 - start connection,
-					//1 - Successful connection
-					//2 - socket error
-					//3 - Abnormal close connection.
-					//4 - The connection was closed successfully.
-			
-			message: '',
-			set: (codeNew, messageNew = '') => { socketStatus.code = codeNew; socketStatus.message = messageNew; }
-		};
-*/		
-		this.compute = (computeCPU, config) => {
+		this.compute = (computeCPU, config, settings) => {
 			if (!socket) {
-				try {
-					socket = new WebSocket(serverAddress);
-				} catch (e) {
-					console.log('connect to ' + serverAddress + ' faled.')
+
+				//progress window
+				let cProgress, elProgress, elTitle, elParent = settings.options.renderer.domElement.parentElement;
+				const onclickCPU = () => {
+					elcontainer.remove();
+					if (socket.readyState === WebSocket.OPEN) socket.close();
+					computeCPU();
 				}
+				const setStatus = (message, code = 1) => {
+					let color = "red", display = '';
+					//See D:\My documents\MyProjects\webgl\three.js\GitHub\universe\main\hyperSphere\UniverseSocketServer\Program.cs
+					switch(code) {
+						case 0://error
+							break;
+					    case 1://Ready to work.
+							color = "black";
+							display = 'none';
+							break;
+					    case 2://Waiting for Hypersphere Universe Engine...
+							message += ' Please open <a href="../webGPUHUniverse.html" target="_blank" style="color: blue;">Hypersphere Universe Engine</a> page'
+							break;
+						default: console.error(sWebGPU + '.compute: Invalud socket status code = ' + code);
+					}
+					stateText.innerHTML = message;
+					stateText.style.color = color;
+					btnCPU.style.display = display;
+				}
+				
+				elProgress = document.createElement('div');
+				cProgress = document.createElement('input'),
+				elProgress.style.backgroundColor = 'white';
+				elProgress.style.margin = '2px';
+				elProgress.style.padding = '2px';
+				
+				elTitle = document.createElement('div');
+//					elTitle.innerHTML = 'GPU';
+				elTitle.innerHTML = 'GPU<div id="socket-status">'
+						+ '<strong>Server Address:</strong> <span>' + serverAddress + '</span><br>'
+						+ '<strong>Socket Status:</strong> <span id="stateText">Waiting for connection to server...</span><br>'
+						+ '<button type="button" id="btnCPU" title="Use CPU for compute" style="display: none;">CPU</button>'
+					+ '</div>';
+				
+				const btnCPU = elTitle.querySelector("#btnCPU");
+				btnCPU.onclick = onclickCPU;
+				
+				elTitle.style.color = 'black';
+				elProgress.appendChild(elTitle);
+
+				if (settings.min === undefined) settings.min = 0;
+				cProgress.min = settings.min;
+				cProgress.max = settings.max != undefined ? settings.max : settings.iterationCount != undefined ? settings.iterationCount : 1;
+				cProgress.type = "range";
+				cProgress.disabled = true;
+				elProgress.appendChild(cProgress);
+		
+				let elcontainer;
+				const containerName = 'ProgressContainer';
+				for (let i = 0; i < elParent.children.length; i++) {
+		
+					const child = elParent.children[i];
+					if (child.name && (child.name === containerName)) {
+		
+						elcontainer = child;
+						break;
+		
+					}
+		
+				}
+				if (!elcontainer) {
+		
+					elcontainer = document.createElement('table');
+					elcontainer.name = containerName;
+					elcontainer.style.position = 'absolute';
+					elcontainer.style.top = 0;
+					elcontainer.style.left = 0;
+					elParent.appendChild(elcontainer);
+		
+				}
+				const elRow = document.createElement('tr');
+				elRow.appendChild(elProgress);
+				elcontainer.appendChild(elRow);
+				
+				socket = new WebSocket(serverAddress);
 				socket.binaryType = 'arraybuffer';
 
 				// 1. Обработка ошибок (неверный адрес, отказ в соединении)
 				socket.onerror = (error) => {
-//					socketStatus.set(2, error.target.url + " ERROR: Server unreachable or incorrect address.");//error
-					computeCPU();//Не удалось соедениться с сервером вычислений на GPU. Делаем вычисления на CPU.
+					setStatus('ERROR: Server unreachable or incorrect address. <a href="https://github.com/anhr/universe/blob/main/hyperSphere/HUniverseEngine.md" target="_blank" style="color: blue;">Help</a>.', 0);
+					btnCPU.style.display = "";//сделать кнопку видимой
 				};
 
 				// 2. Обработка закрытия соединения (сервер отключился в процессе)
@@ -80,15 +146,21 @@ class WebGPUHUniverse {
 						totalSteps: totalSteps,
 						pointsPerStep: pointsPerStep
 					};
-*/					
+*/
+/*
 					socket.send(JSON.stringify(config));
 
-					const anglesItemSize = 4, initialAngles = new Float32Array(pointsPerStep * anglesItemSize);
+					const anglesItemSize = 4, initialAngles = new Float32Array(config.pointsPerStep * anglesItemSize), angles = settings.object.geometry.angles;
+					settings.bufferGeometry.userData.timeId--;//Углы вершин брать из предыдущего шага проигрывателя
 					for (let i = 0; i < config.pointsPerStep; i++) {
 						let index = i * anglesItemSize;
-						initialAngles[index++] = angles[i].latitude; initialAngles[index++] = angles[i].longitude; initialAngles[index++] = angles[i].altitude;
+						const vertuceAngles = angles[i];
+						initialAngles[index++] = vertuceAngles.latitude; initialAngles[index++] = vertuceAngles.longitude; initialAngles[index++] = vertuceAngles.altitude;
 					}
+					settings.bufferGeometry.userData.timeId++;
 					socket.send(initialAngles.buffer);
+*/
+					
 				};
 				socket.onmessage = (event) => {
 					if (typeof event.data === 'string') {
@@ -96,11 +168,36 @@ class WebGPUHUniverse {
 
 						switch (data.type) {
 							case "STATUS":
-								const stateText = document.getElementById('stateText');
-								stateText.innerText = data.message;
+								setStatus(data.message, data.code);
+								if (data.code === 1) {
+									//Connection established. Ready to work.
+				/*					
+									const config = {
+										type: 'START_COMPUTE',
+										DEBUG_MODE: DEBUG_MODE,
+										RANDOM_POINTS: RANDOM_POINTS,
+										DAMPING: DAMPING,
+										REPULSION_STRENGTH: REPULSION_STRENGTH,
+										PSEUDO_RANDOM: PSEUDO_RANDOM,
+										p: p,
+										baseRadius: baseRadius,
+										radiusMax: radiusMax,
+										totalSteps: totalSteps,
+										pointsPerStep: pointsPerStep
+									};
+				*/
+									socket.send(JSON.stringify(config));
 
-								// Используем 0 и 1 для управления цветом
-								stateText.style.color = (data.code === 1) ? "#00ffcc" : "#ff4444";
+									const anglesItemSize = 4, initialAngles = new Float32Array(config.pointsPerStep * anglesItemSize), angles = settings.object.geometry.angles;
+									settings.bufferGeometry.userData.timeId--;//Углы вершин брать из предыдущего шага проигрывателя
+									for (let i = 0; i < config.pointsPerStep; i++) {
+										let index = i * anglesItemSize;
+										const vertuceAngles = angles[i];
+										initialAngles[index++] = vertuceAngles.latitude; initialAngles[index++] = vertuceAngles.longitude; initialAngles[index++] = vertuceAngles.altitude;
+									}
+									settings.bufferGeometry.userData.timeId++;
+									socket.send(initialAngles.buffer);
+								}
 								break;
 							case "PROGRESS":
 								currentStep = data.currentStep;
@@ -112,7 +209,7 @@ class WebGPUHUniverse {
 					} else if (typeof event.data === 'object') {
 						//Vertices positions
 						const posData = new Float32Array(event.data);
-						for (let i = pointsPerStep; i < count; i++) {
+						for (let i = config.pointsPerStep; i < count; i++) {
 							let index = i * 4;
 							const itemAngles = cartesianToPolar({
 								x: posData[index++],
@@ -123,7 +220,7 @@ class WebGPUHUniverse {
 							const pointAngles = angles[i];
 							pointAngles.latitude = itemAngles.latitude; pointAngles.longitude = itemAngles.longitude; pointAngles.altitude = itemAngles.altitude;
 							//console.log('i = ' + i + ' angles: ' + JSON.stringify(pointAngles))
-							const s = Math.floor(i / pointsPerStep);
+							const s = Math.floor(i / config.pointsPerStep);
 							const r = baseRadius + s * radiusStep;
 							setAttributes(pointAngles, r, i);
 						}
@@ -143,107 +240,6 @@ class WebGPUHUniverse {
 				default: console.error(sWebGPU + '.compute: Invalid socket.readyState = ' + socket.readyState);
 			}
 		}
-/*		
-		this.compute = () => {
-			switch(socketStatus.code){
-				case 0://start connection,
-					break;
-				default: console.error(sWebGPU + '.compute: Invalid socketStatus.code = ' + socketStatus.code)
-			}
-		}
-		const socket = new WebSocket(serverAddress);
-		socket.binaryType = 'arraybuffer';
-
-		// 1. Обработка ошибок (неверный адрес, отказ в соединении)
-		socket.onerror = (error) => {
-			socketStatus.set(2, error.target.url + " ERROR: Server unreachable or incorrect address.");//error
-		};
-
-		// 2. Обработка закрытия соединения (сервер отключился в процессе)
-		socket.onclose = (event) => {
-			if (event.wasClean) {
-				socketStatus.set(4);//The connection was closed successfully.
-				if (event.code === 4001) stateText.style.color = "#ff4444";  // Эта страница уже открыта
-			} else {
-				const rfcLink = "https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1";
-				const mozillaLink = 'https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code'
-				const errorDetail = event.reason ? `Reason: ${event.reason}` : `Error Code: ${event.code}`;
-				const sError = event.target.url + ` The connection was closed. ${errorDetail}. See RFC: ${rfcLink}, mozilla: ${mozillaLink}`
-//				console.error(sError);
-
-				socketStatus.set(3, sError);//Abnormal close connection.
-			}
-//			console.log(`Код закрытия: ${event.code}, причина: ${event.reason}`);
-		};
-		// 3. Успешное подключение
-		socket.onopen = () => {
-			stateText.innerText = "Связь установлена. Готов к работе.";
-			stateText.style.color = "#00ffcc";
-
-			const config = {
-				type: 'START_COMPUTE',
-				DEBUG_MODE: DEBUG_MODE,
-				RANDOM_POINTS: RANDOM_POINTS,
-				DAMPING: DAMPING,
-				REPULSION_STRENGTH: REPULSION_STRENGTH,
-				PSEUDO_RANDOM: PSEUDO_RANDOM,
-				p: p,
-				baseRadius: baseRadius,
-				radiusMax: radiusMax,
-				totalSteps: totalSteps,
-				pointsPerStep: pointsPerStep
-			};
-			socket.send(JSON.stringify(config));
-
-			const anglesItemSize = 4, initialAngles = new Float32Array(pointsPerStep * anglesItemSize);
-			for (let i = 0; i < config.pointsPerStep; i++) {
-				let index = i * anglesItemSize;
-				initialAngles[index++] = angles[i].latitude; initialAngles[index++] = angles[i].longitude; initialAngles[index++] = angles[i].altitude;
-			}
-			socket.send(initialAngles.buffer);
-		};
-		socket.onmessage = (event) => {
-			if (typeof event.data === 'string') {
-				const data = JSON.parse(event.data);
-
-				switch (data.type) {
-					case "STATUS":
-						const stateText = document.getElementById('stateText');
-						stateText.innerText = data.message;
-
-						// Используем 0 и 1 для управления цветом
-						stateText.style.color = (data.code === 1) ? "#00ffcc" : "#ff4444";
-						break;
-					case "PROGRESS":
-						currentStep = data.currentStep;
-						radiusPrev = data.radiusPrev;
-						updateDisplay();
-						break;
-					default: console.error('socket message: Invalid data.type: ' + data.type);
-				}
-			} else if (typeof event.data === 'object') {
-				//Vertices positions
-				const posData = new Float32Array(event.data);
-				for (let i = pointsPerStep; i < count; i++) {
-					let index = i * 4;
-					const itemAngles = cartesianToPolar({
-						x: posData[index++],
-						y: posData[index++],
-						z: posData[index++],
-						w: posData[index++],
-					});
-					const pointAngles = angles[i];
-					pointAngles.latitude = itemAngles.latitude; pointAngles.longitude = itemAngles.longitude; pointAngles.altitude = itemAngles.altitude;
-					//console.log('i = ' + i + ' angles: ' + JSON.stringify(pointAngles))
-					const s = Math.floor(i / pointsPerStep);
-					const r = baseRadius + s * radiusStep;
-					setAttributes(pointAngles, r, i);
-				}
-				posAttr.needsUpdate = true; colorAttr.needsUpdate = true;
-				document.getElementById('timeResult').innerText = `Итог (${mode}): ${((performance.now() - start) / 1000).toFixed(3)} сек.`;
-			} else console.error('socket message: Invalid event.data type: ' + (typeof event.data));
-		};
-*/		
 	}
 }
 

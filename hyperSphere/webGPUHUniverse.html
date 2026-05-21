@@ -875,7 +875,7 @@ let r4 = random(&state);
         
         const setState = (text, boError = false) => {
             const stateText = document.getElementById('stateText');
-            stateText.innerText = text;
+            stateText.innerHTML = text;
             stateText.style.color = boError ? "#ff4444" : "#00ffcc";
             if(!boError || !socket || socket.readyState != WebSocket.OPEN) return;
             const config = {
@@ -914,8 +914,8 @@ let r4 = random(&state);
                         false
                     );
                 } else {
-                    const rfcLink = "https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1";
-                    const mozillaLink = 'https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code';
+                    const rfcLink = '<a href="https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1" target="_blank">7.4.1.  Defined Status Codes</a>';
+                    const mozillaLink = '<a href="https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code" target="_blank">CloseEvent: code property</a>';
                     const errorDetail = event.reason ? `Reason: ${event.reason}` : `Error Code: ${event.code}`;
                     const sError = `The connection was closed. ${errorDetail}. See RFC: ${rfcLink}, mozilla: ${mozillaLink}`
                     console.error(sError);
