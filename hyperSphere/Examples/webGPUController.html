@@ -160,7 +160,7 @@
         else random = RANDOM_POINTS ? Math.random : () => { return PSEUDO_RANDOM; };
 
         const LOG = false;//log attributes to console
-        const LOTS_OF_POINTS = true;
+        const LOTS_OF_POINTS = false;
         const totalSteps = LOTS_OF_POINTS ? 1000 : 10;
         const pointsPerStep = LOTS_OF_POINTS ? 5000 : 5;
         const count = totalSteps * pointsPerStep;

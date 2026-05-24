@@ -879,12 +879,13 @@ let r4 = random(&state);
             stateText.innerHTML = text;
             stateText.style.color = boError ? "#ff4444" : "#00ffcc";
             if(!boError || !socket || socket.readyState != WebSocket.OPEN) return;
-            const config = {
+            const message = 'ENGINE: ' + text;
+            socket.send(JSON.stringify({
                 type: 'STATUS',
                 code: 0,//error
-                message: 'ENGINE: ' + text
-            };
-            socket.send(JSON.stringify(config));
+                message: message
+            }));
+            if (boError) log('<span  style="color: red;">' + message + '</span>');
 //            socket.close(4002, 'Hypersphere Universe Engine: ' + text);
         }
 
@@ -896,6 +897,8 @@ let r4 = random(&state);
             socket.binaryType = 'arraybuffer';
 
 //            const stateText = document.getElementById('stateText');
+            const elStatus = document.getElementById('status');
+            const elClient = document.getElementById('client')
 
             // 1. Error handling (incorrect address, connection refused)
             socket.onerror = (error) => {
@@ -960,14 +963,16 @@ let r4 = random(&state);
                             case "START_COMPUTE":
                                 window.config = data;
                                 count = config.totalSteps * config.pointsPerStep;
-                                document.getElementById('status').innerText = "CONFIG RECEIVED";
+                                elStatus.innerText = "CONFIG RECEIVED";
                                 const clientText = event.origin || "Localhost";
-                                document.getElementById('client').innerText = clientText;
+                                elClient.innerText = clientText;
                                 currentStep = 1;
                                 log('Start compute. Source: ' + clientText);//"Configuration loaded.");
                                 break;
                             case "MAIN_DISCONNECTED":
                                 //Главная страница отсоеденилась от сервера. Если идут вычисления, то остановить их.
+                                elStatus.innerText = "IDLE";
+                                //elClient.innerText = '---';
                                 //                            await readMessageValue(currentStep);
                                 //                            await finalSyncGPU();
                                 //                            updateDisplay();
@@ -978,6 +983,7 @@ let r4 = random(&state);
                         }
                     } else {
                         // Binary data received
+                        elStatus.innerText = "Binary data received";
                         const initialAngles = new Float32Array(event.data);
                         angles = new Array(count).fill(null).map(() => ({ latitude: 0, longitude: 0, altitude: 0 }));
                         const anglesItemSize = 4;

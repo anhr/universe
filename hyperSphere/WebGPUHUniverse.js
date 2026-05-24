@@ -13,6 +13,13 @@
  * http://www.apache.org/licenses/LICENSE-2.0
 */
 
+import MyThree from '../../../commonNodeJS/master/myThree/myThree.js';
+//import MyThree from '../../../commonNodeJS/master/myThree/build/myThree.module.js';
+//import MyThree from '../../../commonNodeJS/master/myThree/build/myThree.module.min.js';
+//import MyThree from 'https://raw.githack.com/anhr/commonNodeJS/master/myThree/myThree.js';
+//import MyThree from 'https://raw.githack.com/anhr/commonNodeJS/master/myThree/build/myThree.module.js';
+//import MyThree from 'https://raw.githack.com/anhr/commonNodeJS/master/myThree/build/myThree.module.min.js';
+
 const sWebGPU = 'WebGPU';
 
 class WebGPUHUniverse {
@@ -21,21 +28,17 @@ class WebGPUHUniverse {
 
 		const serverAddress = 'ws://localhost:5000/ws?type=main';
 		let socket;
-		this.compute = (computeCPU, config, settings) => {
+		this.compute = (computeCPU, config, settings, hyperSphere) => {
 			if (!socket) {
 
 				//progress window
 				let cProgress, elProgress, elTitle, elParent = settings.options.renderer.domElement.parentElement;
-				const onclickCPU = () => {
-					elcontainer.remove();
-					if (socket.readyState === WebSocket.OPEN) socket.close();
-					computeCPU();
-				}
 				const setStatus = (message, code = 1) => {
 					let color = "red", display = '';
 					//See D:\My documents\MyProjects\webgl\three.js\GitHub\universe\main\hyperSphere\UniverseSocketServer\Program.cs
 					switch(code) {
 						case 0://error
+							socket.close();
 							break;
 					    case 1://Ready to work.
 							color = "black";
@@ -49,6 +52,7 @@ class WebGPUHUniverse {
 					stateText.innerHTML = message;
 					stateText.style.color = color;
 					btnCPU.style.display = display;
+					btnClose.style.display = display;
 				}
 				
 				elProgress = document.createElement('div');
@@ -62,8 +66,8 @@ class WebGPUHUniverse {
 				elTitle.innerHTML = 'GPU<div id="socket-status">'
 						+ '<strong>Server Address:</strong> <span>' + serverAddress + '</span><br>'
 						+ '<strong>Socket Status:</strong> <span id="stateText">Waiting for connection to server...</span><br>'
-						+ '<strong>Step:</strong> <span id="stepCounter">0</span> / <span id="totalStepsDisplay">0</span> | R: <span id="radVal">0.0</span><br>'
-						+ '<strong>Elapse Time:</strong> <span id="timeResult">---</span> sec.<br>'
+						+ '<strong>Step:</strong> <span id="stepCounter">0</span> / <span>' + config.totalSteps + '</span> | R: <span id="radVal">' + config.baseRadius + '</span><br>'
+						+ '<strong>Elapsed Time:</strong> <span id="timeResult">---</span> sec.<br>'
 /*					
 						+ '<div id="info">Step: <span id="stepCounter">0</span> / <span id="totalStepsDisplay">0</span> | R: <span id="radVal">0.0</span>'
 				        + '    <span id="timeResult" class="timer"></span>'
@@ -71,10 +75,21 @@ class WebGPUHUniverse {
 				        + '</div>'
 */						
 						+ '<button type="button" id="btnCPU" title="Use CPU for computation" style="display: none;">CPU</button>'
+						+ '<button type="button" id="btnClose" title="Close this window" style="display: none;">Close</button>'
 					+ '</div>';
 				
 				const btnCPU = elTitle.querySelector("#btnCPU");
-				btnCPU.onclick = onclickCPU;
+				btnCPU.onclick =  () => {
+					elcontainer.remove();
+					if (socket.readyState === WebSocket.OPEN) socket.close();
+					computeCPU();
+				}
+
+				const btnClose = elTitle.querySelector("#btnClose");
+				btnClose.onclick = () => {
+					elcontainer.remove();
+					if (socket.readyState === WebSocket.OPEN) socket.close();
+				}
 
 				//info
 				const stepCounter = elTitle.querySelector("#stepCounter");
@@ -136,6 +151,7 @@ class WebGPUHUniverse {
 				socket.onerror = (error) => {
 					setStatus('ERROR: Server unreachable or incorrect address. <a href="https://github.com/anhr/universe/blob/main/hyperSphere/HUniverseEngine.md" target="_blank" style="color: blue;">Help</a>.', 0);
 					btnCPU.style.display = "";//сделать кнопку видимой
+					btnClose.style.display = "";//сделать кнопку видимой
 				};
 
 				// 2. Обработка закрытия соединения (сервер отключился в процессе)
@@ -232,8 +248,68 @@ class WebGPUHUniverse {
 						}
 					} else if (typeof event.data === 'object') {
 						//Vertices positions
-						const position = settings.bufferGeometry.attributes.position.array = new Float32Array(event.data);
+/*						
+						const posData = new Float32Array(event.data);
+						for (let i = config.pointsPerStep; i < (config.totalSteps * config.pointsPerStep); i++) {
+							let index = i * 4;
+							const timeId = parseInt(i / config.pointsPerStep);
+							hyperSphere.setPositionAttributeFromPoint(i - timeId * config.pointsPerStep, { x: posData[index++], y: posData[index++], z: posData[index++], w: posData[index++],}, timeId);
+						}
+						const attributes = settings.bufferGeometry.attributes;
+						attributes.position.needsUpdate = true;
+						attributes.color.needsUpdate = true;
+*/
+						const position = settings.bufferGeometry.attributes.position;
+//classSettings.overriddenProperties.updateVertices(new Float32Array(event.data));
+//settings.overriddenProperties.editVertice(1);
+						position.copyArray(new Float32Array(event.data)); 
+//						position.array = new Float32Array(event.data);
 						position.needsUpdate = true;
+
+						//color
+						const colorAttr = settings.bufferGeometry.attributes.color;
+						const THREE = MyThree.three.THREE;
+						for (let i = config.pointsPerStep; i < (config.totalSteps * config.pointsPerStep); i++) {
+							let index = i * 4;
+							const s = Math.floor(i / config.pointsPerStep);
+							const r = config.baseRadius + s * config.radiusStep;
+//							setAttributes(pointAngles, r, i);
+//				            const p = polarToCartesian(pointAngles.latitude, pointAngles.longitude, pointAngles.altitude, r);
+				            const t = (position.getW(i) + config.radiusMax) / (2 * config.radiusMax);
+				            const color = new THREE.Color();
+				            color.setHSL(0.7 * (1 - t), 1, 0.5);
+				            colorAttr.setXYZ(i, color.r, color.g, color.b);
+				            //if (LOG) console.log('Step:' + (parseInt(index / pointsPerStep)) + ' Point:' + index + '. x=' + p.x + ' y=' + p.y + ' z=' + p.z + ' w=' + p.w + ',alt=' + pointAngles.altitude + ' lat=' + pointAngles.latitude + ' lon=' + pointAngles.longitude);
+						}
+//						posAttr.needsUpdate = true;
+						colorAttr.needsUpdate = true;
+						
+/*						
+						const posData = new Float32Array(event.data);
+						const posAttr = settings.bufferGeometry.attributes.position;
+						const colorAttr = settings.bufferGeometry.attributes.color;
+						const THREE = MyThree.three.THREE;
+						for (let i = config.pointsPerStep; i < (config.totalSteps * config.pointsPerStep); i++) {
+							let index = i * 4;
+							const s = Math.floor(i / config.pointsPerStep);
+							const r = config.baseRadius + s * config.radiusStep;
+//							setAttributes(pointAngles, r, i);
+//				            const p = polarToCartesian(pointAngles.latitude, pointAngles.longitude, pointAngles.altitude, r);
+							const p = {
+								x: posData[index],
+								y: posData[index+1],
+								z: posData[index+2],
+								w: posData[index+3],
+							}
+				            posAttr.setXYZ(i, p.x, p.y, p.z);
+				            const t = (p.w + config.radiusMax) / (2 * config.radiusMax);
+				            const color = new THREE.Color();
+				            color.setHSL(0.7 * (1 - t), 1, 0.5);
+				            colorAttr.setXYZ(i, color.r, color.g, color.b);
+				            //if (LOG) console.log('Step:' + (parseInt(index / pointsPerStep)) + ' Point:' + index + '. x=' + p.x + ' y=' + p.y + ' z=' + p.z + ' w=' + p.w + ',alt=' + pointAngles.altitude + ' lat=' + pointAngles.latitude + ' lon=' + pointAngles.longitude);
+						}
+						posAttr.needsUpdate = true; colorAttr.needsUpdate = true;
+*/						
 /*						
 						const posData = new Float32Array(event.data);
 						for (let i = config.pointsPerStep; i < (config.totalSteps * config.pointsPerStep); i++) {
@@ -248,8 +324,10 @@ class WebGPUHUniverse {
 						}
 						posAttr.needsUpdate = true; colorAttr.needsUpdate = true;
 */						
+						settings.overriddenProperties.setDrawRange(0, Infinity);
 						updateDisplay();
 						socket.close();
+						btnClose.style.display = "";//сделать кнопку видимой
 					} else console.error(sWebGPU + ': socket message: Invalid event.data type: ' + (typeof event.data));
 				};
 				return;
