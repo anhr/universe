@@ -20,6 +20,8 @@ import MyThree from '../../../commonNodeJS/master/myThree/myThree.js';
 //import MyThree from 'https://raw.githack.com/anhr/commonNodeJS/master/myThree/build/myThree.module.js';
 //import MyThree from 'https://raw.githack.com/anhr/commonNodeJS/master/myThree/build/myThree.module.min.js';
 
+import ProgressBar from '../../../commonNodeJS/master/ProgressBar/ProgressBar.js'
+
 const sWebGPU = 'WebGPU';
 
 class WebGPUHUniverse {
@@ -267,6 +269,42 @@ class WebGPUHUniverse {
 						position.needsUpdate = true;
 
 						//color
+						const posData = new Float32Array(event.data), count = config.totalSteps * config.pointsPerStep;
+						let i = config.pointsPerStep;
+/*
+						for (let i = config.pointsPerStep; i < count; i++) {
+							let index = i * 4;
+							const timeId = parseInt(i / config.pointsPerStep);
+//							hyperSphere.setPositionAttributeFromPoint(i - timeId * config.pointsPerStep, { x: posData[index++], y: posData[index++], z: posData[index++], w: posData[index++],}, timeId);
+							hyperSphere.setColorAttributeFromPoint(i - timeId * config.pointsPerStep, { x: posData[index++], y: posData[index++], z: posData[index++], w: posData[index++],}, timeId);
+						}
+*/						
+						const progressTitle = 'Load vertices<br>Vertice %s / ' + count, progressBar = new ProgressBar(settings.options.renderer.domElement.parentElement, () => {
+							if (i >= count) {
+								progressBar.remove();
+								return;
+							}
+							const iEnd = i + 100000;
+							while ((i < iEnd) && (i < count)) {
+								let index = i * 4;
+								const timeId = parseInt(i / config.pointsPerStep);
+								hyperSphere.setColorAttributeFromPoint(i - timeId * config.pointsPerStep, { x: posData[index++], y: posData[index++], z: posData[index++], w: posData[index++],}, timeId);
+								i++;
+							}
+							settings.overriddenProperties.setDrawRange(0, i);// * position.itemSize);
+							progressBar.value = i;
+							progressBar.title(progressTitle.replace('%s', i));
+							progressBar.step();
+						}, {
+
+							sTitle: progressTitle,
+							max: count,
+//							timeoutPeriod: 1000,
+
+						});
+						
+/*
+						//color
 						const colorAttr = settings.bufferGeometry.attributes.color;
 						const THREE = MyThree.three.THREE;
 						for (let i = config.pointsPerStep; i < (config.totalSteps * config.pointsPerStep); i++) {
@@ -283,7 +321,7 @@ class WebGPUHUniverse {
 						}
 //						posAttr.needsUpdate = true;
 						colorAttr.needsUpdate = true;
-						
+*/						
 /*						
 						const posData = new Float32Array(event.data);
 						const posAttr = settings.bufferGeometry.attributes.position;
@@ -324,7 +362,7 @@ class WebGPUHUniverse {
 						}
 						posAttr.needsUpdate = true; colorAttr.needsUpdate = true;
 */						
-						settings.overriddenProperties.setDrawRange(0, Infinity);
+//						settings.overriddenProperties.setDrawRange(0, Infinity);
 						updateDisplay();
 						socket.close();
 						btnClose.style.display = "";//сделать кнопку видимой
