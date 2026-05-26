@@ -21,6 +21,7 @@ import MyThree from '../../../commonNodeJS/master/myThree/myThree.js';
 //import MyThree from 'https://raw.githack.com/anhr/commonNodeJS/master/myThree/build/myThree.module.min.js';
 
 import ProgressBar from '../../../commonNodeJS/master/ProgressBar/ProgressBar.js'
+import * as utils from '../../../commonNodeJS/master/HyperSphere/utilsHSphere.js'
 
 const sWebGPU = 'WebGPU';
 
@@ -285,10 +286,19 @@ class WebGPUHUniverse {
 								return;
 							}
 							const iEnd = i + 100000;
+							const times = settings.object.geometry.times;
+							let timesLength = times.length, time;
 							while ((i < iEnd) && (i < count)) {
 								let index = i * 4;
 								const timeId = parseInt(i / config.pointsPerStep);
-								hyperSphere.setColorAttributeFromPoint(i - timeId * config.pointsPerStep, { x: posData[index++], y: posData[index++], z: posData[index++], w: posData[index++],}, timeId);
+								if (timeId >= timesLength) {
+									time = times[timeId];//add item to times
+									timesLength = times.length;
+								}
+								const point = { x: posData[index++], y: posData[index++], z: posData[index++], w: posData[index++],};
+								const angles = utils.cartesianToPolar(point, config.DEBUG_MODE);
+								time.push(angles);
+								hyperSphere.setColorAttributeFromPoint(i - timeId * config.pointsPerStep, point, timeId);
 								i++;
 							}
 							settings.overriddenProperties.setDrawRange(0, i);// * position.itemSize);
