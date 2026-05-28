@@ -164,6 +164,18 @@ class WebGPUHUniverse {
                         stateText.innerText = event.reason ? event.reason : "The connection was closed successfully.";
 						if (event.code === 4001) stateText.style.color = "#ff4444";  // Эта страница уже открыта
 					} else {
+                        if (event.code != 1006) {
+                            const rfcLink = "https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1";
+                            const mozillaLink = 'https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code'
+                            const errorDetail = event.reason ? `Reason: ${event.reason}` : `Error Code: ${event.code}`;
+                            const error = ` ${errorDetail}. See RFC: ${rfcLink}, mozilla: ${mozillaLink}`;
+	                        const sMessage = `The connection was closed.` + error
+	//                        console.error(sMessage);
+	
+	                        stateText.innerText = sMessage;//"СВЯЗЬ ПРЕРВАНА (Сервер упал или ошибка сети).";
+	                        stateText.style.color = "#00ffcc";
+                        }
+/*						
 						const rfcLink = "https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1";
 						const mozillaLink = 'https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code'
 						const errorDetail = event.reason ? `Reason: ${event.reason}` : `Error Code: ${event.code}`;
@@ -173,6 +185,7 @@ class WebGPUHUniverse {
 //						socketStatus.set(3, sError);//Abnormal close connection.
                         stateText.innerText = sError;
                         stateText.style.color = "#ff4444";
+*/						
 					}
 					//			console.log(sWebGPU + `: Код закрытия: ${event.code}, причина: ${event.reason}`);
 				};
