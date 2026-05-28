@@ -164,11 +164,28 @@ class WebGPUHUniverse {
                         stateText.innerText = event.reason ? event.reason : "The connection was closed successfully.";
 						if (event.code === 4001) stateText.style.color = "#ff4444";  // Эта страница уже открыта
 					} else {
-                        if (event.code != 1006) {
-                            const rfcLink = "https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1";
-                            const mozillaLink = 'https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code'
-                            const errorDetail = event.reason ? `Reason: ${event.reason}` : `Error Code: ${event.code}`;
-                            const error = ` ${errorDetail}. See RFC: ${rfcLink}, mozilla: ${mozillaLink}`;
+                        function rgbToHex(rgbString) {
+							// Находим числа. Если совпадений нет, вернется пустой массив [] вместо null
+							const rgb = rgbString.match(/\d+/g)?.map(Number) || [];
+							// Если это был не RGB формат (массив пустой или в нем не 3 числа)
+							if (rgb.length < 3) return rgbString;
+/*							
+							// Находим все числа в строке с помощью регулярного выражения
+							const rgb = rgbString.match(/\d+/g).map(Number);
+*/							
+							
+							// Переводим каждое число в HEX и дополняем нулями слева, если нужно
+							return "#" + rgb.map(x => x.toString(16).padStart(2, '0')).join('');
+                        }
+						const color = rgbToHex(stateText.style.color);
+                        if ((color != "#ff4444") && (color != "red")) {//Не маскировать сообщение об ошибке
+							let error = '';
+							if (event.code != 1006) {
+	                            const rfcLink = "https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1";
+	                            const mozillaLink = 'https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code'
+	                            const errorDetail = event.reason ? `Reason: ${event.reason}` : `Error Code: ${event.code}`;
+	                            error = ` ${errorDetail}. See RFC: ${rfcLink}, mozilla: ${mozillaLink}`;
+							}
 	                        const sMessage = `The connection was closed.` + error
 	//                        console.error(sMessage);
 	

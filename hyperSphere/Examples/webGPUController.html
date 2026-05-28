@@ -1265,19 +1265,25 @@
                         stateText.innerText = event.reason ? event.reason : "The connection was closed successfully.";
                         if (event.code === 4001) stateText.style.color = "#ff4444";  // Эта страница уже открыта
                     } else {
-                        let error = '';
-                        if (event.code != 1006) {
+                        function rgbToHex(rgbString) {
+                          // Находим все числа в строке с помощью регулярного выражения
+                          const rgb = rgbString.match(/\d+/g).map(Number);
+                          
+                          // Переводим каждое число в HEX и дополняем нулями слева, если нужно
+                          return "#" + rgb.map(x => x.toString(16).padStart(2, '0')).join('');
+                        }
+                        if (rgbToHex(stateText.style.color) != "#ff4444") {//Не маскировать сообщение об ошибке
                             const rfcLink = "https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1";
                             const mozillaLink = 'https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code'
                             const errorDetail = event.reason ? `Reason: ${event.reason}` : `Error Code: ${event.code}`;
-                            error = ` ${errorDetail}. See RFC: ${rfcLink}, mozilla: ${mozillaLink}`;
+                            const error = ` ${errorDetail}. See RFC: ${rfcLink}, mozilla: ${mozillaLink}`;
+                            const sMessage = `The connection was closed.` + error
+    //                        console.error(sMessage);
+    
+    //                        console.log(`Причина: ${event.reason}`); // Текстовое описание от сервера
+                            stateText.innerText = sMessage;//"СВЯЗЬ ПРЕРВАНА (Сервер упал или ошибка сети).";
+                            stateText.style.color = "#00ffcc";
                         }
-                        const sMessage = `The connection was closed.` + error
-//                        console.error(sMessage);
-
-//                        console.log(`Причина: ${event.reason}`); // Текстовое описание от сервера
-                        stateText.innerText = sMessage;//"СВЯЗЬ ПРЕРВАНА (Сервер упал или ошибка сети).";
-                        stateText.style.color = "#00ffcc";
                     }
 //                    startBtn.disabled = true;
                     console.log(`Код закрытия: ${event.code}, причина: ${event.reason}`);
