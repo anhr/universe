@@ -1265,15 +1265,19 @@
                         stateText.innerText = event.reason ? event.reason : "The connection was closed successfully.";
                         if (event.code === 4001) stateText.style.color = "#ff4444";  // Эта страница уже открыта
                     } else {
-                        const rfcLink = "https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1";
-                        const mozillaLink = 'https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code'
-                        const errorDetail = event.reason ? `Reason: ${event.reason}` : `Error Code: ${event.code}`;
-                        const sError = `The connection was closed. ${errorDetail}. See RFC: ${rfcLink}, mozilla: ${mozillaLink}` 
-                        console.error(sError);
+                        let error = '';
+                        if (event.code != 1006) {
+                            const rfcLink = "https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1";
+                            const mozillaLink = 'https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code'
+                            const errorDetail = event.reason ? `Reason: ${event.reason}` : `Error Code: ${event.code}`;
+                            error = ` ${errorDetail}. See RFC: ${rfcLink}, mozilla: ${mozillaLink}`;
+                        }
+                        const sMessage = `The connection was closed.` + error
+//                        console.error(sMessage);
 
 //                        console.log(`Причина: ${event.reason}`); // Текстовое описание от сервера
-                        stateText.innerText = sError;//"СВЯЗЬ ПРЕРВАНА (Сервер упал или ошибка сети).";
-                        stateText.style.color = "#ff4444";
+                        stateText.innerText = sMessage;//"СВЯЗЬ ПРЕРВАНА (Сервер упал или ошибка сети).";
+                        stateText.style.color = "#00ffcc";
                     }
 //                    startBtn.disabled = true;
                     console.log(`Код закрытия: ${event.code}, причина: ${event.reason}`);
@@ -1372,6 +1376,7 @@
                         }
                         posAttr.needsUpdate = true; colorAttr.needsUpdate = true;
                         document.getElementById('timeResult').innerText = `Итог (${mode}): ${((performance.now() - start) / 1000).toFixed(3)} сек.`;
+						socket.close();
                     } else console.error('socket message: Invalid event.data type: ' + (typeof event.data));
                 };
  /*
