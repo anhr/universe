@@ -805,7 +805,134 @@ let r4 = random(&state);
         }
 
         let socket;
-        
+        const elStatus = document.getElementById('status');
+        const elClient = document.getElementById('client');
+        let reconnectTimer = null; // Переменная для хранения таймера переподключения
+        let config;
+
+        async function connectToServer() {
+            // Если таймер уже запущен, очищаем его, чтобы избежать дублирования циклов
+            if (reconnectTimer) {
+                clearTimeout(reconnectTimer);
+                reconnectTimer = null;
+            }
+
+            // Если прошлый сокет еще жив или закрывается — принудительно очищаем его
+            if (socket) {
+                socket.onerror = null;
+                socket.onclose = null;
+                socket.onopen = null;
+                socket.onmessage = null;
+                if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
+                    socket.close();
+                }
+                socket = null;
+            }
+
+//            log("Attempting to connect to server...");
+            setState("Connecting to server...");
+
+            socket = new WebSocket('ws://localhost:5000/ws?type=gpu');
+            socket.binaryType = 'arraybuffer';
+
+            // 1. Обработка ошибок (сервер недоступен)
+            socket.onerror = (error) => {
+                const failedUrl = error.target ? error.target.url : 'ws://localhost:5000/ws?type=gpu';
+                setState("ERROR: Server unreachable at " + failedUrl, true);
+                console.error("WebSocket Error:", error);
+            };
+
+            // 2. ОБРАБОТКА ЗАКРЫТИЯ СОКЕТА И ЦИКЛ ПЕРЕПОДКЛЮЧЕНИЯ
+            socket.onclose = (event) => {
+                console.log(`Close code: ${event.code}, reason: ${event.reason}, wasClean: ${event.wasClean}`);
+
+                // КРИТИЧЕСКИЙ ЧЕК: Если код 4001, значит эта копия Engine уже запущена в другой вкладке.
+                // Мы НЕ должны переподключаться, чтобы не спамить сервер.
+                if (event.code === 4001) {
+                    setState(`Rejected by server: ${event.reason || "Duplicate Engine instance."}`, true);
+                    cleanupGpuResources();
+                    return;
+                }
+
+                // В любом другом случае (сервер упал, код 1006, плановый перезапуск и т.д.)
+                let helpURL = '';
+                if (event.code != 1006) {
+                    const rfcLink = '<a href="https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1" target="_blank">7.4.1.  Defined Status Codes</a>';
+                    const mozillaLink = '<a href="https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code" target="_blank">CloseEvent: code property</a>';
+                    helpURL = ` See RFC: ${ rfcLink }, mozilla: ${ mozillaLink }`
+                }
+                const errorDetail = event.reason ? `Reason: ${event.reason}` : `Code: ${event.code}${helpURL}`;
+                setState(`Connection lost (${errorDetail}). Reconnecting in 5 seconds...`, true);
+
+                // Сбрасываем ресурсы GPU перед новым циклом, чтобы предотвратить "adapter is consumed"
+                cleanupGpuResources();
+
+                // Запускаем цикл повторного соединения через 5 секунд
+                reconnectTimer = setTimeout(() => {
+                    connectToServer();
+                }, 5000);
+            };
+
+            // 3. Успешное соединение
+            socket.onopen = (event) => {
+                setState("Connection established. Ready for computation.");
+                log("Connected to relay server successfully.");
+            };
+
+            // 4. Прием сообщений
+            socket.onmessage = async (event) => {
+                const sError = "WebGPU ERROR: ";
+                try {
+                    if (typeof event.data === 'string') {
+                        const data = JSON.parse(event.data);
+                        switch (data.type) {
+                            case "START_COMPUTE":
+                                config = data;
+                                count = config.totalSteps * config.pointsPerStep;
+                                elStatus.innerText = "CONFIG RECEIVED";
+                                const clientText = event.origin || "Localhost";
+                                elClient.innerText = clientText;
+                                currentStep = 1;
+                                log('Start compute. Source: ' + clientText);
+                                break;
+                            case "MAIN_DISCONNECTED":
+                                elStatus.innerText = "IDLE";
+                                if (config) currentStep = config.totalSteps - 1;
+                                log('Main page disconnected.');
+                                break;
+                            default:
+                                console.error('socket message: Invalid data.type: ' + data.type);
+                        }
+                    } else {
+                        // Двоичные данные
+                        elStatus.innerText = "Binary data received";
+                        const initialAngles = new Float32Array(event.data);
+                        angles = new Array(count).fill(null).map(() => ({ latitude: 0, longitude: 0, altitude: 0 }));
+                        const anglesItemSize = 4;
+                        for (let i = 0; i < config.pointsPerStep; i++) {
+                            const anglesItem = angles[i];
+                            let index = i * anglesItemSize;
+                            anglesItem.latitude = initialAngles[index++];
+                            anglesItem.longitude = initialAngles[index++];
+                            anglesItem.altitude = initialAngles[index++];
+                        }
+                        try {
+                            await runAuto();
+                        } catch (e) {
+                            setState(sError + e.message, true);
+                        }
+                    }
+                } catch (e) {
+                    setState(sError + e.message, true);
+                }
+            };
+        }
+
+        // Запуск первичного подключения при загрузке страницы Hypersphere Universe Engine
+        if (await findAdapters()) {
+            await connectToServer();
+        }
+/*
         if (await findAdapters()) {
 
             socket = new WebSocket('ws://localhost:5000/ws?type=gpu');
@@ -889,6 +1016,7 @@ let r4 = random(&state);
                 }
             };
         }
+*/
         function log(m) { document.getElementById('log').innerHTML += `<div>> ${m}</div>`; }
         // Безопасная функция для уничтожения буферов
         function destroyIfBuffer(buf) {
