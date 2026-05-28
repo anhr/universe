@@ -209,8 +209,8 @@
         async function initWebGPU(idx) {
             if (device) {
                 cleanupGpuResources();
-                if (!await findAdapters()) return;
             }
+            if (!await findAdapters()) return;
             const adapter = availableAdapters[idx];
             device = await adapter.requestDevice();
 
