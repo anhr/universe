@@ -1273,10 +1273,13 @@
                           return "#" + rgb.map(x => x.toString(16).padStart(2, '0')).join('');
                         }
                         if (rgbToHex(stateText.style.color) != "#ff4444") {//Не маскировать сообщение об ошибке
-                            const rfcLink = "https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1";
-                            const mozillaLink = 'https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code'
-                            const errorDetail = event.reason ? `Reason: ${event.reason}` : `Error Code: ${event.code}`;
-                            const error = ` ${errorDetail}. See RFC: ${rfcLink}, mozilla: ${mozillaLink}`;
+                            let error = '';
+                            if (event.code != 1006) {
+                                const rfcLink = "https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1";
+                                const mozillaLink = 'https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code'
+                                const errorDetail = event.reason ? `Reason: ${event.reason}` : `Error Code: ${event.code}`;
+                                error = ` ${errorDetail}. See RFC: ${rfcLink}, mozilla: ${mozillaLink}`;
+                            }
                             const sMessage = `The connection was closed.` + error
     //                        console.error(sMessage);
     
