@@ -901,7 +901,9 @@ let r4 = random(&state);
                                 log('Main page disconnected.');
                                 break;
                             default:
-                                console.error('socket message: Invalid data.type: ' + data.type);
+                                const error = 'socket message: Invalid data.type: ' + data.type;
+//                                console.error(error);
+                                setState(error, true);
                         }
                     } else {
                         // Двоичные данные
