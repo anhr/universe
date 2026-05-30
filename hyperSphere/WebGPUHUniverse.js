@@ -104,8 +104,9 @@ class WebGPUHUniverse {
 				elProgress.appendChild(elTitle);
 
 				if (settings.min === undefined) settings.min = 0;
-				cProgress.min = settings.min;
-				cProgress.max = settings.max != undefined ? settings.max : settings.iterationCount != undefined ? settings.iterationCount : 1;
+				cProgress.min = 0;
+				cProgress.max = config.totalSteps - 1;
+				cProgress.value = 0;
 				cProgress.type = "range";
 				cProgress.disabled = true;
 				elProgress.appendChild(cProgress);
@@ -145,6 +146,7 @@ class WebGPUHUniverse {
 		            stepCounter.innerText = currentStep;
 		            radVal.innerText = radiusPrev.toFixed(2);
 		            timeResult.innerText = `${((performance.now() - start) / 1000).toFixed(3)}`;
+					cProgress.value = currentStep;
 		        }
 				
 				socket = new WebSocket(serverAddress);
@@ -330,8 +332,10 @@ class WebGPUHUniverse {
 								}
 								const point = { x: posData[index++], y: posData[index++], z: posData[index++], w: posData[index++],};
 								const angles = utils.cartesianToPolar(point, config.DEBUG_MODE);
+					            if (config.LOG) console.log('Step:' + (parseInt(i / config.pointsPerStep)) + ' Point:' + i + '. x=' + point.x + ' y=' + point.y + ' z=' + point.z + ' w=' + point.w + ',alt=' + angles.altitude + ' lat=' + angles.latitude + ' lon=' + angles.longitude);
+								settings.options.player.setSelectSceneIndex(timeId);
 								time.push(angles);
-								hyperSphere.setColorAttributeFromPoint(i - timeId * config.pointsPerStep, point, timeId);
+//								hyperSphere.setColorAttributeFromPoint(i - timeId * config.pointsPerStep, point, timeId);
 								i++;
 							}
 							settings.overriddenProperties.setDrawRange(0, i);// * position.itemSize);

@@ -208,7 +208,7 @@
             const color = new THREE.Color();
             color.setHSL(0.7 * (1 - t), 1, 0.5);
             colorAttr.setXYZ(index, color.r, color.g, color.b);
-            if (LOG) console.log('Step:' + (parseInt(index / pointsPerStep)) + ' Point:' + index + '. x=' + p.x + ' y=' + p.y + ' z=' + p.z + ' w=' + p.w + ',alt=' + pointAngles.altitude + ' lat=' + pointAngles.latitude + ' lon=' + pointAngles.longitude);
+//            if (LOG) console.log('Step:' + (parseInt(index / pointsPerStep)) + ' Point:' + index + '. x=' + p.x + ' y=' + p.y + ' z=' + p.z + ' w=' + p.w + ',alt=' + pointAngles.altitude + ' lat=' + pointAngles.latitude + ' lon=' + pointAngles.longitude);
         }
 
         // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ МАТЕМАТИКИ ---
@@ -1198,7 +1198,10 @@
                 setVelocities(velociti, DAMPING, force);
 
                 const index = currStart + i;
-                angles[index] = cartesianToPolar({ x: p1.x + velociti.x, y: p1.y + velociti.y, z: p1.z + velociti.z, w: p1.w + velociti.w });
+                const pointCur = { x: p1.x + velociti.x, y: p1.y + velociti.y, z: p1.z + velociti.z, w: p1.w + velociti.w };
+                const anglesCur = cartesianToPolar(pointCur);
+                angles[index] = anglesCur;
+                if (LOG) console.log('Step:' + (parseInt(index / pointsPerStep)) + ' Point:' + index + '. x=' + pointCur.x + ' y=' + pointCur.y + ' z=' + pointCur.z + ' w=' + pointCur.w + ',alt=' + anglesCur.altitude + ' lat=' + anglesCur.latitude + ' lon=' + anglesCur.longitude);
                 setAttributes(angles[index], newRadius, index);
             }
             radiusPrev = newRadius; currentStep++;
@@ -1370,17 +1373,14 @@
                         const posData = new Float32Array(event.data);
                         for (let i = pointsPerStep; i < count; i++) {
                             let index = i * 4;
-                            const itemAngles = cartesianToPolar({
-                                x: posData[index++],
-                                y: posData[index++],
-                                z: posData[index++],
-                                w: posData[index++],
-                            });
+                            const pointCur = { x: posData[index++], y: posData[index++], z: posData[index++], w: posData[index++], };
+                            const itemAngles = cartesianToPolar(pointCur);
                             const pointAngles = angles[i];
                             pointAngles.latitude = itemAngles.latitude; pointAngles.longitude = itemAngles.longitude; pointAngles.altitude = itemAngles.altitude;
 //console.log('i = ' + i + ' angles: ' + JSON.stringify(pointAngles))
                             const s = Math.floor(i / pointsPerStep);
                             const r = baseRadius + s * radiusStep;
+                            if (LOG) console.log('Step:' + (parseInt(i / pointsPerStep)) + ' Point:' + index + '. x=' + pointCur.x + ' y=' + pointCur.y + ' z=' + pointCur.z + ' w=' + pointCur.w + ',alt=' + pointAngles.altitude + ' lat=' + pointAngles.latitude + ' lon=' + pointAngles.longitude);
                             setAttributes(pointAngles, r, i);
                         }
                         posAttr.needsUpdate = true; colorAttr.needsUpdate = true;
