@@ -34,6 +34,7 @@ MyThree.three.THREE = THREE;
 
 import { dat } from '../../commonNodeJS/master/dat/dat.module.js';
 import ND from '../../commonNodeJS/master/nD/nD.js';
+import * as utils from '../../commonNodeJS/master/HyperSphere/utilsHSphere.js'
 
 const sUniverse = 'Universe';
 
@@ -152,8 +153,23 @@ class Universe
 									get: (timeAngles, name) => {
 
 										const verticeId = parseInt(name);
-										if (!isNaN(verticeId))
-											return new Proxy(timeAngles[verticeId], {
+//const v = classSettings.settings.object.geometry.angles[0];
+/*										
+const p = classSettings.settings.object.geometry.position[0];
+const x = p.x;
+console.error('Under constraction')
+*/
+										if (!isNaN(verticeId)) {
+											const positionData = this.hyperSphere.getPositionData(verticeId, timeId);
+											const position = classSettings.settings.bufferGeometry.attributes.position;
+											let verticePosition;
+											switch (position.itemSize) {
+												case 4:
+													verticePosition = new THREE.Vector4().fromBufferAttribute(position, positionData.positionId);
+													break;
+												default: console.error(sUniverse + ': get angles. Invalid position.itemSize = ' + position.itemSize);
+											}
+											return new Proxy(utils.cartesianToPolar(verticePosition)/*timeAngles[verticeId]*/, {
 
 												get: (verticeAngles, name) => {
 
@@ -167,6 +183,7 @@ class Universe
 												}
 												
 											});
+										}
 										switch (name) {
 
 											case 'player': return this.hyperSphere.anglesPlayer(timeId);
@@ -179,7 +196,7 @@ class Universe
 
 										timeAngles[name] = value;
 										const timeAnglesId = parseInt(name);
-										if (!isNaN(timeAnglesId)) this.hyperSphere.setPositionAttributeFromPoint(timeAnglesId, undefined, timeId);
+										if (!isNaN(timeAnglesId)) this.hyperSphere.setPositionAttributeFromPoint(timeAnglesId, utils.polarToCartesian(value), timeId);
 										return true;
 
 									},
