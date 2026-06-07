@@ -194,9 +194,9 @@ console.error('Under constraction')
 									},
 									set: (timeAngles, name, value) => {
 
-										timeAngles[name] = value;
+//										timeAngles[name] = value;
 										const timeAnglesId = parseInt(name);
-										if (!isNaN(timeAnglesId)) this.hyperSphere.setPositionAttributeFromPoint(timeAnglesId, utils.polarToCartesian(value), timeId);
+										if (!isNaN(timeAnglesId)) this.hyperSphere.setPositionAttributeFromPoint(timeAnglesId, utils.polarToCartesian(value, this.hyperSphere.r), timeId);
 										return true;
 
 									},
