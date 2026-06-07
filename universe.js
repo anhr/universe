@@ -148,6 +148,7 @@ class Universe
 							if (!times[timeId]) {
 
 								if (times.length != timeId) console.error(sUniverse + ': get times[' + timeId + '] failed. Invalid timeId = ' + timeId);
+								let verticesCount = 0;
 								times[timeId] = new Proxy([], {
 
 									get: (timeAngles, name) => {
@@ -187,6 +188,7 @@ console.error('Under constraction')
 										switch (name) {
 
 											case 'player': return this.hyperSphere.anglesPlayer(timeId);
+											case 'length': return verticesCount;
 
 										}
 										return timeAngles[name];
@@ -196,7 +198,10 @@ console.error('Under constraction')
 
 //										timeAngles[name] = value;
 										const timeAnglesId = parseInt(name);
-										if (!isNaN(timeAnglesId)) this.hyperSphere.setPositionAttributeFromPoint(timeAnglesId, utils.polarToCartesian(value, this.hyperSphere.r), timeId);
+										if (!isNaN(timeAnglesId)) {
+											verticesCount++;
+											this.hyperSphere.setPositionAttributeFromPoint(timeAnglesId, utils.polarToCartesian(value, this.hyperSphere.r), timeId);
+										}
 										return true;
 
 									},
