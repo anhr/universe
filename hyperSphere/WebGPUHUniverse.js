@@ -298,30 +298,37 @@ class WebGPUHUniverse {
 								progressBar.remove();
 								return;
 							}
-							const iEnd = i + 100000;
-							const times = settings.object.geometry.times;
-							let timesLength = times.length, time;
+							const attributeColor = settings.bufferGeometry.attributes.color;
+							const iEnd = i + 100000, times = settings.object.geometry.times, colorItemSize = attributeColor.itemSize;
+							let timesLength = times.length, time,
+
+								//Вершины группируются группами с одинаковым timeId.
+								//В этих группах цвет вершин одинаковый.
+								//Поэтому нет необходимости вычислять цвет каждой вершины.
+								//Вместо этого вычисляется цвет первой вершины в группе time.color = point, а цвет остальных вершин в группе приравнивается цвету первой вершины в группе.
+								timeIdGroup,
+								color;//Цвет текущей группы вершин
 							while ((i < iEnd) && (i < count)) {
 								const timeId = parseInt(i / config.pointsPerStep);
 								if (timeId >= timesLength) {
 									time = times[timeId];//add item to times
 									timesLength = times.length;
 								}
-								let index = i * 4;
+								let index = i * colorItemSize;
 								const point = { x: posData[index++], y: posData[index++], z: posData[index++], w: posData[index++],};
-/*								
-								const angles = utils.cartesianToPolar(point, config.DEBUG_MODE);
-								time.push(angles);
-*/								
-								time.color = point;
-//								time.increaseVerticesCount = 1;
+								if (
+									(timeIdGroup === undefined) ||//Первая группа вершин
+									(timeIdGroup != timeId)//Новая группа вершин
+								) {
+									timeIdGroup = timeId;
+									time.color = point;
+									color = new MyThree.three.THREE.Vector4().fromBufferAttribute(attributeColor, i);
+								} else attributeColor.setXYZW(i, color.x, color.y, color.z, color.w);
 					            if (config.LOG) {
-/*									
-									let index = i * 4;
-									const point = { x: posData[index++], y: posData[index++], z: posData[index++], w: posData[index++],};
-*/									
 									const angles = utils.cartesianToPolar(point, config.DEBUG_MODE);
-									console.log('Step:' + (parseInt(i / config.pointsPerStep)) + ' Point:' + i + '. x=' + point.x + ' y=' + point.y + ' z=' + point.z + ' w=' + point.w + ',alt=' + angles.altitude + ' lat=' + angles.latitude + ' lon=' + angles.longitude);
+									const color = new MyThree.three.THREE.Vector4().fromBufferAttribute(attributeColor, i);
+									console.log('Step:' + (parseInt(timeId)) + ' Point:' + i + '. x=' + point.x + ' y=' + point.y + ' z=' + point.z + ' w=' + point.w + ',alt=' + angles.altitude + ' lat=' + angles.latitude + ' lon=' + angles.longitude);
+									console.log('color: x=' + color.x + ' y=' + color.y + ' z=' + color.z + ' w=' + color.w);
 								}
 								settings.options.player.setSelectSceneIndex(timeId);
 								i++;
