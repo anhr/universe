@@ -201,6 +201,16 @@ console.error('Under constraction')
 										if (!isNaN(timeAnglesId)) {
 											verticesCount++;
 											this.hyperSphere.setPositionAttributeFromPoint(timeAnglesId, utils.polarToCartesian(value, this.hyperSphere.r), timeId);
+										} else switch(name) {
+/*												
+											case 'increaseVerticesCount':
+												verticesCount += value;
+												break;
+*/												
+											case 'color':
+												this.hyperSphere.setColorAttributeFromPoint(verticesCount, value, timeId);
+												verticesCount++;
+												break;
 										}
 										return true;
 

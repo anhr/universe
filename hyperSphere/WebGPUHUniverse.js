@@ -286,35 +286,13 @@ class WebGPUHUniverse {
 						}
 					} else if (typeof event.data === 'object') {
 						//Vertices positions
-/*						
-						const posData = new Float32Array(event.data);
-						for (let i = config.pointsPerStep; i < (config.totalSteps * config.pointsPerStep); i++) {
-							let index = i * 4;
-							const timeId = parseInt(i / config.pointsPerStep);
-							hyperSphere.setPositionAttributeFromPoint(i - timeId * config.pointsPerStep, { x: posData[index++], y: posData[index++], z: posData[index++], w: posData[index++],}, timeId);
-						}
-						const attributes = settings.bufferGeometry.attributes;
-						attributes.position.needsUpdate = true;
-						attributes.color.needsUpdate = true;
-*/
 						const position = settings.bufferGeometry.attributes.position;
-//classSettings.overriddenProperties.updateVertices(new Float32Array(event.data));
-//settings.overriddenProperties.editVertice(1);
 						position.copyArray(new Float32Array(event.data)); 
-//						position.array = new Float32Array(event.data);
 						position.needsUpdate = true;
 
 						//color
 						const posData = new Float32Array(event.data), count = config.totalSteps * config.pointsPerStep;
 						let i = config.pointsPerStep;
-/*
-						for (let i = config.pointsPerStep; i < count; i++) {
-							let index = i * 4;
-							const timeId = parseInt(i / config.pointsPerStep);
-//							hyperSphere.setPositionAttributeFromPoint(i - timeId * config.pointsPerStep, { x: posData[index++], y: posData[index++], z: posData[index++], w: posData[index++],}, timeId);
-							hyperSphere.setColorAttributeFromPoint(i - timeId * config.pointsPerStep, { x: posData[index++], y: posData[index++], z: posData[index++], w: posData[index++],}, timeId);
-						}
-*/						
 						const progressTitle = 'Load vertices<br>Vertice %s / ' + count, progressBar = new ProgressBar(settings.options.renderer.domElement.parentElement, () => {
 							if (i >= count) {
 								progressBar.remove();
@@ -324,20 +302,31 @@ class WebGPUHUniverse {
 							const times = settings.object.geometry.times;
 							let timesLength = times.length, time;
 							while ((i < iEnd) && (i < count)) {
-								let index = i * 4;
 								const timeId = parseInt(i / config.pointsPerStep);
 								if (timeId >= timesLength) {
 									time = times[timeId];//add item to times
 									timesLength = times.length;
 								}
+								let index = i * 4;
 								const point = { x: posData[index++], y: posData[index++], z: posData[index++], w: posData[index++],};
+/*								
 								const angles = utils.cartesianToPolar(point, config.DEBUG_MODE);
-					            if (config.LOG) console.log('Step:' + (parseInt(i / config.pointsPerStep)) + ' Point:' + i + '. x=' + point.x + ' y=' + point.y + ' z=' + point.z + ' w=' + point.w + ',alt=' + angles.altitude + ' lat=' + angles.latitude + ' lon=' + angles.longitude);
-								settings.options.player.setSelectSceneIndex(timeId);
 								time.push(angles);
-//								hyperSphere.setColorAttributeFromPoint(i - timeId * config.pointsPerStep, point, timeId);
+*/								
+								time.color = point;
+//								time.increaseVerticesCount = 1;
+					            if (config.LOG) {
+/*									
+									let index = i * 4;
+									const point = { x: posData[index++], y: posData[index++], z: posData[index++], w: posData[index++],};
+*/									
+									const angles = utils.cartesianToPolar(point, config.DEBUG_MODE);
+									console.log('Step:' + (parseInt(i / config.pointsPerStep)) + ' Point:' + i + '. x=' + point.x + ' y=' + point.y + ' z=' + point.z + ' w=' + point.w + ',alt=' + angles.altitude + ' lat=' + angles.latitude + ' lon=' + angles.longitude);
+								}
+								settings.options.player.setSelectSceneIndex(timeId);
 								i++;
 							}
+							
 							settings.overriddenProperties.setDrawRange(0, i);// * position.itemSize);
 							progressBar.value = i;
 							progressBar.title(progressTitle.replace('%s', i));
@@ -346,70 +335,9 @@ class WebGPUHUniverse {
 
 							sTitle: progressTitle,
 							max: count,
-//							timeoutPeriod: 1000,
 
 						});
 						
-/*
-						//color
-						const colorAttr = settings.bufferGeometry.attributes.color;
-						const THREE = MyThree.three.THREE;
-						for (let i = config.pointsPerStep; i < (config.totalSteps * config.pointsPerStep); i++) {
-							let index = i * 4;
-							const s = Math.floor(i / config.pointsPerStep);
-							const r = config.baseRadius + s * config.radiusStep;
-//							setAttributes(pointAngles, r, i);
-//				            const p = polarToCartesian(pointAngles.latitude, pointAngles.longitude, pointAngles.altitude, r);
-				            const t = (position.getW(i) + config.radiusMax) / (2 * config.radiusMax);
-				            const color = new THREE.Color();
-				            color.setHSL(0.7 * (1 - t), 1, 0.5);
-				            colorAttr.setXYZ(i, color.r, color.g, color.b);
-				            //if (LOG) console.log('Step:' + (parseInt(index / pointsPerStep)) + ' Point:' + index + '. x=' + p.x + ' y=' + p.y + ' z=' + p.z + ' w=' + p.w + ',alt=' + pointAngles.altitude + ' lat=' + pointAngles.latitude + ' lon=' + pointAngles.longitude);
-						}
-//						posAttr.needsUpdate = true;
-						colorAttr.needsUpdate = true;
-*/						
-/*						
-						const posData = new Float32Array(event.data);
-						const posAttr = settings.bufferGeometry.attributes.position;
-						const colorAttr = settings.bufferGeometry.attributes.color;
-						const THREE = MyThree.three.THREE;
-						for (let i = config.pointsPerStep; i < (config.totalSteps * config.pointsPerStep); i++) {
-							let index = i * 4;
-							const s = Math.floor(i / config.pointsPerStep);
-							const r = config.baseRadius + s * config.radiusStep;
-//							setAttributes(pointAngles, r, i);
-//				            const p = polarToCartesian(pointAngles.latitude, pointAngles.longitude, pointAngles.altitude, r);
-							const p = {
-								x: posData[index],
-								y: posData[index+1],
-								z: posData[index+2],
-								w: posData[index+3],
-							}
-				            posAttr.setXYZ(i, p.x, p.y, p.z);
-				            const t = (p.w + config.radiusMax) / (2 * config.radiusMax);
-				            const color = new THREE.Color();
-				            color.setHSL(0.7 * (1 - t), 1, 0.5);
-				            colorAttr.setXYZ(i, color.r, color.g, color.b);
-				            //if (LOG) console.log('Step:' + (parseInt(index / pointsPerStep)) + ' Point:' + index + '. x=' + p.x + ' y=' + p.y + ' z=' + p.z + ' w=' + p.w + ',alt=' + pointAngles.altitude + ' lat=' + pointAngles.latitude + ' lon=' + pointAngles.longitude);
-						}
-						posAttr.needsUpdate = true; colorAttr.needsUpdate = true;
-*/						
-/*						
-						const posData = new Float32Array(event.data);
-						for (let i = config.pointsPerStep; i < (config.totalSteps * config.pointsPerStep); i++) {
-							let index = i * 4;
-							const itemAngles = cartesianToPolar({ x: posData[index++], y: posData[index++], z: posData[index++], w: posData[index++],});
-							const pointAngles = angles[i];
-							pointAngles.latitude = itemAngles.latitude; pointAngles.longitude = itemAngles.longitude; pointAngles.altitude = itemAngles.altitude;
-							//console.log('i = ' + i + ' angles: ' + JSON.stringify(pointAngles))
-							const s = Math.floor(i / config.pointsPerStep);
-							const r = baseRadius + s * radiusStep;
-							setAttributes(pointAngles, r, i);
-						}
-						posAttr.needsUpdate = true; colorAttr.needsUpdate = true;
-*/						
-//						settings.overriddenProperties.setDrawRange(0, Infinity);
 						updateDisplay();
 						socket.close();
 						btnClose.style.display = "";//сделать кнопку видимой

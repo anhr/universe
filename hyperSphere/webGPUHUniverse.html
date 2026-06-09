@@ -188,7 +188,7 @@
                 device.queue.writeBuffer(timeBuffer, 0, new Uint32Array([Math.floor(performance.now() * timeMultiplier)]));
 
                 const newRadius = radiusPrev + radiusStep;
-                device.queue.writeBuffer(paramBuf, 0, new Float32Array([radiusPrev, currentStep * config.pointsPerStep]));
+                device.queue.writeBuffer(paramBuf, 0, new Float32Array([radiusPrev, newRadius, currentStep * config.pointsPerStep]));
                 const encoder = device.createCommandEncoder();
                 const pass = encoder.beginComputePass();
                 pass.setPipeline(pipeline); pass.setBindGroup(0, bindGroup);
@@ -375,8 +375,9 @@
             const dynamicShaderCode = `
                             /* СТРУКТУРЫ ДАННЫХ */
                             struct Params {
-                                radiusPrev: f32,      // Предыдущий радиус сферы
-                                stepOffset: f32   // Индекс начала текущей группы
+                                radiusPrev: f32,// Предыдущий радиус сферы
+                                radius: f32,    // Текущий радиус сферы
+                                stepOffset: f32 // Индекс начала текущей группы
                             };
 
                             struct PolarAngles {
@@ -632,8 +633,7 @@ let r4 = random(&state);
 
                                 //пересчитываем декартовые коодинаты для текущего шага проигрывателя
                                 let polar = cartesianToPolar(next_pos_unit * p_param.radiusPrev);
-//ВНИМАНИЕ! Определить p_param.radius
-positions[currOffset + i] = polarToCartesian(polar.latitude, polar.longitude, polar.altitude, 0.2);//p_param.radius);
+                                positions[currOffset + i] = polarToCartesian(polar.latitude, polar.longitude, polar.altitude, p_param.radius);
 
                             }
                         `;
