@@ -17,6 +17,7 @@
 
 import Universe from '../universe.js';
 import Sphere from '../../../commonNodeJS/master/HyperSphere/sphere.js';
+import * as utils from '../../../commonNodeJS/master/HyperSphere/utilsSphere.js'
 
 //select one:
 import distanceOfVertices from '../../../commonNodeJS/master/HyperSphere/distanceOfVertices/averageVerticesSphere.js';
@@ -38,6 +39,7 @@ class SphericalUniverse extends Universe {
 		myThreeOptions.scales = myThreeOptions.scales || { z: {}, };
 		myThreeOptions.orbitControls = myThreeOptions.orbitControls || { enableRotate: true, };
 		myThreeOptions.camera = myThreeOptions.camera || { position: [ 0.4, 0.4, 2 ] };
+		classSettings.utils ||= utils;
 		super(classSettings, myThreeOptions);
 
 	}

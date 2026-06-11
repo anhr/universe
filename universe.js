@@ -34,7 +34,8 @@ MyThree.three.THREE = THREE;
 
 import { dat } from '../../commonNodeJS/master/dat/dat.module.js';
 import ND from '../../commonNodeJS/master/nD/nD.js';
-import * as utils from '../../commonNodeJS/master/HyperSphere/utilsHSphere.js'
+//import * as utils from '../../commonNodeJS/master/HyperSphere/utilsHSphere.js'
+let utils;
 
 const sUniverse = 'Universe';
 
@@ -49,6 +50,7 @@ class Universe
 	 */
 	constructor(classSettings = {}, myThreeOptions = {}) {
 
+		utils = classSettings.utils;
 		const _this = this;
 		//myThreeOptions.playerOptions ||= {};Not compatible with buid of hyperSphericalUniverse.module.min.js
 		if (!myThreeOptions.playerOptions) myThreeOptions.playerOptions = {};
@@ -163,10 +165,14 @@ console.error('Under constraction')
 										if (!isNaN(verticeId)) {
 											const positionData = this.hyperSphere.getPositionData(verticeId, timeId);
 											const position = classSettings.settings.bufferGeometry.attributes.position;
+											const index = positionData.positionId / position.itemSize;
 											let verticePosition;
 											switch (position.itemSize) {
 												case 4:
-													verticePosition = new THREE.Vector4().fromBufferAttribute(position, positionData.positionId);
+													verticePosition = new THREE.Vector4().fromBufferAttribute(position, index);
+													break;
+												case 3:
+													verticePosition = new THREE.Vector3().fromBufferAttribute(position, index);
 													break;
 												default: console.error(sUniverse + ': get angles. Invalid position.itemSize = ' + position.itemSize);
 											}

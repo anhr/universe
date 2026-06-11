@@ -17,6 +17,7 @@
 
 import SphericalUniverse from '../sphere/sphericalUniverse.js';
 import HyperSphere3D from '../../../commonNodeJS/master/HyperSphere/hyperSphere3D.js';
+import * as utils from '../../../commonNodeJS/master/HyperSphere/utilsHSphere.js'
 
 //select one:
 //import distanceOfVertices from '../../../commonNodeJS/master/HyperSphere/distanceOfVertices/averageVerticesHSphere.js';
@@ -34,7 +35,10 @@ class HypersphericalUniverse extends SphericalUniverse {
 	 * All the vertices of the <b>HypersphericalUniverse</b> form a 3 dimensional [hypersphere]{@link https://en.wikipedia.org/wiki/N-sphere}.
 	 * @param {object} [classSettings={}] See <a href="../../../commonNodeJS/master/HyperSphere/jsdoc/module-HyperSphere-HyperSphere.html" target="_blank">HyperSphere classSettings</a> parameter.
 	 **/
-	constructor(classSettings = {}, myThreeOptions) { super(classSettings, myThreeOptions); }
+	constructor(classSettings = {}, myThreeOptions) {
+		classSettings.utils = utils;
+		super(classSettings, myThreeOptions);
+	}
 	getHyperSphere(options, classSettings) {
 		
 		classSettings.distanceOfVertices = distanceOfVertices;

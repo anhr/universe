@@ -16,6 +16,7 @@
 
 import Universe from '../universe.js';
 import distanceOfVertices from '../../../commonNodeJS/master/HyperSphere/distanceOfVertices/middleVerticesCircle.js';
+import * as utils from '../../../commonNodeJS/master/HyperSphere/utilsCircle.js'
 
 //const sCircularUniverse = 'CircularUniverse';
 
@@ -26,7 +27,10 @@ class CircularUniverse extends Universe {
 	 * @param {object} [classSettings={}] See <a href="../../../commonNodeJS/master/HyperSphere/jsdoc/module-HyperSphere-HyperSphere.html" target="_blank">HyperSphere classSettings</a> parameter.
 	 * @param {object} [myThreeOptions={}] See <a href="../../../commonNodeJS/master/myThree/jsdoc/module-MyThree-MyThree.html" target="_blank">MyThree options</a> parameter.
 	 **/
-	constructor(classSettings = {}, myThreeOptions = {}) { super(classSettings, myThreeOptions); }
+	constructor(classSettings = {}, myThreeOptions = {}) {
+		classSettings.utils = utils;
+		super(classSettings, myThreeOptions);
+	}
 	getHyperSphere(options, classSettings) {
 
 		classSettings.distanceOfVertices = distanceOfVertices;
