@@ -34,6 +34,7 @@ class HypersphericalUniverse extends SphericalUniverse {
 	/**
 	 * All the vertices of the <b>HypersphericalUniverse</b> form a 3 dimensional [hypersphere]{@link https://en.wikipedia.org/wiki/N-sphere}.
 	 * @param {object} [classSettings={}] See <a href="../../../commonNodeJS/master/HyperSphere/jsdoc/module-HyperSphere-HyperSphere.html" target="_blank">HyperSphere classSettings</a> parameter.
+	 * @param {object} [myThreeOptions={}] See <a href="../../../commonNodeJS/master/myThree/jsdoc/module-MyThree-MyThree.html" target="_blank">MyThree options</a> parameter.
 	 **/
 	constructor(classSettings = {}, myThreeOptions) {
 		classSettings.utils = utils;

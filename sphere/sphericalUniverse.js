@@ -32,6 +32,7 @@ class SphericalUniverse extends Universe {
 	/**
 	 * All the vertices of the <b>SphericalUniverse</b> form a sphere.
 	 * @param {object} [classSettings={}] See <a href="../../../commonNodeJS/master/HyperSphere/jsdoc/module-HyperSphere-HyperSphere.html" target="_blank">HyperSphere classSettings</a> parameter.
+	 * @param {object} [myThreeOptions={}] See <a href="../../../commonNodeJS/master/myThree/jsdoc/module-MyThree-MyThree.html" target="_blank">MyThree options</a> parameter.
 	 **/
 	constructor(classSettings = {}, myThreeOptions={}) {
 
