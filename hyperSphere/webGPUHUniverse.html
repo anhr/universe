@@ -48,6 +48,9 @@
     <div id="log"></div>
 
     <script type="module">
+
+        //Public https://gemini.google.com/share/e56abc54cfb9
+        //Private https://gemini.google.com/app/9f9d634b8146885b
         
         const π = Math.PI;
         let angles, count, currentStep, radiusPrev, radiusStep;
@@ -641,12 +644,52 @@ let r4 = random(&state);
             pipeline = device.createComputePipeline({
                 layout: 'auto', compute: { module: device.createShaderModule({ code: dynamicShaderCode }), entryPoint: 'main' }
             });
-            posBuf = device.createBuffer({ size: count * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
+
+            // Рассчитываем необходимый размер для posBuf в байтах
+            const requiredPosBufSize = count * 16;
+
+            // ПРОВЕРКА ЛИМИТОВ ТЕКУЩЕГО УСТРОЙСТВА (DEVICE, А НЕ ADAPTER)
+            // Здесь гарантированно будет 268435456, если лимиты не расширялись
+            const currentDeviceLimit = device.limits.maxBufferSize;
+
+            if (requiredPosBufSize > currentDeviceLimit) {
+                const reqMb = (requiredPosBufSize / (1024 * 1024)).toFixed(1);
+                const maxMb = (currentDeviceLimit / (1024 * 1024)).toFixed(1);
+                
+                // Вычисляем коэффициент превышения
+//                const excessRatio = Math.ceil(requiredPosBufSize / currentDeviceLimit);
+                
+                // Формируем рекомендацию
+                let recommendation = `<br>Required buffer (${reqMb} MB) exceeds WebGPU Device limit (${maxMb} MB). `;
+                const maxTotalSteps = parseInt(currentDeviceLimit / (config.pointsPerStep * 16)), maxPointsPerStep = parseInt(currentDeviceLimit / (config.totalSteps * 16));
+                recommendation += `<br>To fix this, please decrease` +
+                    `<br>'classSettings.settings.object.geometry.angles.length' to ${maxTotalSteps}` +
+                    `<br>or 'myThreeOptions.playerOptions.marks' to ${maxPointsPerStep}.` +
+                    `<br>See <a href="../../jsdoc/module-HypersphericalUniverse-HypersphericalUniverse.html" target="_blank">HypersphericalUniverse</a>`;
+//                recommendation += `To fix this, please decrease 'totalSteps' or 'pointsPerStep' at least ${excessRatio} times.`;
+                
+                throw new Error(recommendation);
+            }
+
+            // 1. Включаем перехват ВАЛИДАЦИОННЫХ ошибок (превышение лимитов — это валидация)
+            device.pushErrorScope('validation');
+
+            posBuf = device.createBuffer({ size: requiredPosBufSize, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
             velBuf = device.createBuffer({ size: config.pointsPerStep * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
             paramBuf = device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
             debugBuf = device.createBuffer({ size: 32, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
             messageArray = device.createBuffer({ size: 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
 
+            // 2. Извлекаем ошибку валидации
+            const validationError = await device.popErrorScope();
+            if (validationError) {
+                // Если буфер превысил лимит, мы попадем сюда. Прерываем выполнение!
+                const reqMb = (requiredPosBufSize / (1024 * 1024)).toFixed(1);
+                const maxMb = (adapter.limits.maxBufferSize / (1024 * 1024)).toFixed(1);
+                
+                throw new Error(`Validation Failed: Buffer size (${reqMb} MB) exceeds the max buffer size limit (${maxMb} MB). Please reduce totalSteps or pointsPerStep.`);
+            }            
+            
             // Создаем буфер для одного числа u32. Этот буфер используется для генератора случайных чисел в GPU.
             timeBuffer = device.createBuffer({ size: 4, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
 
@@ -882,10 +925,10 @@ let r4 = random(&state);
                 setState("Connection established. Ready for computation.");
                 log("Connected to relay server successfully.");
             };
+            const sError = "WebGPU ERROR: ";
 
             // 4. Прием сообщений
             socket.onmessage = async (event) => {
-                const sError = "WebGPU ERROR: ";
                 try {
                     if (typeof event.data === 'string') {
                         const data = JSON.parse(event.data);
