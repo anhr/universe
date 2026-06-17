@@ -181,7 +181,25 @@
                 setState(message, true);
                 return;
             }
+            
             await initWebGPU(idx);
+
+            // 2. Извлекаем ошибку валидации
+            const validationError = await device.popErrorScope();
+            if (validationError) {
+/*                
+                // Если буфер превысил лимит, мы попадем сюда. Прерываем выполнение!
+                const reqMb = (requiredPosBufSize / (1024 * 1024)).toFixed(1);
+                const maxMb = (adapter.limits.maxBufferSize / (1024 * 1024)).toFixed(1);
+                
+                throw new Error(`Validation Failed: Buffer size (${reqMb} MB) exceeds the max buffer size limit (${maxMb} MB). Please reduce totalSteps or pointsPerStep.`);
+*/                
+                // Заменяем все символы переноса строки (\n) на HTML-теги <br>
+                const formattedMessage = validationError.message.replace(/\n/g, '<br>');
+                
+                throw new Error(`Validation Failed: ${formattedMessage}`);
+            }            
+            
             radiusPrev = config.baseRadius;
             radiusStep = (config.radiusMax - config.baseRadius) / (config.totalSteps - 1);
             document.getElementById('totalStepsDisplay').innerText = config.totalSteps;
@@ -215,7 +233,40 @@
             }
             if (!await findAdapters()) return;
             const adapter = availableAdapters[idx];
-            device = await adapter.requestDevice();
+
+            //Выделяем необходимый размер памяти
+//            device = await adapter.requestDevice();
+            // 1. Рассчитываем точный объем в байтах для самой тяжелой структуры (posBuf)
+            const requiredPosBufSize = config.totalSteps * config.pointsPerStep * 16;
+
+            // Базовый лимит WebGPU по умолчанию для всех устройств в мире
+            const DEFAULT_WEBGPU_LIMIT = 268435456; // 256 MB
+
+            let deviceDescriptor = {}; // По умолчанию дескриптор пустой (дефолтные лимиты)
+
+            // 2. Если дефолтных 256 МБ НЕ хватает, динамически расширяем лимит под задачу
+            if (requiredPosBufSize > DEFAULT_WEBGPU_LIMIT) {
+                //console.log(`Task requires ${requiredPosBufSize} bytes. Extending WebGPU limits...`);
+
+                // Проверяем: а потянет ли видеокарта такой объем физически?
+                if (requiredPosBufSize > adapter.limits.maxBufferSize) {
+                    throw new Error(`Hardware limit exceeded! Your GPU maximum is ${(adapter.limits.maxBufferSize / (1024 * 1024)).toFixed(0)} MB, but task requires ${(requiredPosBufSize / (1024 * 1024)).toFixed(0)} MB.`);
+                }
+
+                // Формируем запрос на точечное расширение лимитов
+                deviceDescriptor = {
+                    requiredLimits: {
+                        // Запрашиваем ровно столько, сколько нужно для расчетов + небольшой запас
+                        maxBufferSize: requiredPosBufSize,
+                        maxStorageBufferBindingSize: requiredPosBufSize
+                    }
+                };
+            } else {
+                //console.log("Task fits into standard 256MB WebGPU limit. Requesting default device.");
+            }
+
+            // 3. Создаем устройство с динамически рассчитанным дескриптором
+            device = await adapter.requestDevice(deviceDescriptor);
 
             //for random function in WebGPU
 
@@ -646,7 +697,7 @@ let r4 = random(&state);
             });
 
             // Рассчитываем необходимый размер для posBuf в байтах
-            const requiredPosBufSize = count * 16;
+            //const requiredPosBufSize = count * 16;
 
             // ПРОВЕРКА ЛИМИТОВ ТЕКУЩЕГО УСТРОЙСТВА (DEVICE, А НЕ ADAPTER)
             // Здесь гарантированно будет 268435456, если лимиты не расширялись
@@ -663,14 +714,14 @@ let r4 = random(&state);
                 let recommendation = `<br>Required buffer (${reqMb} MB) exceeds WebGPU Device limit (${maxMb} MB). `;
                 const maxTotalSteps = parseInt(currentDeviceLimit / (config.pointsPerStep * 16)), maxPointsPerStep = parseInt(currentDeviceLimit / (config.totalSteps * 16));
                 recommendation += `<br>To fix this, please decrease` +
-                    `<br>'classSettings.settings.object.geometry.angles.length' to ${maxTotalSteps}` +
-                    `<br>or 'myThreeOptions.playerOptions.marks' to ${maxPointsPerStep}.` +
-                    `<br>See <a href="../../jsdoc/module-HypersphericalUniverse-HypersphericalUniverse.html" target="_blank">HypersphericalUniverse</a>`;
+                    `<br>'classSettings.settings.object.geometry.angles.length' to ${maxPointsPerStep}` +
+                    `<br>or 'myThreeOptions.playerOptions.marks' to ${maxTotalSteps}.` +
+                    `<br>See <a href="../../jsdoc/module-HypersphericalUniverse-HypersphericalUniverse.html" target="_blank" style="color: blue;">HypersphericalUniverse</a>`;
 //                recommendation += `To fix this, please decrease 'totalSteps' or 'pointsPerStep' at least ${excessRatio} times.`;
                 
                 throw new Error(recommendation);
             }
-
+            
             // 1. Включаем перехват ВАЛИДАЦИОННЫХ ошибок (превышение лимитов — это валидация)
             device.pushErrorScope('validation');
 
@@ -679,7 +730,7 @@ let r4 = random(&state);
             paramBuf = device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
             debugBuf = device.createBuffer({ size: 32, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
             messageArray = device.createBuffer({ size: 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
-
+/*
             // 2. Извлекаем ошибку валидации
             const validationError = await device.popErrorScope();
             if (validationError) {
@@ -689,7 +740,7 @@ let r4 = random(&state);
                 
                 throw new Error(`Validation Failed: Buffer size (${reqMb} MB) exceeds the max buffer size limit (${maxMb} MB). Please reduce totalSteps or pointsPerStep.`);
             }            
-            
+*/            
             // Создаем буфер для одного числа u32. Этот буфер используется для генератора случайных чисел в GPU.
             timeBuffer = device.createBuffer({ size: 4, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
 
