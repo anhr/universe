@@ -184,21 +184,17 @@
             
             await initWebGPU(idx);
 
+/*
+            //Сейчас использую универсальный перехватчик во время исполнения
             // 2. Извлекаем ошибку валидации
             const validationError = await device.popErrorScope();
             if (validationError) {
-/*                
-                // Если буфер превысил лимит, мы попадем сюда. Прерываем выполнение!
-                const reqMb = (requiredPosBufSize / (1024 * 1024)).toFixed(1);
-                const maxMb = (adapter.limits.maxBufferSize / (1024 * 1024)).toFixed(1);
-                
-                throw new Error(`Validation Failed: Buffer size (${reqMb} MB) exceeds the max buffer size limit (${maxMb} MB). Please reduce totalSteps or pointsPerStep.`);
-*/                
                 // Заменяем все символы переноса строки (\n) на HTML-теги <br>
                 const formattedMessage = validationError.message.replace(/\n/g, '<br>');
                 
                 throw new Error(`Validation Failed: ${formattedMessage}`);
             }            
+*/
             
             radiusPrev = config.baseRadius;
             radiusStep = (config.radiusMax - config.baseRadius) / (config.totalSteps - 1);
@@ -267,6 +263,23 @@
 
             // 3. Создаем устройство с динамически рассчитанным дескриптором
             device = await adapter.requestDevice(deviceDescriptor);
+
+            // НАЗНАЧАЕМ ГЛОБАЛЬНЫЙ ПЕРЕХВАТЧИК ОШИБОК СРАЗУ ПОСЛЕ СОЗДАНИЯ DEVICE
+            device.onuncaughterror = (event) => {
+                console.error("Uncaught WebGPU error:", event.error.message);
+
+                // Принудительно останавливаем циклы в runAuto (сбрасываем счетчик шагов)
+                if (window.config) {
+                    currentStep = config.totalSteps;
+                }
+
+                // Переводим текст ошибки, заменяя \n на <br> для вывода пользователю
+                const formattedMessage = event.error.message.replace(/\n/g, '<br>');
+                setState(`CRITICAL GPU ERROR:<br>${formattedMessage}`, true);
+
+                // Освобождаем ресурсы, чтобы очистить видеокарту
+                cleanupGpuResources();
+            };
 
             //for random function in WebGPU
 
@@ -722,8 +735,9 @@ let r4 = random(&state);
                 throw new Error(recommendation);
             }
             
+            //Сейчас использую универсальный перехватчик во время исполнения
             // 1. Включаем перехват ВАЛИДАЦИОННЫХ ошибок (превышение лимитов — это валидация)
-            device.pushErrorScope('validation');
+//            device.pushErrorScope('validation');
 
             posBuf = device.createBuffer({ size: requiredPosBufSize, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
             velBuf = device.createBuffer({ size: config.pointsPerStep * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
@@ -1019,6 +1033,9 @@ let r4 = random(&state);
                         try {
                             await runAuto();
                         } catch (e) {
+                            elStatus.innerText = "ERROR";
+                            cleanupGpuResources();
+//                            setState(e.message, true); // <--- Сюда попадет абсолютно любой текст ошибки!
                             setState(sError + e.message, true);
                         }
                     }
@@ -1145,9 +1162,21 @@ let r4 = random(&state);
             // Не вызываем device.destroy() — вместо этого просто забываем ссылку
             // и даём браузеру управлять lifecycle; если реализация поддерживает,
             // можно проверить и вызвать, но это не стандартно.
-            try { if (device && typeof device.destroy === 'function') device.destroy(); } catch(e) {}
-            // обязательно обнуляем ссылку на device
+            try { if (device && typeof device.destroy === 'function') device.destroy(); } catch (e) { }
+
+            //Снять обработчик device.onuncaughterror
+            try {
+                if (device) {
+                    device.onuncaughterror = null; // Снимаем обработчик перед удалением
+                    if (typeof device.destroy === 'function') {
+                        device.destroy();
+                    }
+                }
+            } catch (e) {
+                console.warn('Device destroy error:', e);
+            }
             device = null;
+            availableAdapters.length = 0;
         }
         window.addEventListener('beforeunload', () => {
             cleanupGpuResources();
