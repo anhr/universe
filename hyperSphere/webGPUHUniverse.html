@@ -283,6 +283,41 @@
 
             // КРИТИЧЕСКИЙ ДОБАВОК: Перехватчик аппаратного краша / потери устройства
             device.lost.then((info) => {
+                // ЕСЛИ УСТРОЙСТВО УНИЧТОЖЕНО ПЛАНОВО НАШИМ КОДОМ - ПРОСТО ВЫХОДИМ ИЗ ОБРАБОТЧИКА
+                if (info.reason === 'destroyed') {
+                    console.log("WebGPU Device was intentionally destroyed for resource cleanup.");
+                    return;
+                }
+
+                console.warn(`WebGPU Device was lost! Reason: ${info.reason}, Message: ${info.message}`);
+
+                // Принудительно останавливаем циклы в runAuto
+                currentStep = config.totalSteps;
+
+                let userMessage = `CRITICAL ERROR: GPU Device Lost.`;
+                userMessage += `<br>Reason: ${info.reason}.` +
+                    `<br>Message: ${info.message.replace(/\n/g, '<br>')}` +
+                    `<br><br><strong>Analysis:</strong> Your GPU hung up and was restarted by the OS (TDR). ` +
+                    `The current task size (${config.pointsPerStep} points) requires a quadratic O(N²) calculation path ` +
+                    `which is too heavy for a single compute pass.` +
+                    `<br>To fix this, please decrease` +
+                    `<br>'classSettings.settings.object.geometry.angles.length'` +
+                    `<br>or 'myThreeOptions.playerOptions.marks'` +
+                    `<br>See <a href="../../jsdoc/module-HypersphericalUniverse-HypersphericalUniverse.html" target="_blank" style="color: blue;">HypersphericalUniverse</a>` +
+                    `<br>When processing large-scale 4D math or dense point clouds in the Hypersphere Universe Engine, your GPU might take longer than 2 seconds to complete a single compute pass (dispatchWorkgroups).` +
+                    `<br>By default, Windows monitors the GPU response time. If a single GPU operation takes longer than 2 seconds, the operating system assumes the graphics card is frozen, forcibly restarts the display driver, and terminates the application context. In your browser console, this results in the following crash errors:` +
+                    `<br>DXGI_ERROR_DEVICE_HUNG (0x887A0006)` +
+                    `<br>CRITICAL ERROR: GPU Device Lost` +
+                    `<br>To solve this issue, please read <a href="https://github.com/anhr/universe/blob/main/hyperSphere/TDR_GUIDE.md" target="_blank" style="color: blue;">How to Increase or Disable the TDR (Timeout Detection and Recovery) Limit in Windows</a>`;
+
+                // Выводим развернутый текст на страницу пользователя
+                setState(userMessage, true);
+
+                // Мягко очищаем локальные ссылки
+                cleanupGpuResources();
+            });
+/*
+            device.lost.then((info) => {
                 console.warn(`WebGPU Device was lost! Reason: ${info.reason}, Message: ${info.message}`);
 
                 // Принудительно останавливаем циклы в runAuto
@@ -305,8 +340,7 @@
                         `<br>By default, Windows monitors the GPU response time. If a single GPU operation takes longer than 2 seconds, the operating system assumes the graphics card is frozen, forcibly restarts the display driver, and terminates the application context. In your browser console, this results in the following crash errors:` + 
                         `<br>DXGI_ERROR_DEVICE_HUNG (0x887A0006)` + 
                         `<br>CRITICAL ERROR: GPU Device Lost` + 
-                        `<br>To solve this issue, please read <a href="../../hyperSphere/TDR_GUIDE.md" target="_blank" style="color: blue;">How to Increase or Disable the TDR (Timeout Detection and Recovery) Limit in Windows</a>`;
-`;
+                        `<br>To solve this issue, please read <a href="https://github.com/anhr/universe/blob/main/hyperSphere/TDR_GUIDE.md" target="_blank" style="color: blue;">How to Increase or Disable the TDR (Timeout Detection and Recovery) Limit in Windows</a>`;
                 }
 
                 // Выводим развернутый текст на страницу пользователя
@@ -315,6 +349,7 @@
                 // Мягко очищаем локальные ссылки
                 cleanupGpuResources();
             });
+*/
 
             //for random function in WebGPU
 
@@ -1190,6 +1225,28 @@ let r4 = random(&state);
             destroyIfBuffer(debugBuf);
             destroyIfBuffer(messageArray);
             destroyIfBuffer(timeBuffer);
+
+            posBuf = velBuf = paramBuf = debugBuf = messageArray = timeBuffer = null;
+            bindGroup = pipeline = null;
+
+            try {
+                if (device) {
+                    if (typeof device.destroy === 'function') {
+                        device.destroy();
+                    }
+                }
+            } catch (e) {
+                console.warn('Device destroy error:', e);
+            }
+            device = null; // Обязательно освобождаем ссылку!
+        }/*
+        function cleanupGpuResources() {
+            destroyIfBuffer(posBuf);
+            destroyIfBuffer(velBuf);
+            destroyIfBuffer(paramBuf);
+            destroyIfBuffer(debugBuf);
+            destroyIfBuffer(messageArray);
+            destroyIfBuffer(timeBuffer);
             // Обнуляем ссылки
             posBuf = velBuf = paramBuf = debugBuf = messageArray = timeBuffer = null;
             // Сброс bindGroup / pipeline (они не имеют destroy в спецификации)
@@ -1213,6 +1270,7 @@ let r4 = random(&state);
             device = null;
             availableAdapters.length = 0;
         }
+*/
         window.addEventListener('beforeunload', () => {
             cleanupGpuResources();
         });
