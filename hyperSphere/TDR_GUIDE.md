@@ -33,19 +33,19 @@ HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\GraphicsDrivers
 
 2. If it does not exist:
 
-   * Right-click on an empty space in the right pane, select New, and click DWORD (32-bit) Value.
+   * Right-click on an empty space in the right pane, select **New**, and click **DWORD (32-bit) Value**.
 
    * Name it exactly `TdrDelay` (case-sensitive).
 
 3. Double-click on `TdrDelay` to edit it:
 
-   * Change the Base setting to Decimal.
+   * Change the **Base** setting to **Decimal**.
 
-   * In the Value data field, enter the time limit in seconds.
+   * In the **Value data** field, enter the time limit in seconds.
 
-      * Recommended for heavy 4D math: 15 or 30 (this grants the GPU 15 or 30 seconds of uninterrupted execution instead of the default 2).
+      * *Recommended for heavy 4D math*: `15` or `30` (this grants the GPU 15 or 30 seconds of uninterrupted execution instead of the default 2).
 
-   * Click OK.
+   * Click **OK**.
 
 ### Step 4: Create or Modify the `TdrDdiDelay` Parameter (Optional but Recommended)
 To prevent downstream driver interface timeouts, configure the driver subsystem response limit alongside TdrDelay:
@@ -54,24 +54,24 @@ To prevent downstream driver interface timeouts, configure the driver subsystem 
 
 2. If it does not exist:
 
-   * Right-click on an empty space, select New, and click DWORD (32-bit) Value. Name it exactly `TdrDdiDelay`.
+   * Right-click on an empty space, select **New**, and click **DWORD (32-bit) Value**. Name it exactly `TdrDdiDelay`.
 
 3. Double-click on TdrDdiDelay:
 
-   * Change the Base setting to Decimal.
+   * Change the **Base** setting to **Decimal**.
 
-   * Set the Value data to match your TdrDelay value (e.g., 15 or 30).
+   * Set the **Value data** to match your TdrDelay value (e.g., `15` or `30`).
 
-   * Click OK.
+   * Click **OK**.
 
 ### Step 5: How to Completely Disable TDR (Alternative Method)
 If you do not want Windows to limit your GPU processing time at all:
 
-1. In the same registry folder, create a new DWORD (32-bit) Value named TdrLevel.
+1. In the same registry folder, create a new **DWORD (32-bit) Value** named TdrLevel.
 
-2. Double-click it, set the Base to Decimal, and set the Value data to `0`.
+2. Double-click it, set the **Base** to **Decimal**, and set the **Value data** to `0`.
 
-3. Click OK.
+3. Click **OK**.
 (Note: If you need to re-enable TDR later, simply delete the TdrLevel key or set its value back to `3`).
 
 ### Step 6: Restart Your Computer
