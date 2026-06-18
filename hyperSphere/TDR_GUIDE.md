@@ -27,4 +27,59 @@ To solve this issue, you can either **decrease your configuration parameters** (
 In the left sidebar of the Registry Editor, navigate to the following path:
 ```text
 HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\GraphicsDrivers
+```
+### Step 3: Create or Modify the TdrDelay Parameter
+Check the right panel for a value named TdrDelay.
 
+If it does not exist:
+
+Right-click on an empty space in the right pane, select New, and click DWORD (32-bit) Value.
+
+Name it exactly TdrDelay (case-sensitive).
+
+Double-click on TdrDelay to edit it:
+
+Change the Base setting to Decimal.
+
+In the Value data field, enter the time limit in seconds.
+
+Recommended for heavy 4D math: 15 or 30 (this grants the GPU 15 or 30 seconds of uninterrupted execution instead of the default 2).
+
+Click OK.
+
+### Step 4: Create or Modify the TdrDdiDelay Parameter (Optional but Recommended)
+To prevent downstream driver interface timeouts, configure the driver subsystem response limit alongside TdrDelay:
+
+Check the right panel for a value named TdrDdiDelay.
+
+If it does not exist:
+
+Right-click on an empty space, select New, and click DWORD (32-bit) Value. Name it exactly TdrDdiDelay.
+
+Double-click on TdrDdiDelay:
+
+Change the Base setting to Decimal.
+
+Set the Value data to match your TdrDelay value (e.g., 15 or 30).
+
+Click OK.
+
+### Step 5: How to Completely Disable TDR (Alternative Method)
+If you do not want Windows to limit your GPU processing time at all:
+
+In the same registry folder, create a new DWORD (32-bit) Value named TdrLevel.
+
+Double-click it, set the Base to Decimal, and set the Value data to 0.
+
+Click OK.
+(Note: If you need to re-enable TDR later, simply delete the TdrLevel key or set its value back to 3).
+
+### Step 6: Restart Your Computer
+Changes made to the Windows Registry graphics keys will not take effect until you restart your operating system. Please save your work and reboot your PC.
+
+## Alternative Solutions
+If modifying the registry is not an option on your system (e.g., due to lack of Administrator privileges), you must scale down the simulation payload to prevent the 2-second timeout:
+
+Decrease config.pointsPerStep to lower the workload per compute pass.
+
+Reduce config.totalSteps to scale down the global memory allocation footprints.
