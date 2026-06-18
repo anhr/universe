@@ -300,7 +300,13 @@
                         `<br>To fix this, please decrease` +
                         `<br>'classSettings.settings.object.geometry.angles.length'` +
                         `<br>or 'myThreeOptions.playerOptions.marks'` +
-                        `<br>See <a href="../../jsdoc/module-HypersphericalUniverse-HypersphericalUniverse.html" target="_blank" style="color: blue;">HypersphericalUniverse</a>`;
+                        `<br>See <a href="../../jsdoc/module-HypersphericalUniverse-HypersphericalUniverse.html" target="_blank" style="color: blue;">HypersphericalUniverse</a>` + 
+                        `<br>When processing large-scale 4D math or dense point clouds in the Hypersphere Universe Engine, your GPU might take longer than 2 seconds to complete a single compute pass (dispatchWorkgroups).` + 
+                        `<br>By default, Windows monitors the GPU response time. If a single GPU operation takes longer than 2 seconds, the operating system assumes the graphics card is frozen, forcibly restarts the display driver, and terminates the application context. In your browser console, this results in the following crash errors:` + 
+                        `<br>DXGI_ERROR_DEVICE_HUNG (0x887A0006)` + 
+                        `<br>CRITICAL ERROR: GPU Device Lost` + 
+                        `<br>To solve this issue, please read <a href="../../hyperSphere/TDR_GUIDE.md" target="_blank" style="color: blue;">How to Increase or Disable the TDR (Timeout Detection and Recovery) Limit in Windows</a>`;
+`;
                 }
 
                 // Выводим развернутый текст на страницу пользователя
