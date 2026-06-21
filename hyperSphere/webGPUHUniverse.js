@@ -241,6 +241,7 @@ class WebGPUHUniverse {
 					
 				};
 				socket.onmessage = (event) => {
+//					console.log('socket.onmessage: ' + (typeof event.data === 'string' ? JSON.parse(event.data).type : typeof event.data === 'object' ? 'object' : 'Unknown event.data type'))
 					if (typeof event.data === 'string') {
 						const data = JSON.parse(event.data);
 
@@ -300,7 +301,8 @@ class WebGPUHUniverse {
 							}
 							const attributeColor = settings.bufferGeometry.attributes.color;
 							const iEnd = i + 100000, times = settings.object.geometry.times, colorItemSize = attributeColor.itemSize;
-							let timesLength = times.length, time,
+							let timesLength = times.length,
+								// time,Если я буду использовать time вместо times[timeId] то непонято почему time превращается в undefined при angles.count = 124875 и marks = 134 и если GPU выдает предупреждение: Binding size (267732000) of [Buffer (unlabeled)] is larger than the maximum storage buffer binding size (134217728). Не могу поймать этот момент
 
 								//Вершины группируются группами с одинаковым timeId.
 								//В этих группах цвет вершин одинаковый.
@@ -311,17 +313,19 @@ class WebGPUHUniverse {
 							while ((i < iEnd) && (i < count)) {
 								const timeId = parseInt(i / config.pointsPerStep);
 								if (timeId >= timesLength) {
-									time = times[timeId];//add item to times
+//									time = times[timeId];//add item to times
 									timesLength = times.length;
 								}
 								let index = i * colorItemSize;
 								const point = { x: posData[index++], y: posData[index++], z: posData[index++], w: posData[index++],};
+//								times[timeId].color = point;
 								if (
 									(timeIdGroup === undefined) ||//Первая группа вершин
 									(timeIdGroup != timeId)//Новая группа вершин
 								) {
 									timeIdGroup = timeId;
-									time.color = point;
+//									time.color = point;
+									times[timeId].color = point;
 									color = new MyThree.three.THREE.Vector4().fromBufferAttribute(attributeColor, i);
 								} else attributeColor.setXYZW(i, color.x, color.y, color.z, color.w);
 					            if (config.LOG) {

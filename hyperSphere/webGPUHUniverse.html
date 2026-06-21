@@ -184,17 +184,40 @@
             
             await initWebGPU(idx);
 
-/*
             //Сейчас использую универсальный перехватчик во время исполнения
             // 2. Извлекаем ошибку валидации
             const validationError = await device.popErrorScope();
             if (validationError) {
+                // Если буфер превысил лимит, мы попадем сюда. Прерываем выполнение!
+/*                
+                const reqMb = (requiredPosBufSize / (1024 * 1024)).toFixed(1);
+                const maxMb = (adapter.limits.maxBufferSize / (1024 * 1024)).toFixed(1);
+
+                // Заменяем все символы переноса строки (\n) на HTML-теги <br>
+                const formattedMessage = validationError.message.replace(/\n/g, '<br>');
+                
+                // Формируем рекомендацию
+//                let recommendation = `<br>Required buffer (${reqMb} MB) exceeds WebGPU Device limit (${maxMb} MB). `;
+                let recommendation = formattedMessage;
+                const maxTotalSteps = parseInt(currentDeviceLimit / (config.pointsPerStep * 16)), maxPointsPerStep = parseInt(currentDeviceLimit / (config.totalSteps * 16));
+                recommendation += `<br>To fix this, please decrease` +
+                    `<br>'classSettings.settings.object.geometry.angles.length' to ${maxPointsPerStep}` +
+                    `<br>or 'myThreeOptions.playerOptions.marks' to ${maxTotalSteps}.` +
+                    `<br>See <a href="../../jsdoc/module-HypersphericalUniverse-HypersphericalUniverse.html" target="_blank" style="color: blue;">HypersphericalUniverse</a>`;
+//                recommendation += `To fix this, please decrease 'totalSteps' or 'pointsPerStep' at least ${excessRatio} times.`;
+                
+                throw new Error(recommendation);
+*/                
+                recommendationThrow(validationError.message.replace(/\n/g, '<br>'));
+                
+//                throw new Error(`Validation Failed: Buffer size (${reqMb} MB) exceeds the max buffer size limit (${maxMb} MB). Please reduce totalSteps or pointsPerStep.`);
+/*                
                 // Заменяем все символы переноса строки (\n) на HTML-теги <br>
                 const formattedMessage = validationError.message.replace(/\n/g, '<br>');
                 
                 throw new Error(`Validation Failed: ${formattedMessage}`);
+*/                
             }            
-*/
             
             radiusPrev = config.baseRadius;
             radiusStep = (config.radiusMax - config.baseRadius) / (config.totalSteps - 1);
@@ -219,10 +242,12 @@
             }
 
             await readMessageValue(currentStep);
-            await finalSyncGPU(); updateDisplay();
             updateDisplay();
+            await finalSyncGPU();
+//            updateDisplay();
         };
 
+        let recommendationThrow;// requiredPosBufSize, adapter, currentDeviceLimit;
         async function initWebGPU(idx) {
             if (device) {
                 cleanupGpuResources();
@@ -248,7 +273,7 @@
                 if (requiredPosBufSize > adapter.limits.maxBufferSize) {
                     throw new Error(`Hardware limit exceeded! Your GPU maximum is ${(adapter.limits.maxBufferSize / (1024 * 1024)).toFixed(0)} MB, but task requires ${(requiredPosBufSize / (1024 * 1024)).toFixed(0)} MB.`);
                 }
-
+                
                 // Формируем запрос на точечное расширение лимитов
                 deviceDescriptor = {
                     requiredLimits: {
@@ -257,6 +282,7 @@
                         maxStorageBufferBindingSize: requiredPosBufSize
                     }
                 };
+//console.error('Under constraction')
             } else {
                 //console.log("Task fits into standard 256MB WebGPU limit. Requesting default device.");
             }
@@ -786,7 +812,27 @@ let r4 = random(&state);
             // Здесь гарантированно будет 268435456, если лимиты не расширялись
             const currentDeviceLimit = device.limits.maxBufferSize;
 
+            recommendationThrow = (recommendation) => {
+                const reqMb = (requiredPosBufSize / (1024 * 1024)).toFixed(1);
+                const maxMb = (currentDeviceLimit / (1024 * 1024)).toFixed(1);
+
+                // Вычисляем коэффициент превышения
+                //                const excessRatio = Math.ceil(requiredPosBufSize / currentDeviceLimit);
+
+                // Формируем рекомендацию
+                recommendation ||= `<br>Required buffer (${reqMb} MB) exceeds WebGPU Device limit (${maxMb} MB). `;
+                const maxTotalSteps = parseInt(currentDeviceLimit / (config.pointsPerStep * 16)), maxPointsPerStep = parseInt(currentDeviceLimit / (config.totalSteps * 16));
+                recommendation += `<br>To fix this, please decrease` +
+                    `<br>'classSettings.settings.object.geometry.angles.length' to ${maxPointsPerStep}` +
+                    `<br>or 'myThreeOptions.playerOptions.marks' to ${maxTotalSteps}.` +
+                    `<br>See <a href="../../jsdoc/module-HypersphericalUniverse-HypersphericalUniverse.html" target="_blank" style="color: blue;">HypersphericalUniverse</a>`;
+                //                recommendation += `To fix this, please decrease 'totalSteps' or 'pointsPerStep' at least ${excessRatio} times.`;
+
+                throw new Error(recommendation);
+            }
             if (requiredPosBufSize > currentDeviceLimit) {
+                recommendationThrow();
+/*
                 const reqMb = (requiredPosBufSize / (1024 * 1024)).toFixed(1);
                 const maxMb = (currentDeviceLimit / (1024 * 1024)).toFixed(1);
                 
@@ -803,11 +849,12 @@ let r4 = random(&state);
 //                recommendation += `To fix this, please decrease 'totalSteps' or 'pointsPerStep' at least ${excessRatio} times.`;
                 
                 throw new Error(recommendation);
+*/
             }
             
             //Сейчас использую универсальный перехватчик во время исполнения
             // 1. Включаем перехват ВАЛИДАЦИОННЫХ ошибок (превышение лимитов — это валидация)
-//            device.pushErrorScope('validation');
+            device.pushErrorScope('validation');
 
             posBuf = device.createBuffer({ size: requiredPosBufSize, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
             velBuf = device.createBuffer({ size: config.pointsPerStep * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
