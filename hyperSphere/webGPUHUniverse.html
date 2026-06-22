@@ -40,6 +40,7 @@
         <div>STATUS: <span id="status">IDLE</span></div>
         <div>SOURCE: <span id="client">---</span></div>
         <div>PROGRESS: <span id="stepCounter">0</span> / <span id="totalStepsDisplay">0</span> | R: <span id="radVal">0.00</span> </div>
+        <div>Points Per Step: <span id="pointsPerStep">---</span></div>
         <div>ELAPSE TIME: <span id="timeResult" class="timer">---</span></div>
         <div id="socket-status">
             <strong>Socket Status:</strong> <span id="stateText">Waiting for connection to server...</span><br>
@@ -260,6 +261,33 @@
             // 1. Рассчитываем точный объем в байтах для самой тяжелой структуры (posBuf)
             const requiredPosBufSize = config.totalSteps * config.pointsPerStep * 16;
 
+            // Базовые лимиты WebGPU по умолчанию
+            const DEFAULT_MAX_BUFFER = 268435456;      // 256 MB
+            const DEFAULT_MAX_BINDING = 134217728;     // 128 MB
+
+            let deviceDescriptor = {};
+
+            // 2. Если ТРЕБУЕТСЯ расширение ХОТЯ БЫ ОДНОГО из дефолтных лимитов
+            if (requiredPosBufSize > DEFAULT_MAX_BUFFER || requiredPosBufSize > DEFAULT_MAX_BINDING) {
+                //console.log(`Task requires ${requiredPosBufSize} bytes. Expanding WebGPU limits...`);
+
+                // Проверяем аппаратные возможности видеокарты по обоим направлениям
+                if (requiredPosBufSize > adapter.limits.maxBufferSize) {
+                    throw new Error(`Hardware limit exceeded! Your GPU maximum buffer size is ${(adapter.limits.maxBufferSize / (1024 * 1024)).toFixed(0)} MB, but task requires ${(requiredPosBufSize / (1024 * 1024)).toFixed(0)} MB.`);
+                }
+                if (requiredPosBufSize > adapter.limits.maxStorageBufferBindingSize) {
+                    throw new Error(`Hardware limit exceeded! Your GPU maximum storage binding size is ${(adapter.limits.maxStorageBufferBindingSize / (1024 * 1024)).toFixed(0)} MB, but task requires ${(requiredPosBufSize / (1024 * 1024)).toFixed(0)} MB.`);
+                }
+
+                // Динамически раздвигаем границы устройства под текущую задачу
+                deviceDescriptor = {
+                    requiredLimits: {
+                        maxBufferSize: Math.max(requiredPosBufSize, adapter.limits.minBufferSize || DEFAULT_MAX_BUFFER),
+                        maxStorageBufferBindingSize: requiredPosBufSize
+                    }
+                };
+            }
+/*
             // Базовый лимит WebGPU по умолчанию для всех устройств в мире
             const DEFAULT_WEBGPU_LIMIT = 268435456; // 256 MB
 
@@ -286,7 +314,7 @@
             } else {
                 //console.log("Task fits into standard 256MB WebGPU limit. Requesting default device.");
             }
-
+*/
             // 3. Создаем устройство с динамически рассчитанным дескриптором
             device = await adapter.requestDevice(deviceDescriptor);
 
@@ -1118,6 +1146,8 @@ let r4 = random(&state);
                             case "START_COMPUTE":
                                 config = data;
                                 count = config.totalSteps * config.pointsPerStep;
+                                document.getElementById('pointsPerStep').innerText = config.pointsPerStep;
+                                document.getElementById('totalStepsDisplay').innerText = config.totalSteps;
                                 elStatus.innerText = "CONFIG RECEIVED";
                                 const clientText = event.origin || "Localhost";
                                 elClient.innerText = clientText;
