@@ -1152,6 +1152,11 @@ let r4 = random(&state);
                                 elStatus.innerText = "CONFIG RECEIVED";
                                 const clientText = event.origin || "Localhost";
                                 elClient.innerText = clientText;
+                                
+                                const stateText = document.getElementById('stateText');
+                                stateText.innerHTML = 'Main page ' + clientText;
+                                stateText.style.color = "#00ffcc";
+                                
                                 currentStep = 1;
                                 log('Start compute. Source: ' + clientText);
                                 break;
