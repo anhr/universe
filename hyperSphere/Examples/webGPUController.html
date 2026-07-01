@@ -87,12 +87,13 @@
     <div id="ui">
         <div class="controls">
             <!--
-            <select id="gpuSelect">
-                <option value="-1">Поиск видеокарт...</option>
-            </select>-->
+    <select id="gpuSelect">
+        <option value="-1">Поиск видеокарт...</option>
+    </select>-->
             <button id="stepBtn">Шаг (CPU)</button>
             <button id="startBtn">Старт (CPU)</button>
             <button id="gpuBtn">Старт (GPU)</button>
+            <button id="analysisBtn">Анализ конфигурации</button>
         </div>
         <div id="info">
             Шаг: <span id="stepCounter">0</span> / <span id="totalStepsDisplay">0</span> | R: <span id="radVal">0.0</span>
@@ -117,6 +118,8 @@
     <script type="module">
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        
+        //"WebGPU Hyperspherical Universe" in https://gemini.google.com
 
         const π = Math.PI, sin = Math.sin, cos = Math.cos;
 
@@ -128,13 +131,13 @@
         //select one:
 
         //Случайная точка не вычисляется. Вместо этого возвращается PSEUDO_RANDOM
-        const RANDOM_POINTS = 0;
+        //const RANDOM_POINTS = 0;
 
         //Вычисляется случайное число.
         //В GPU для получения случайного числа применяется хеширование(Hashing).Простой генератор псевдослучайных чисел(PCG).Permuted Congruential Generator(Перемешанный конгруэнтный генератор).
         //Этот метод лучше всего вычисляет случайное число, но требует много времени на вычисления если не оптимизировать Google Chrome.
         //Инструкция по оптимизации находится в Technical Guide: Enabling High-Performance GPU for Google Chrome https://github.com/anhr/universe/blob/main/hyperSphere/HUniverseEngine.md#technical-guide-enabling-high-performance-gpu-for-google-chromeИнструкцию по оттимизации смотри в D:\My documents\MyProjects\webgl\three.js\GitHub\universe\main\hyperSphere\webGPUHUniverse.js
-        //const RANDOM_POINTS = 1;
+        const RANDOM_POINTS = 1;
 
         //Вычисляется случайное число.
         //Анализ производительности вычислений в GPU показал, что генерация случайного числа внутри WebGPU по методу хеширования(Hashing) (RANDOM_POINTS = 1) крайне затратно.
@@ -159,10 +162,10 @@
         }
         else random = RANDOM_POINTS ? Math.random : () => { return PSEUDO_RANDOM; };
 
-        const LOG = true;//log attributes to console
-        const LOTS_OF_POINTS = false;
-        const totalSteps = LOTS_OF_POINTS ? 1000 : 10;
-        const pointsPerStep = LOTS_OF_POINTS ? 5000 : 5;
+        const LOG = false;//log attributes to console
+        const LOTS_OF_POINTS = true;
+        const totalSteps = LOTS_OF_POINTS ? 10 : 10;
+        const pointsPerStep = LOTS_OF_POINTS ? 50 : 5;
         const count = totalSteps * pointsPerStep;
 
         //Hyperbola parametr. See calculateHyperbola.
@@ -1422,12 +1425,129 @@
             document.querySelectorAll('button').forEach(b => b.disabled = false);
         };
 
+        const analysis = () => {
+            const aAnalysis = [];
+            
+            //https://gemini.google.com/app/72b981da2d229516
+            //Оценка равномерности распределения точек
+            function evaluateDistribution(stepIndex) {
+                // pointsCount: Общее количество точек, которые рассчитываются на одной итерации (шаге)
+                const pointsCount = pointsPerStep;
+
+                // offset: Смещение индекса в общем массиве posAttr, чтобы найти начало данных для текущего шага stepIndex
+                const offset = stepIndex * pointsPerStep;
+
+                // totalEnergy: Суммарная потенциальная (электростатическая) энергия системы на данном шаге. 
+                // В идеальном случае (минимум энергии) она должна быть минимально возможной.
+                let totalEnergy = 0;
+
+                // points: Вспомогательный массив, куда мы соберем декартовы координаты (x, y, z) всех точек текущего шага
+                // для более удобного и быстрого доступа к ним в циклах.
+                let points = [];
+
+                // Цикл по всем точкам текущего шага для извлечения их координат из буфера posAttr
+                for (let i = 0; i < pointsCount; i++) {
+                    // idx: Базовый индекс в плоском массиве координат Three.js (каждая точка занимает 3 позиции: x, y, z)
+                    const idx = (offset + i) * 3;
+
+                    // Добавляем объект с координатами текущей i-й точки в наш рабочий массив
+                    points.push({
+                        x: posAttr.getX(offset + i), // x-координата i-й точки
+                        y: posAttr.getY(offset + i), // y-координата i-й точки
+                        z: posAttr.getZ(offset + i)  // z-координата i-й точки
+                    });
+                }
+
+                // allMinDistances: Массив, в который мы сохраним расстояние от каждой точки до её самого близкого соседа.
+                // Если распределение идеальное, все эти расстояния будут практически одинаковыми.
+                let allMinDistances = [];
+
+                // Внешний цикл: перебираем каждую точку системы, чтобы найти расстояния до остальных точек
+                for (let i = 0; i < pointsCount; i++) {
+                    // distancesForPointI: Временный массив для хранения расстояний от текущей i-й точки до абсолютно всех остальных точек
+                    let distancesForPointI = [];
+
+                    // Внутренний цикл: перебираем все остальные точки (j), чтобы измерить расстояние до них от i-й точки
+                    for (let j = 0; j < pointsCount; j++) {
+                        // Если индексы совпадают (i == j), это одна и та же точка. Пропускаем, так как расстояние до самой себя равно 0.
+                        if (i === j) continue;
+
+                        // dx: Разность координат по оси X между i-й и j-й точками
+                        let dx = points[i].x - points[j].x;
+                        // dy: Разность координат по оси Y между i-й и j-й точками
+                        let dy = points[i].y - points[j].y;
+                        // dz: Разность координат по оси Z между i-й и j-й точками
+                        let dz = points[i].z - points[j].z;
+
+                        // d: Евклидово расстояние (длина хорды) между i-й и j-й точками в пространстве
+                        let d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+                        // Добавляем вычисленное расстояние в список расстояний для i-й точки
+                        distancesForPointI.push(d);
+
+                        // Накапливаем потенциальную энергию взаимодействия между зарядами i и j.
+                        // Формула Кулона: E = 1 / d. Если d стремится к 0 (точки слиплись) — энергия уйдет в бесконечность, что укажет на ошибку.
+                        totalEnergy += 1.0 / d;
+                    }
+
+                    // Сортируем массив расстояний для i-й точки по возрастанию.
+                    // После сортировки самый близкий сосед окажется на позиции с индексом [0].
+                    distancesForPointI.sort((a, b) => a - b);
+
+                    // Сохраняем расстояние до 1-го (самого близкого) соседа i-й точки в общий массив минимумов
+                    allMinDistances.push(distancesForPointI[0]);
+                }
+
+                // Корректируем totalEnergy: делим накопленную энергию на 2, так как в двойном цикле 
+                // расстояние между каждой парой точек (i, j) и (j, i) было посчитано дважды.
+                totalEnergy = totalEnergy / 2;
+
+                // meanD: Среднее арифметическое расстояние до ближайшего соседа по всей системе.
+                // Считается как сумма всех минимальных расстояний, деленная на количество точек.
+                let meanD = allMinDistances.reduce((a, b) => a + b, 0) / pointsCount;
+
+                // variance: Дисперсия (средний квадрат отклонения). Мера того, насколько сильно расстояния 
+                // до соседей у разных точек "разбросаны" относительно вычисленного среднего значения meanD.
+                let variance = allMinDistances.reduce((sum, d) => sum + Math.pow(d - meanD, 2), 0) / pointsCount;
+
+                // stdDev: Среднеквадратичное отклонение (СКО, или сигма). Показывает реальный разброс расстояний в тех же единицах, что и сами координаты.
+                // Если stdDev близко к нулю — все точки находятся в равных условиях (идеальная геометрия).
+                let stdDev = Math.sqrt(variance);
+
+                // deviationPercent: Коэффициент вариации (дисбаланс распределения), выраженный в процентах.
+                // Показывает относительную погрешность: какая доля от среднего расстояния приходится на ошибку (разброс).
+                let deviationPercent = (stdDev / meanD) * 100;
+
+                aAnalysis.push({
+//                    step: stepIndex
+                    totalEnergy:totalEnergy,
+                    minDistance: meanD,
+                    standardDeviation: stdDev,
+                    deviationPercent: deviationPercent
+                });
+/*                
+                // Вывод диагностической информации в консоль браузера
+                console.log(`--- Результаты анализа для шага ${stepIndex} ---`);
+                console.log(`Общая энергия системы (E): ${totalEnergy.toFixed(4)}`);
+                console.log(`Среднее расстояние до ближайшего соседа: ${meanD.toFixed(4)}`);
+                console.log(`Среднеквадратичное отклонение (СКО): ${stdDev.toFixed(6)}`);
+                console.log(`Коэффициент вариации (дисбаланс): ${deviationPercent.toFixed(2)}%`);
+*/                
+
+                // Возвращаем объект с ключевыми метриками, чтобы их можно было использовать для построения графиков сходимости
+                return { totalEnergy, deviationPercent };
+            }
+            for (let stepIndex = 0; stepIndex < totalSteps; stepIndex++) evaluateDistribution(stepIndex);
+            console.table(aAnalysis);
+        }
+
         document.getElementById('stepBtn').onclick = () => performStepCPU();
         document.getElementById('startBtn').onclick = () => runAuto('CPU');
         document.getElementById('gpuBtn').onclick = () => runAuto('GPU');
+        document.getElementById('analysisBtn').onclick = () => analysis();
         function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
 //        findAdapters();
-        initPoints();
+        initPoints(); 
         animate();
     </script>
 </body>
