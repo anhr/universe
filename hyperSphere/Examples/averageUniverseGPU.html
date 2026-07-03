@@ -162,7 +162,19 @@
         const baseRadius = 0.1;
         const radiusMax = 1;
         const radiusStep = (radiusMax - baseRadius) / (totalSteps - 1);
+
+		//Damping is a velocity reduction factor applied at each iteration step.
+		//It simulates friction or energy dissipation in the system.
+		//Without damping, particles would oscillate indefinitely around equilibrium positions, never stabilizing.
+		//Valid DAMPING value range:
+		//  0 - Heavy damping, quick stopping. Fast stabilization, no oscillations
+		//  1 - No damping. Not recommended for production
+		//Default 0.95.
+        //See https://chat.deepseek.com/share/azo3y7zgc6hov7mlfp for details.
+		// Демпфирование движения. Вязкость среды. Диапазон от 0 до 1. При 0 среда окаменеет и точки не смогут двигаться. При 1 точки будут летать без сопротивления и пролетать точку равновесия по инерции
         const DAMPING = 0.95;
+
+		//Сила отталкивания. Чем меньше значение, тем слабее силы отталкивания между точками, и тем медленнее они двигаются
         const REPULSION_STRENGTH = 50 / pointsPerStep;
 
         let currentStep = 1;
