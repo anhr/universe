@@ -131,6 +131,7 @@
 	<script type="module">
 		import * as THREE from 'three';
 		import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+		import { analysis } from '../../../../commonNodeJS/master/HyperSphere/distanceOfVertices/thomsonAnalysisHSphere.js'
 		
 		//"WebGPU Hyperspherical Universe" in https://gemini.google.com
 
@@ -177,7 +178,7 @@
 
 		const LOG = false;//log attributes to console
 		const LOTS_OF_POINTS = true;
-		const totalSteps = LOTS_OF_POINTS ? 500 : 10;
+		const totalSteps = LOTS_OF_POINTS ? 50 : 10;
 		const pointsPerStep = LOTS_OF_POINTS ? 5 : 5;
 		const count = totalSteps * pointsPerStep;
 
@@ -1449,7 +1450,7 @@
 			document.getElementById('timeResult').innerText = `Итог (${mode}): ${((end - start) / 1000).toFixed(3)} сек.`;
 			document.querySelectorAll('button').forEach(b => b.disabled = false);
 		};
-
+/*
 		//https://gemini.google.com/app/72b981da2d229516
 		//Оценка равномерности распределения точек
 		function evaluateDistribution(stepIndex) {
@@ -1539,23 +1540,6 @@
 			// deviationPercent: Коэффициент вариации (дисбаланс распределения), выраженный в процентах.
 			// Показывает относительную погрешность: какая доля от среднего расстояния приходится на ошибку (разброс).
 			let deviationPercent = (stdDev / meanD) * 100;
-/*
-			aAnalysis.push({
-				//                    step: stepIndex
-				totalEnergy: totalEnergy,
-				minDistance: meanD,
-				standardDeviation: stdDev,
-				deviationPercent: deviationPercent
-			});
-*/
-/*            
-			// Вывод диагностической информации в консоль браузера
-			console.log(`--- Результаты анализа для шага ${stepIndex} ---`);
-			console.log(`Общая энергия системы (E): ${totalEnergy.toFixed(4)}`);
-			console.log(`Среднее расстояние до ближайшего соседа: ${meanD.toFixed(4)}`);
-			console.log(`Среднеквадратичное отклонение (СКО): ${stdDev.toFixed(6)}`);
-			console.log(`Коэффициент вариации (дисбаланс): ${deviationPercent.toFixed(2)}%`);
-*/            
 			currentStep++;
 			// Возвращаем объект с ключевыми метриками, чтобы их можно было использовать для построения графиков сходимости
 			return { totalEnergy, meanD, stdDev, deviationPercent };
@@ -1742,11 +1726,12 @@
 			console.table(aAnalysis);
 			console.log('------------------------------------');
 		}
+*/
 
 		document.getElementById('stepBtn').onclick = () => performStepCPU();
 		document.getElementById('startBtn').onclick = () => runAuto('CPU');
 		document.getElementById('gpuBtn').onclick = () => runAuto('GPU');
-		document.getElementById('analysisBtn').onclick = () => analysis();
+		document.getElementById('analysisBtn').onclick = () => analysis({totalSteps, pointsPerStep, posAttr});
 		function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
 //        findAdapters();
 		initPoints(); 
