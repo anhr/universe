@@ -736,7 +736,7 @@ console.error('Under constraction')
 				
 			});
 			const block = 'block', none = 'none';
-			let cTimes;
+			let cTimes, fThomsonAnalysis;
 			classSettings.settings.guiPoints = {
 
 				get timeAngles() { return classSettings.settings.object.geometry.times[this.timeId != undefined ? this.timeId : 0]; },
@@ -812,8 +812,12 @@ console.error('Under constraction')
 					const lang = {
 
 						notSelected: 'Not selected',
+
 						time: 'Time',
 						timeTitle: 'Position of vertices at selected time',
+
+						thomsonAnalysis: 'Thomson Analysis',
+						thomsonAnalysisTitle: 'Analysis of the results of solving the Thomson problem, in which at each step all vertices gradually move to a position in which the vertices are at the maximum distance from each other on the hypersphere.',
 
 					};
 
@@ -822,8 +826,12 @@ console.error('Under constraction')
 
 						case 'ru'://Russian language
 							lang.notSelected = 'Не выбран';
+
 							lang.time = 'Время';
 							lang.timeTitle = 'Выбрать список вершин в выбранное время';
+
+							lang.thomsonAnalysis = 'Анализ задачи Томсона';
+							lang.thomsonAnalysisTitle = 'Анализ результатов решения задачи Томсона, в которой на каждом шаге все вершины постепенно перемещаются к положению, в котором вершины находятся на максимальном расстоянии друг от друга на гиперсфере.';
 							break;
 
 					}
@@ -843,9 +851,28 @@ console.error('Under constraction')
 							
 					});
 					if (!cTimes) {
-						
+
 						cTimes = fPoints.add({ Times: lang.notSelected }, 'Times', { [lang.notSelected]: -1 });
 						dat.controllerNameAndTitle(cTimes, lang.time, lang.timeTitle);
+
+						fThomsonAnalysis = fPoints.addFolder(lang.thomsonAnalysis);
+//						dat.controllerNameAndTitle(fThomsonAnalysis, lang.thomsonAnalysis, lang.thomsonAnalysisTitle);
+
+						// Находим элемент заголовка папки в DOM
+						const folderTitle = fThomsonAnalysis.domElement.querySelector('.title');
+
+						folderTitle.addEventListener('click', () => {
+							// Проверяем свойство .closed, чтобы понять, открылась папка или закрылась
+							// Важно: в момент клика состояние .closed меняется не сразу, 
+							// поэтому проверяем инвертированное значение либо ставим минимальный setTimeout
+							setTimeout(() => {
+								if (!fThomsonAnalysis.closed) {
+									console.log('Папка "Name" была открыта!');
+								} else {
+//									console.log('Папка "Name" была закрыта!');
+								}
+							}, 0);
+						});
 
 					}
 
