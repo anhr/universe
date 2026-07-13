@@ -34,6 +34,7 @@ MyThree.three.THREE = THREE;
 
 import { dat } from '../../commonNodeJS/master/dat/dat.module.js';
 import ND from '../../commonNodeJS/master/nD/nD.js';
+import { evaluateDistribution } from '../../commonNodeJS/master/HyperSphere/distanceOfVertices/thomsonAnalysisHSphere.js'
 //import * as utils from '../../commonNodeJS/master/HyperSphere/utilsHSphere.js'
 let utils;
 
@@ -818,6 +819,7 @@ console.error('Under constraction')
 
 						thomsonAnalysis: 'Thomson Analysis',
 						thomsonAnalysisTitle: 'Analysis of the results of solving the Thomson problem, in which at each step all vertices gradually move to a position in which the vertices are at the maximum distance from each other on the hypersphere.',
+						step: 'Step: ',
 
 					};
 
@@ -832,6 +834,7 @@ console.error('Under constraction')
 
 							lang.thomsonAnalysis = 'Анализ задачи Томсона';
 							lang.thomsonAnalysisTitle = 'Анализ результатов решения задачи Томсона, в которой на каждом шаге все вершины постепенно перемещаются к положению, в котором вершины находятся на максимальном расстоянии друг от друга на гиперсфере.';
+							lang.step = 'Шаг: ';
 							break;
 
 					}
@@ -855,9 +858,20 @@ console.error('Under constraction')
 						cTimes = fPoints.add({ Times: lang.notSelected }, 'Times', { [lang.notSelected]: -1 });
 						dat.controllerNameAndTitle(cTimes, lang.time, lang.timeTitle);
 
+					}
+
+					//Переместить список Time вверх
+					const elBefore = fPoints.__ul.children[1], elLast = fPoints.__ul.children[fPoints.__ul.children.length - 1];
+					fPoints.__ul.removeChild(elLast);
+					fPoints.__ul.insertBefore(elLast, elBefore);
+
+					let tomsonAnalysis;//Функция, которая анализирует вершины для данного шагп проигрывателя на предмет удаленности друг от друга
+					if (!fThomsonAnalysis) {
 						fThomsonAnalysis = fPoints.addFolder(lang.thomsonAnalysis);
 //						dat.controllerNameAndTitle(fThomsonAnalysis, lang.thomsonAnalysis, lang.thomsonAnalysisTitle);
+						fThomsonAnalysis.domElement.style.display = 'none';
 
+						//Вызов tomsonAnalysis() после открытия папки
 						// Находим элемент заголовка папки в DOM
 						const folderTitle = fThomsonAnalysis.domElement.querySelector('.title');
 
@@ -867,19 +881,40 @@ console.error('Under constraction')
 							// поэтому проверяем инвертированное значение либо ставим минимальный setTimeout
 							setTimeout(() => {
 								if (!fThomsonAnalysis.closed) {
-									console.log('Папка "Name" была открыта!');
+//									console.log('Папка "Name" была открыта!');
+									const firstElementChild = textController.__li.firstElementChild.firstElementChild;
+
+									//Растягиваем текст на всю длинну контроллера.
+									//Не могу это сделать сразу после создания textController потому что firstElementChild еще не создан
+									firstElementChild.style.width = '100%';
+									firstElementChild.style.float = 'none';
+									firstElementChild.style.maxWidth = '100%'; // На случай жестких ограничений в стилях
+									
+									tomsonAnalysis(firstElementChild, lang.step + '%step / ');
 								} else {
 //									console.log('Папка "Name" была закрыта!');
 								}
 							}, 0);
 						});
 
-					}
+						//Добавить в папку строку, в которой будет отображаться текущее состояние процесса анализа результатов выополения задачи Томсона
 
-					//Переместить список Time вверх
-					const elBefore = fPoints.__ul.children[1], elLast = fPoints.__ul.children[fPoints.__ul.children.length - 1];
-					fPoints.__ul.removeChild(elLast);
-					fPoints.__ul.insertBefore(elLast, elBefore);
+						// 1. Создаем пустой контроллер-заглушку (привязываем к пустой функции)
+						const dummyObj = { fakeFunction: function () { } };
+						const textController = fThomsonAnalysis.add(dummyObj, 'fakeFunction');
+
+						// 2. Отключаем клики, чтобы строка не реагировала на нажатия и не вела себя как кнопка
+						textController.domElement.style.pointerEvents = 'none';
+
+						// 3. Прячем правую часть (где у кнопок обычно стрелочка или пустая зона)
+						const rightPart = textController.domElement.querySelector('.c');
+						if (rightPart) {
+							rightPart.style.display = 'none';
+						}
+						
+						// 4. Задаем начальный текст
+						textController.name(lang.step);
+					}
 
 					const cPointsStyle = cPoints.domElement.parentElement.parentElement.style;
 					if (!cTraceAll.userData) cTraceAll.userData = {}
@@ -908,6 +943,10 @@ console.error('Under constraction')
 						}
 						const anglesLength = classSettings.settings.object.geometry.angles.length, hyperSphereObject = this.hyperSphere.object3D;
 						let display, start, end;
+						tomsonAnalysis = (elStep, stepFormat) => {
+							const res = evaluateDistribution(timeId, { pointsPerStep: anglesLength, angles: classSettings.settings.object.geometry.angles, elStep: elStep, stepFormat: stepFormat + anglesLength});
+console.log(res)
+						}
 						if (timeId != -1) {
 							
 							display = block;
@@ -959,6 +998,7 @@ console.error('Under constraction')
 							this.hyperSphere.setEdgesRange(start, end);
 						else this.hyperSphere.setVerticesRange(anglesLength * start, anglesLength * (end - start));
 						cPointsStyle.display = display;
+						fThomsonAnalysis.domElement.style.display = display;
 						cTraceAll.userData.display = none;
 						guiPoints.pointsStyleDisplay = cPointsStyle.display;
 
