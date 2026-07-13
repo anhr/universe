@@ -943,8 +943,8 @@ console.error('Under constraction')
 						}
 						const anglesLength = classSettings.settings.object.geometry.angles.length, hyperSphereObject = this.hyperSphere.object3D;
 						let display, start, end;
-						tomsonAnalysis = (elStep, stepFormat) => {
-							const res = evaluateDistribution(timeId, { pointsPerStep: anglesLength, angles: classSettings.settings.object.geometry.angles, elStep: elStep, stepFormat: stepFormat + anglesLength});
+						tomsonAnalysis = async (elStep, stepFormat) => {
+							const res = await evaluateDistribution(timeId, { pointsPerStep: anglesLength, angles: classSettings.settings.object.geometry.angles, elStep: elStep, stepFormat: stepFormat + anglesLength});
 console.log(res)
 						}
 						if (timeId != -1) {
