@@ -820,6 +820,7 @@ console.error('Under constraction')
 						thomsonAnalysis: 'Thomson Analysis',
 						thomsonAnalysisTitle: 'Analysis of the results of solving the Thomson problem, in which at each step all vertices gradually move to a position in which the vertices are at the maximum distance from each other on the hypersphere.',
 						step: 'Step: ',
+						deviationPercentTitle: 'Коэффициент вариации (дисбаланс). Коэффициент вариации (deviationPercent) высокий (например, > 15-20%): Точки распределены хаотично, решетка не сформировалась. Скорее всего, силам отталкивания не хватает итераций, либо коэффициент затухания скорости (DAMPING) гасит движение слишком рано. deviationPercent стремится к 0% (например, < 2-5%): Алгоритм работает отлично, структура симметрична, точки распределились максимально равномерно.',
 
 					};
 
@@ -835,6 +836,14 @@ console.error('Under constraction')
 							lang.thomsonAnalysis = 'Анализ задачи Томсона';
 							lang.thomsonAnalysisTitle = 'Анализ результатов решения задачи Томсона, в которой на каждом шаге все вершины постепенно перемещаются к положению, в котором вершины находятся на максимальном расстоянии друг от друга на гиперсфере.';
 							lang.step = 'Шаг: ';
+/*							
+							lang.deviationPercentTitle = `Коэффициент вариации (дисбаланс).
+ 	Коэффициент вариации (<b>deviationPercent</b>) высокий (например, > 15-20%):
+ 		Точки распределены хаотично, решетка не сформировалась.
+ 		Скорее всего, силам отталкивания не хватает итераций, либо коэффициент затухания скорости (DAMPING) гасит движение слишком рано.
+ 	<b>deviationPercent</b> стремится к 0% (например, < 2-5%):
+ 		Алгоритм работает отлично, структура симметрична, точки распределились максимально равномерно.`;
+*/		
 							break;
 
 					}
@@ -942,10 +951,108 @@ console.error('Under constraction')
 
 						}
 						const anglesLength = classSettings.settings.object.geometry.angles.length, hyperSphereObject = this.hyperSphere.object3D;
-						let display, start, end;
+						let display, start, end, tomsonAnalysisRes;
 						tomsonAnalysis = async (elStep, stepFormat) => {
-							const res = await evaluateDistribution(timeId, { pointsPerStep: anglesLength, angles: classSettings.settings.object.geometry.angles, elStep: elStep, stepFormat: stepFormat + anglesLength});
-console.log(res)
+							if (tomsonAnalysisRes) return;
+							tomsonAnalysisRes = await evaluateDistribution(timeId, { pointsPerStep: anglesLength, angles: classSettings.settings.object.geometry.angles, elStep: elStep, stepFormat: stepFormat + anglesLength });
+
+							const createController = (property, title, name) => {
+								// 2. Добавляем свойство в папку и заставляем GUI следить за ним (.listen())
+								const controller = fThomsonAnalysis.add(tomsonAnalysisRes, property).listen();
+
+								// 3. БЛОКИРОВКА РЕДАКТИРОВАНИЯ:
+								// Запрещаем любые клики и ввод в область этого контроллера
+								controller.domElement.style.pointerEvents = 'none';
+
+								// Опционально: делаем поле ввода визуально неотличимым от обычного текста
+								const inputField = controller.domElement.querySelector('input');
+								if (inputField) {
+									inputField.style.background = 'transparent';
+									inputField.style.border = 'none';
+									inputField.style.color = '#fff'; // Оставляем белый цвет текста
+									inputField.style.textShadow = 'none';
+								}
+
+								// Записываем подсказку в атрибут title всего контейнера строки
+								dat.controllerNameAndTitle(controller, name, title);
+
+								// Заставляем браузер правильно обрабатывать переносы строк (\n) внутри всплывающего окна
+								controller.domElement.style.whiteSpace = 'pre-line';
+								
+								return controller;
+							}
+							const languageCode  = options.getLanguageCode();
+							createController('totalEnergyPercent', languageCode === 'ru' ?
+`Общая энергия — это суммарная потенциальная электростатическая энергия системы взаимодействующих зарядов (точек), рассчитываемая по закону Кулона как сумма обратных расстояний (1/d) между всеми парами точек. Она служит главным показателем сходимости алгоритма: при оптимальном и равномерном распределении точек на гиперсфере значение общей энергии стремится к своему теоретическому минимуму
+	Растет от шага к шагу:
+ 		Ошибка в знаках сил (точки притягиваются вместо отталкивания) либо слишком большой шаг интегрирования (dt).
+ 	Энергия totalEnergy уходит в бесконечность или NaN:
+ 		Ошибка в коде вычислений, при которой две точки заняли абсолютно одинаковые координаты (деление на ноль).
+ 		Проверьте генератор случайных чисел или начальную инициализацию.` :
+`Total energy is the cumulative potential electrostatic energy of a system of interacting charges (points). Calculated via Coulomb's law as the sum of reciprocal distances (1/d) between all pairs of vertices, it acts as the primary metric for algorithmic convergence, reaching its theoretical minimum when points achieve optimal, uniform distribution across the hypersphere.
+	Increasing from step to step:
+		Error in the force signs (points attract instead of repel) or the integration step (dt) is too large.
+	TotalEnergy goes to infinity or is NaN:
+		Error in the calculation code, causing two points to occupy exactly the same coordinates (division by zero).
+		Check the random number generator or initialization.`, 'totalEnergy');
+							createController('deviationPercent', languageCode === 'ru' ?
+	`Коэффициент вариации (дисбаланс).
+ 	Коэффициент вариации (deviationPercent) высокий (например, > 15-20%):
+ 		Точки распределены хаотично, решетка не сформировалась.
+ 		Скорее всего, силам отталкивания не хватает итераций, либо коэффициент затухания скорости (DAMPING) гасит движение слишком рано.
+ 	deviationPercent стремится к 0% (например, < 2-5%):
+ 		Алгоритм работает отлично, структура симметрична, точки распределились максимально равномерно.` :
+								`Variation coefficient (imbalance).
+	The variation coefficient (deviationPercent) is high (e.g., > 15-20%):
+		The points are distributed randomly, and the lattice has not formed.
+		Most likely, the repulsive forces are not receiving enough iterations, or the velocity damping coefficient (DAMPING) is damping the motion too early.
+	deviationPercent approaches 0% (e.g., < 2-5%):
+		The algorithm is working perfectly, the structure is symmetrical, and the points are distributed as evenly as possible.`);
+							createController('meanD', languageCode === 'ru' ?
+								`Среднее расстояние до ближайшего соседа. Должно постепенно расти, пока не стабилизируется.` :
+								`Average distance to nearest neighbor. Should gradually increase until it stabilizes.`);
+							createController('stdDev', languageCode === 'ru' ?
+								`Среднеквадратичное отклонение (СКО): С каждым шагом алгоритма значение stdDev должно стремиться к нулю` :
+								`Standard Deviation (SD): With each step of the algorithm, the stdDev value should tend to zero.`);
+							createController('variance', languageCode === 'ru' ?
+								`Дисперсия(средний квадрат отклонения). Мера того, насколько сильно расстояния до соседей у разных точек "разбросаны" относительно вычисленного среднего значения meanD` :
+								`Variance (mean squared deviation). A measure of how widely the distances to neighbors of different points are "dispersed" relative to the calculated mean value (meanD)..`);
+/*
+							// 2. Добавляем свойство в папку и заставляем GUI следить за ним (.listen())
+							const percentController = fThomsonAnalysis.add(tomsonAnalysisRes, 'deviationPercent').listen();
+
+							// 3. БЛОКИРОВКА РЕДАКТИРОВАНИЯ:
+							// Запрещаем любые клики и ввод в область этого контроллера
+							percentController.domElement.style.pointerEvents = 'none';
+
+							// Опционально: делаем поле ввода визуально неотличимым от обычного текста
+							const inputField = percentController.domElement.querySelector('input');
+							if (inputField) {
+								inputField.style.background = 'transparent';
+								inputField.style.border = 'none';
+								inputField.style.color = '#fff'; // Оставляем белый цвет текста
+								inputField.style.textShadow = 'none';
+							}
+							
+							// Записываем подсказку в атрибут title всего контейнера строки
+							dat.controllerNameAndTitle( percentController, undefined, options.getLanguageCode() === 'ru' ?
+	`Коэффициент вариации (дисбаланс).
+ 	Коэффициент вариации (deviationPercent) высокий (например, > 15-20%):
+ 		Точки распределены хаотично, решетка не сформировалась.
+ 		Скорее всего, силам отталкивания не хватает итераций, либо коэффициент затухания скорости (DAMPING) гасит движение слишком рано.
+ 	deviationPercent стремится к 0% (например, < 2-5%):
+ 		Алгоритм работает отлично, структура симметрична, точки распределились максимально равномерно.` :
+	`Variation coefficient (imbalance).
+	The variation coefficient (deviationPercent) is high (e.g., > 15-20%):
+		The points are distributed randomly, and the lattice has not formed.
+		Most likely, the repulsive forces are not receiving enough iterations, or the velocity damping coefficient (DAMPING) is damping the motion too early.
+	deviationPercent approaches 0% (e.g., < 2-5%):
+		The algorithm is working perfectly, the structure is symmetrical, and the points are distributed as evenly as possible.`);
+//							percentController.domElement.setAttribute('title', );
+							
+							// Заставляем браузер правильно обрабатывать переносы строк (\n) внутри всплывающего окна
+							percentController.domElement.style.whiteSpace = 'pre-line';
+*/
 						}
 						if (timeId != -1) {
 							
