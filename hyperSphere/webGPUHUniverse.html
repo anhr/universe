@@ -175,6 +175,32 @@
         }
 
         let start;
+        const progressStep = async (currentStepNew) => {
+            currentStep = currentStepNew;
+			if (currentStep < config.totalSteps) {
+
+				//Для генератора случайных чисел
+				device.queue.writeBuffer(timeBuffer, 0, new Uint32Array([Math.floor(performance.now() * timeMultiplier)]));
+
+				const newRadius = radiusPrev + radiusStep;
+				device.queue.writeBuffer(paramBuf, 0, new Float32Array([radiusPrev, newRadius, currentStep * config.pointsPerStep]));
+				const encoder = device.createCommandEncoder();
+				const pass = encoder.beginComputePass();
+				pass.setPipeline(pipeline); pass.setBindGroup(0, bindGroup);
+				pass.dispatchWorkgroups(Math.ceil(config.pointsPerStep / 64));
+				pass.end();
+				device.queue.submit([encoder.finish()]);
+				if (config.DEBUG_MODE) await readDebugValue(currentStep);
+				else await readMessageValue(currentStep);
+				updateDisplay();
+                radiusPrev = newRadius;// currentStep++;
+                return;
+			}
+
+			await readMessageValue(currentStep);
+			updateDisplay();
+			await finalSyncGPU();
+        }
         const runAuto = async () => {
             start = performance.now();
             const idx = parseInt(document.getElementById('gpuSelect').value);
@@ -191,39 +217,14 @@
             const validationError = await device.popErrorScope();
             if (validationError) {
                 // Если буфер превысил лимит, мы попадем сюда. Прерываем выполнение!
-/*                
-                const reqMb = (requiredPosBufSize / (1024 * 1024)).toFixed(1);
-                const maxMb = (adapter.limits.maxBufferSize / (1024 * 1024)).toFixed(1);
-
-                // Заменяем все символы переноса строки (\n) на HTML-теги <br>
-                const formattedMessage = validationError.message.replace(/\n/g, '<br>');
-                
-                // Формируем рекомендацию
-//                let recommendation = `<br>Required buffer (${reqMb} MB) exceeds WebGPU Device limit (${maxMb} MB). `;
-                let recommendation = formattedMessage;
-                const maxTotalSteps = parseInt(currentDeviceLimit / (config.pointsPerStep * 16)), maxPointsPerStep = parseInt(currentDeviceLimit / (config.totalSteps * 16));
-                recommendation += `<br>To fix this, please decrease` +
-                    `<br>'classSettings.settings.object.geometry.angles.length' to ${maxPointsPerStep}` +
-                    `<br>or 'myThreeOptions.playerOptions.marks' to ${maxTotalSteps}.` +
-                    `<br>See <a href="../../jsdoc/module-HypersphericalUniverse-HypersphericalUniverse.html" target="_blank" style="color: blue;">HypersphericalUniverse</a>`;
-//                recommendation += `To fix this, please decrease 'totalSteps' or 'pointsPerStep' at least ${excessRatio} times.`;
-                
-                throw new Error(recommendation);
-*/                
                 recommendationThrow(validationError.message.replace(/\n/g, '<br>'));
-                
-//                throw new Error(`Validation Failed: Buffer size (${reqMb} MB) exceeds the max buffer size limit (${maxMb} MB). Please reduce totalSteps or pointsPerStep.`);
-/*                
-                // Заменяем все символы переноса строки (\n) на HTML-теги <br>
-                const formattedMessage = validationError.message.replace(/\n/g, '<br>');
-                
-                throw new Error(`Validation Failed: ${formattedMessage}`);
-*/                
             }            
             
             radiusPrev = config.baseRadius;
             radiusStep = (config.radiusMax - config.baseRadius) / (config.totalSteps - 1);
             document.getElementById('totalStepsDisplay').innerText = config.totalSteps;
+            progressStep(currentStep);
+/*
             while (currentStep < config.totalSteps) {
 
                 //Для генератора случайных чисел
@@ -247,6 +248,7 @@
             updateDisplay();
             await finalSyncGPU();
 //            updateDisplay();
+*/
         };
 
         let recommendationThrow;// requiredPosBufSize, adapter, currentDeviceLimit;
@@ -1165,6 +1167,9 @@ let r4 = random(&state);
                                 elStatus.innerText = "IDLE";
                                 if (config) currentStep = config.totalSteps - 1;
                                 log('Main page disconnected.');
+                                break;
+                            case "PROGRESS":
+                                progressStep(data.currentStep);
                                 break;
                             default:
                                 const error = 'socket message: Invalid data.type: ' + data.type;

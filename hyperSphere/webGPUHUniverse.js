@@ -265,6 +265,8 @@ class WebGPUHUniverse {
 								currentStep = data.currentStep;
 								radiusPrev = data.radiusPrev;
 								updateDisplay();
+								socket.send(JSON.stringify({ type: "PROGRESS", currentStep: currentStep + 1 }));
+								//hyperSphere.onSelectSceneEnd(currentStep);
 								break;
 							default: console.error(sWebGPU + ': socket message: Invalid data.type: ' + data.type);
 						}
@@ -343,8 +345,9 @@ class WebGPUHUniverse {
 				case WebSocket.CLOSED://3 —  (Закрыто)
 					computeCPU();//Не удалось соедениться с сервером вычислений на GPU. Делаем вычисления на CPU.
 					break;
-				case WebSocket.CONNECTING://0 —  (Подключение)
 				case WebSocket.OPEN://1 —  (Открыто)
+					break;//Выполняется следующий шаг проигрывателя
+				case WebSocket.CONNECTING://0 —  (Подключение)
 				case WebSocket.CLOSING://2 —  (Закрывается)
 				default: console.error(sWebGPU + '.compute: Invalid socket.readyState = ' + socket.readyState);
 			}
