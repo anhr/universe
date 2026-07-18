@@ -31,7 +31,9 @@ class WebGPUHUniverse {
 
 		const serverAddress = 'ws://localhost:5000/ws?type=main';
 		let socket;
+		this.isDataReady//true: вычисление точек на GPU успешно завершено.
 		this.compute = (computeCPU, config, settings, hyperSphere) => {
+			this.isDataReady = false;
 			if (!socket) {
 
 				//progress window
@@ -223,6 +225,11 @@ class WebGPUHUniverse {
 */
 					
 				};
+				settings.options.player.onStep = () => {
+					// Проигрыватель выполнил шаг вперед
+					if (socket && socket.readyState === WebSocket.OPEN)
+						socket.send(JSON.stringify({ type: "PROGRESS", currentStep: currentStep + 1 }));
+				}					
 				socket.onmessage = (event) => {
 //					console.log('socket.onmessage: ' + (typeof event.data === 'string' ? JSON.parse(event.data).type : typeof event.data === 'object' ? 'object' : 'Unknown event.data type'))
 					if (typeof event.data === 'string') {
@@ -265,8 +272,7 @@ class WebGPUHUniverse {
 								currentStep = data.currentStep;
 								radiusPrev = data.radiusPrev;
 								updateDisplay();
-								socket.send(JSON.stringify({ type: "PROGRESS", currentStep: currentStep + 1 }));
-								//hyperSphere.onSelectSceneEnd(currentStep);
+								hyperSphere.onSelectSceneEnd(currentStep);
 								break;
 							default: console.error(sWebGPU + ': socket message: Invalid data.type: ' + data.type);
 						}
@@ -337,6 +343,7 @@ class WebGPUHUniverse {
 						updateDisplay();
 						socket.close();
 						btnClose.style.display = "";//сделать кнопку видимой
+						this.isDataReady = true;
 					} else console.error(sWebGPU + ': socket message: Invalid event.data type: ' + (typeof event.data));
 				};
 				return;

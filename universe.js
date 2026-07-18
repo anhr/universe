@@ -151,7 +151,10 @@ class Universe
 							if (!times[timeId]) {
 
 								if (times.length != timeId) console.error(sUniverse + ': get times[' + timeId + '] failed. Invalid timeId = ' + timeId);
-								let verticesCount = 0;
+								
+								const webGPU = classSettings.distanceOfVertices.webGPU;
+								let verticesCount = webGPU && webGPU.isDataReady ? classSettings.settings.object.geometry.angles.length ://положение вершин успешно вычислено на GPU
+													0;
 								times[timeId] = new Proxy([], {
 
 									get: (timeAngles, name) => {
@@ -196,7 +199,6 @@ console.error('Under constraction')
 
 											case 'player': return this.hyperSphere.anglesPlayer(timeId);
 											case 'length': return verticesCount;
-
 										}
 										return timeAngles[name];
 
