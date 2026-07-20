@@ -146,13 +146,13 @@
 		//select one:
 
 		//Случайная точка не вычисляется. Вместо этого возвращается PSEUDO_RANDOM
-		//const RANDOM_POINTS = 0;
+		const RANDOM_POINTS = 0;
 
 		//Вычисляется случайное число.
 		//В GPU для получения случайного числа применяется хеширование(Hashing).Простой генератор псевдослучайных чисел(PCG).Permuted Congruential Generator(Перемешанный конгруэнтный генератор).
 		//Этот метод лучше всего вычисляет случайное число, но требует много времени на вычисления если не оптимизировать Google Chrome.
 		//Инструкция по оптимизации находится в Technical Guide: Enabling High-Performance GPU for Google Chrome https://github.com/anhr/universe/blob/main/hyperSphere/HUniverseEngine.md#technical-guide-enabling-high-performance-gpu-for-google-chromeИнструкцию по оттимизации смотри в D:\My documents\MyProjects\webgl\three.js\GitHub\universe\main\hyperSphere\webGPUHUniverse.js
-		const RANDOM_POINTS = 1;
+		//const RANDOM_POINTS = 1;
 
 		//Вычисляется случайное число.
 		//Анализ производительности вычислений в GPU показал, что генерация случайного числа внутри WebGPU по методу хеширования(Hashing) (RANDOM_POINTS = 1) крайне затратно.
@@ -178,7 +178,7 @@
 		else random = RANDOM_POINTS ? Math.random : () => { return PSEUDO_RANDOM; };
 
 		const LOG = false;//log attributes to console
-		const LOTS_OF_POINTS = true;
+		const LOTS_OF_POINTS = false;
 		const totalSteps = LOTS_OF_POINTS ? 50 : 10;
 		const pointsPerStep = LOTS_OF_POINTS ?
 			//5 //заранее определенные в angles точки
@@ -194,7 +194,7 @@
 		const p = 1.0;//0.99;
 
 
-		const baseRadius = 1;//0.1;
+		const baseRadius = 0.1;
 		const radiusMax = 1;
 		const radiusStep = (radiusMax - baseRadius) / (totalSteps - 1);
 		
@@ -1245,20 +1245,20 @@
 		function initPoints() {
 			const color = new THREE.Color();
 			if (!RANDOM_POINTS) {
-				/*
 				//angles[0] = { altitude: Math.PI / 1, latitude: Math.PI / 19, longitude: Math.PI / 10 };// Эта вершина лежит на оси W потомучто Altitude = Math.PI. Это приводит к тому что в функции cartesianToPolar величина rXYZ < 1e-10 и широта с долготой не определены (принимаем за 0)
 				angles[0] = { altitude: Math.PI / 1.5, latitude: Math.PI / 19, longitude: Math.PI / 10 };
 				angles[1] = { altitude: Math.PI / 2, latitude: Math.PI / 20, longitude: Math.PI / 11 };
 				angles[2] = { altitude: Math.PI / 3, latitude: Math.PI / 21, longitude: Math.PI / 2 };
 				angles[3] = { altitude: Math.PI / 4, latitude: Math.PI / 22, longitude: -Math.PI / 2 };
 				angles[4] = { altitude: Math.PI / 5, latitude: Math.PI / 23, longitude: Math.PI };
-				*/
+				/*
 				//антиподальные точки. Расположены на противоположных концах гиперсферы
 			    // Точка 1: Произвольное положение на гиперсфере
 				angles[0] = { altitude: 1.0, latitude: 0.5, longitude: 2.0 };
 			    // Точка 2: Максимально удаленная (антипод для Точки 1)
 //				angles[1] = { altitude: Math.PI - 1.0, latitude: Math.PI - 0.5, longitude: (2.0 + Math.PI) % (2 * Math.PI) };
 				angles[1] = { altitude: Math.PI - 1.0, latitude: 0.5, longitude: (2.0 + Math.PI) % (2 * Math.PI) };
+				*/
 			}
 			for (let i = 0; i < pointsPerStep; i++) {
 				if (RANDOM_POINTS || i >= pointsPerStep) {
@@ -1389,6 +1389,8 @@
 								currentStep = data.currentStep;
 								radiusPrev = data.radiusPrev;
 								updateDisplay();
+								if (socket && socket.readyState === WebSocket.OPEN)
+									socket.send(JSON.stringify({ type: "PROGRESS", currentStep: currentStep + 1 }));
 								break;
 /*                                
 							case "TIME":

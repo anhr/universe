@@ -942,6 +942,7 @@ console.error('Under constraction')
 					}
 					cTimes.onChange((timeId) => {
 
+						fThomsonAnalysis.close();
 						const selectPoints = cPoints.__select;
 						options.guiSelectPoint.selectPoint(-1);
 						while (selectPoints.length > 1) selectPoints.removeChild(selectPoints.lastChild);
@@ -956,7 +957,13 @@ console.error('Under constraction')
 						let display, start, end, tomsonAnalysisRes;
 						tomsonAnalysis = async (elStep, stepFormat) => {
 							if (tomsonAnalysisRes) return;
-							tomsonAnalysisRes = await evaluateDistribution(timeId, { pointsPerStep: anglesLength, angles: classSettings.settings.object.geometry.angles, elStep: elStep, stepFormat: stepFormat + anglesLength });
+							tomsonAnalysisRes = await evaluateDistribution(timeId, {
+								pointsPerStep: anglesLength,
+//								angles: classSettings.settings.object.geometry.angles,
+								position: classSettings.settings.bufferGeometry.attributes.position,
+								elStep: elStep,
+								stepFormat: stepFormat + anglesLength
+							});
 
 							const createController = (property, title, name) => {
 								// 2. Добавляем свойство в папку и заставляем GUI следить за ним (.listen())
@@ -1071,8 +1078,17 @@ console.error('Under constraction')
 								else this.hyperSphere.setVerticesRange(anglesLength * start, anglesLength * (end - start));
 								
 							}
-								
+
+							classSettings.settings.object.geometry.angles.forEach((verticeAngles, verticeId) => {
+	
+								const opt = document.createElement('option');
+								opt.innerHTML = verticeId;
+								opt.setAttribute('value', verticeId);
+								selectPoints.appendChild(opt);
+	
+							});
 							guiPoints.timeId = timeId;
+/*							
 							guiPoints.timeAngles.forEach((verticeAngles, verticeId) => {
 	
 								const opt = document.createElement('option');
@@ -1081,6 +1097,7 @@ console.error('Under constraction')
 								selectPoints.appendChild(opt);
 	
 							});
+*/							
 							hyperSphereObject.userData.myObject.guiPoints.setTimeId = (newTimeId) => { timeId = newTimeId }
 							hyperSphereObject.userData.myObject.guiPoints.getPositionId = (timeAnglesId) => {
 	
