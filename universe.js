@@ -365,7 +365,7 @@ console.error('Under constraction')
 								angles = array;
 
 							}
-							
+//							if (!angles.tomsonAnalysisRes) angles.tomsonAnalysisRes = {};
 							return new Proxy(angles, {
 								
 								get: (angles, name) => {
@@ -373,6 +373,7 @@ console.error('Under constraction')
 									switch (name) {
 
 										case 'ranges': return angles0[name];
+//										case 'tomsonAnalysisRes': return angles.tomsonAnalysisRes;
 											
 									}
 									return angles[name];
@@ -893,7 +894,7 @@ console.error('Under constraction')
 							setTimeout(() => {
 								if (!fThomsonAnalysis.closed) {
 //									console.log('Папка "Name" была открыта!');
-									const firstElementChild = textController.__li.firstElementChild.firstElementChild;
+									firstElementChild = textController.__li.firstElementChild.firstElementChild;
 
 									//Растягиваем текст на всю длинну контроллера.
 									//Не могу это сделать сразу после создания textController потому что firstElementChild еще не создан
@@ -940,9 +941,11 @@ console.error('Under constraction')
 						}
 
 					}
+					const tomsonAnalysisRes = {}, aTomsonAnalysisRes = [];
+					let firstElementChild;
 					cTimes.onChange((timeId) => {
 
-						fThomsonAnalysis.close();
+//						fThomsonAnalysis.close();
 						const selectPoints = cPoints.__select;
 						options.guiSelectPoint.selectPoint(-1);
 						while (selectPoints.length > 1) selectPoints.removeChild(selectPoints.lastChild);
@@ -953,20 +956,30 @@ console.error('Under constraction')
 							return;
 
 						}
-						const anglesLength = classSettings.settings.object.geometry.angles.length, hyperSphereObject = this.hyperSphere.object3D;
-						let display, start, end, tomsonAnalysisRes;
+						const angles = classSettings.settings.object.geometry.angles, anglesLength = angles.length, hyperSphereObject = this.hyperSphere.object3D;
+//						angles.tomsonAnalysisRes ||= {};
+						aTomsonAnalysisRes[timeId] ||= {};
+						let display, start, end;//, tomsonAnalysisRes;
 						tomsonAnalysis = async (elStep, stepFormat) => {
-							if (tomsonAnalysisRes) return;
-							tomsonAnalysisRes = await evaluateDistribution(timeId, {
-								pointsPerStep: anglesLength,
-//								angles: classSettings.settings.object.geometry.angles,
-								position: classSettings.settings.bufferGeometry.attributes.position,
-								elStep: elStep,
-								stepFormat: stepFormat + anglesLength
-							});
+							//Копируем результаты анализа в tomsonAnalysisRes
+							Object.assign(tomsonAnalysisRes, Object.keys(aTomsonAnalysisRes[timeId]).length === 0 ? 
+										//Если результаты анализа не готовы, то вычисляем их.
+										await evaluateDistribution(timeId, {
+											pointsPerStep: anglesLength,
+			//								angles: classSettings.settings.object.geometry.angles,
+											position: classSettings.settings.bufferGeometry.attributes.position,
+											elStep: elStep,
+											stepFormat: stepFormat + anglesLength,
+											tomsonAnalysisRes: aTomsonAnalysisRes[timeId],
+										}) : 
+										//Результаты анализа уже есть в aTomsonAnalysisRes[timeId]
+										aTomsonAnalysisRes[timeId]);
 
 							const createController = (property, title, name) => {
+								if (fThomsonAnalysis.__controllers.find(c => c.property === property)) return;
+								
 								// 2. Добавляем свойство в папку и заставляем GUI следить за ним (.listen())
+								
 								const controller = fThomsonAnalysis.add(tomsonAnalysisRes, property).listen();
 
 								// 3. БЛОКИРОВКА РЕДАКТИРОВАНИЯ:
@@ -1124,7 +1137,10 @@ console.error('Under constraction')
 							this.hyperSphere.setEdgesRange(start, end);
 						else this.hyperSphere.setVerticesRange(anglesLength * start, anglesLength * (end - start));
 						cPointsStyle.display = display;
+						
 						fThomsonAnalysis.domElement.style.display = display;
+						if (!fThomsonAnalysis.closed) tomsonAnalysis(firstElementChild, lang.step + '%step / ');
+						
 						cTraceAll.userData.display = none;
 						guiPoints.pointsStyleDisplay = cPointsStyle.display;
 
