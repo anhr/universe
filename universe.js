@@ -34,8 +34,7 @@ MyThree.three.THREE = THREE;
 
 import { dat } from '../../commonNodeJS/master/dat/dat.module.js';
 import ND from '../../commonNodeJS/master/nD/nD.js';
-import { evaluateDistribution } from '../../commonNodeJS/master/HyperSphere/distanceOfVertices/thomsonAnalysisHSphere.js'
-//import * as utils from '../../commonNodeJS/master/HyperSphere/utilsHSphere.js'
+//import { evaluateDistribution } from '../../commonNodeJS/master/HyperSphere/distanceOfVertices/thomsonAnalysisHSphere.js'
 let utils;
 
 const sUniverse = 'Universe';
@@ -740,7 +739,8 @@ console.error('Under constraction')
 				
 			});
 			const block = 'block', none = 'none';
-			let cTimes, fThomsonAnalysis;
+			let cTimes;
+//			let fThomsonAnalysis;
 			classSettings.settings.guiPoints = {
 
 				get timeAngles() { return classSettings.settings.object.geometry.times[this.timeId != undefined ? this.timeId : 0]; },
@@ -820,9 +820,9 @@ console.error('Under constraction')
 						time: 'Time',
 						timeTitle: 'Position of vertices at selected time',
 
-						thomsonAnalysis: 'Thomson Analysis',
-						thomsonAnalysisTitle: 'Analysis of the results of solving the Thomson problem, in which at each step all vertices gradually move to a position in which the vertices are at the maximum distance from each other on the hypersphere.',
-						step: 'Step: ',
+//						thomsonAnalysis: 'Thomson Analysis',
+//						thomsonAnalysisTitle: 'Analysis of the results of solving the Thomson problem, in which at each step all vertices gradually move to a position in which the vertices are at the maximum distance from each other on the hypersphere.',
+//						step: 'Step: ',
 						deviationPercentTitle: 'Коэффициент вариации (дисбаланс). Коэффициент вариации (deviationPercent) высокий (например, > 15-20%): Точки распределены хаотично, решетка не сформировалась. Скорее всего, силам отталкивания не хватает итераций, либо коэффициент затухания скорости (DAMPING) гасит движение слишком рано. deviationPercent стремится к 0% (например, < 2-5%): Алгоритм работает отлично, структура симметрична, точки распределились максимально равномерно.',
 
 					};
@@ -836,17 +836,9 @@ console.error('Under constraction')
 							lang.time = 'Время';
 							lang.timeTitle = 'Выбрать список вершин в выбранное время';
 
-							lang.thomsonAnalysis = 'Анализ задачи Томсона';
-							lang.thomsonAnalysisTitle = 'Анализ результатов решения задачи Томсона, в которой на каждом шаге все вершины постепенно перемещаются к положению, в котором вершины находятся на максимальном расстоянии друг от друга на гиперсфере.';
-							lang.step = 'Шаг: ';
-/*							
-							lang.deviationPercentTitle = `Коэффициент вариации (дисбаланс).
- 	Коэффициент вариации (<b>deviationPercent</b>) высокий (например, > 15-20%):
- 		Точки распределены хаотично, решетка не сформировалась.
- 		Скорее всего, силам отталкивания не хватает итераций, либо коэффициент затухания скорости (DAMPING) гасит движение слишком рано.
- 	<b>deviationPercent</b> стремится к 0% (например, < 2-5%):
- 		Алгоритм работает отлично, структура симметрична, точки распределились максимально равномерно.`;
-*/		
+//							lang.thomsonAnalysis = 'Анализ задачи Томсона';
+//							lang.thomsonAnalysisTitle = 'Анализ результатов решения задачи Томсона, в которой на каждом шаге все вершины постепенно перемещаются к положению, в котором вершины находятся на максимальном расстоянии друг от друга на гиперсфере.';
+//							lang.step = 'Шаг: ';
 							break;
 
 					}
@@ -877,6 +869,8 @@ console.error('Under constraction')
 					fPoints.__ul.removeChild(elLast);
 					fPoints.__ul.insertBefore(elLast, elBefore);
 
+					if (this.tomsonAnalysisFolder) this.tomsonAnalysisFolder(fPoints);
+/*
 					let tomsonAnalysis;//Функция, которая анализирует вершины для данного шагп проигрывателя на предмет удаленности друг от друга
 					if (!fThomsonAnalysis) {
 						fThomsonAnalysis = fPoints.addFolder(lang.thomsonAnalysis);
@@ -927,7 +921,7 @@ console.error('Under constraction')
 						// 4. Задаем начальный текст
 						textController.name(lang.step);
 					}
-
+*/
 					const cPointsStyle = cPoints.domElement.parentElement.parentElement.style;
 					if (!cTraceAll.userData) cTraceAll.userData = {}
 					classSettings.settings.options.trace = {
@@ -941,11 +935,10 @@ console.error('Under constraction')
 						}
 
 					}
-					const tomsonAnalysisRes = {}, aTomsonAnalysisRes = [];
-					let firstElementChild;
+//					const tomsonAnalysisRes = {}, aTomsonAnalysisRes = [];
+//					let firstElementChild;
 					cTimes.onChange((timeId) => {
 
-//						fThomsonAnalysis.close();
 						const selectPoints = cPoints.__select;
 						options.guiSelectPoint.selectPoint(-1);
 						while (selectPoints.length > 1) selectPoints.removeChild(selectPoints.lastChild);
@@ -957,9 +950,9 @@ console.error('Under constraction')
 
 						}
 						const angles = classSettings.settings.object.geometry.angles, anglesLength = angles.length, hyperSphereObject = this.hyperSphere.object3D;
-//						angles.tomsonAnalysisRes ||= {};
+						if (this.tomsonAnalysis) this.tomsonAnalysis(timeId);
+/*
 						aTomsonAnalysisRes[timeId] ||= {};
-						let display, start, end;//, tomsonAnalysisRes;
 						tomsonAnalysis = async (elStep, stepFormat) => {
 							//Копируем результаты анализа в tomsonAnalysisRes
 							Object.assign(tomsonAnalysisRes, Object.keys(aTomsonAnalysisRes[timeId]).length === 0 ? 
@@ -1039,43 +1032,9 @@ console.error('Under constraction')
 							createController('variance', languageCode === 'ru' ?
 								`Дисперсия(средний квадрат отклонения). Мера того, насколько сильно расстояния до соседей у разных точек "разбросаны" относительно вычисленного среднего значения meanD` :
 								`Variance (mean squared deviation). A measure of how widely the distances to neighbors of different points are "dispersed" relative to the calculated mean value (meanD)..`);
-/*
-							// 2. Добавляем свойство в папку и заставляем GUI следить за ним (.listen())
-							const percentController = fThomsonAnalysis.add(tomsonAnalysisRes, 'deviationPercent').listen();
-
-							// 3. БЛОКИРОВКА РЕДАКТИРОВАНИЯ:
-							// Запрещаем любые клики и ввод в область этого контроллера
-							percentController.domElement.style.pointerEvents = 'none';
-
-							// Опционально: делаем поле ввода визуально неотличимым от обычного текста
-							const inputField = percentController.domElement.querySelector('input');
-							if (inputField) {
-								inputField.style.background = 'transparent';
-								inputField.style.border = 'none';
-								inputField.style.color = '#fff'; // Оставляем белый цвет текста
-								inputField.style.textShadow = 'none';
-							}
-							
-							// Записываем подсказку в атрибут title всего контейнера строки
-							dat.controllerNameAndTitle( percentController, undefined, options.getLanguageCode() === 'ru' ?
-	`Коэффициент вариации (дисбаланс).
- 	Коэффициент вариации (deviationPercent) высокий (например, > 15-20%):
- 		Точки распределены хаотично, решетка не сформировалась.
- 		Скорее всего, силам отталкивания не хватает итераций, либо коэффициент затухания скорости (DAMPING) гасит движение слишком рано.
- 	deviationPercent стремится к 0% (например, < 2-5%):
- 		Алгоритм работает отлично, структура симметрична, точки распределились максимально равномерно.` :
-	`Variation coefficient (imbalance).
-	The variation coefficient (deviationPercent) is high (e.g., > 15-20%):
-		The points are distributed randomly, and the lattice has not formed.
-		Most likely, the repulsive forces are not receiving enough iterations, or the velocity damping coefficient (DAMPING) is damping the motion too early.
-	deviationPercent approaches 0% (e.g., < 2-5%):
-		The algorithm is working perfectly, the structure is symmetrical, and the points are distributed as evenly as possible.`);
-//							percentController.domElement.setAttribute('title', );
-							
-							// Заставляем браузер правильно обрабатывать переносы строк (\n) внутри всплывающего окна
-							percentController.domElement.style.whiteSpace = 'pre-line';
-*/
 						}
+*/
+						let display, start, end;
 						if (timeId != -1) {
 							
 							display = block;
@@ -1137,9 +1096,12 @@ console.error('Under constraction')
 							this.hyperSphere.setEdgesRange(start, end);
 						else this.hyperSphere.setVerticesRange(anglesLength * start, anglesLength * (end - start));
 						cPointsStyle.display = display;
-						
+
+						if (this.timesOnChange) this.timesOnChange(display);
+/*						
 						fThomsonAnalysis.domElement.style.display = display;
 						if (!fThomsonAnalysis.closed) tomsonAnalysis(firstElementChild, lang.step + '%step / ');
+*/						
 						
 						cTraceAll.userData.display = none;
 						guiPoints.pointsStyleDisplay = cPointsStyle.display;
