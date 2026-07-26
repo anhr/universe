@@ -18,7 +18,7 @@
 import SphericalUniverse from '../sphere/sphericalUniverse.js';
 import HyperSphere3D from '../../../commonNodeJS/master/HyperSphere/hyperSphere3D.js';
 import * as utils from '../../../commonNodeJS/master/HyperSphere/utilsHSphere.js'
-import { evaluateDistribution } from '../../../commonNodeJS/master/HyperSphere/distanceOfVertices/thomsonAnalysisHSphere.js'
+import { evaluateDistribution, graphFolderChild } from '../../../commonNodeJS/master/HyperSphere/distanceOfVertices/thomsonAnalysisHSphere.js'
 import { dat } from '../../../commonNodeJS/master/dat/dat.module.js';
 
 //select one:
@@ -48,6 +48,10 @@ class HypersphericalUniverse extends SphericalUniverse {
 
 			thomsonAnalysis: 'Thomson Analysis',
 			thomsonAnalysisTitle: 'Analysis of the results of solving the Thomson problem, in which at each step all vertices gradually move to a position in which the vertices are at the maximum distance from each other on the hypersphere.',
+			
+			thomsonAnalysisGraph: 'Thomson Analysis Graph',
+			thomsonAnalysisGraphTitle: 'Graph of analysis of the results of solving the Thomson problem, in which at each step all vertices gradually move to a position in which the vertices are at the maximum distance from each other on the hypersphere.',
+			
 			step: 'Step: ',
 
 		};
@@ -57,6 +61,10 @@ class HypersphericalUniverse extends SphericalUniverse {
 			case 'ru'://Russian language
 				lang.thomsonAnalysis = 'Анализ задачи Томсона';
 				lang.thomsonAnalysisTitle = 'Анализ результатов решения задачи Томсона, в которой на каждом шаге все вершины постепенно перемещаются к положению, в котором вершины находятся на максимальном расстоянии друг от друга на гиперсфере.';
+				
+				lang.thomsonAnalysisGraph = 'График анализа задачи Томсона';
+				lang.thomsonAnalysisGraphTitle = 'График анализа результатов решения задачи Томсона, в которой на каждом шаге все вершины постепенно перемещаются к положению, в котором вершины находятся на максимальном расстоянии друг от друга на гиперсфере.';
+				
 				lang.step = 'Шаг: ';
 				break;
 
@@ -68,14 +76,74 @@ class HypersphericalUniverse extends SphericalUniverse {
 			if (!fThomsonAnalysis.closed) tomsonAnalysis(firstElementChild, lang.step + '%step / ');
 		}
 		let tomsonAnalysis;//Функция, которая анализирует вершины для данного шагп проигрывателя на предмет удаленности друг от друга
-		let fThomsonAnalysis;
+		let fThomsonAnalysis, fThomsonAnalysisGraph;
 		this.tomsonAnalysisFolder = (fPoints) => {
 			if (fThomsonAnalysis) return;
 
 			fThomsonAnalysis = fPoints.addFolder(lang.thomsonAnalysis);
-			//						dat.controllerNameAndTitle(fThomsonAnalysis, lang.thomsonAnalysis, lang.thomsonAnalysisTitle);
+			dat.folderNameAndTitle(fThomsonAnalysis, lang.thomsonAnalysis, lang.thomsonAnalysisTitle);
 			fThomsonAnalysis.domElement.style.display = 'none';
+			
+			fThomsonAnalysisGraph = fPoints.addFolder(lang.thomsonAnalysisGraph);
+			dat.folderNameAndTitle(fThomsonAnalysisGraph, lang.thomsonAnalysisGraph, lang.thomsonAnalysisGraphTitle);
 
+			const folderClick = (folder, func) => {
+				// Находим элемент заголовка папки в DOM
+				const folderTitle = folder.domElement.querySelector('.title');
+
+				folderTitle.addEventListener('click', () => {
+					// Проверяем свойство .closed, чтобы понять, открылась папка или закрылась
+					// Важно: в момент клика состояние .closed меняется не сразу, 
+					// поэтому проверяем инвертированное значение либо ставим минимальный setTimeout
+					setTimeout(() => {
+						if (!folder.closed) {
+							//									console.log('Папка "Name" была открыта!');
+							const firstElement = textController.__li.firstElementChild.firstElementChild;
+
+							//Растягиваем текст на всю длинну контроллера.
+							//Не могу это сделать сразу после создания textController потому что firstElementChild еще не создан
+							firstElement.style.width = '100%';
+							firstElement.style.float = 'none';
+							firstElement.style.maxWidth = '100%'; // На случай жестких ограничений в стилях
+//							setFirstElementChild(firstElement);
+
+							func(firstElement);
+						} else {
+							//									console.log('Папка "Name" была закрыта!');
+						}
+					}, 0);
+				});
+
+				//Добавить в папку строку, в которой будет отображаться текущее состояние процесса анализа результатов выополения задачи Томсона
+
+				// 1. Создаем пустой контроллер-заглушку (привязываем к пустой функции)
+				const dummyObj = { fakeFunction: function () { } };
+				const textController = folder.add(dummyObj, 'fakeFunction');
+
+				// 2. Отключаем клики, чтобы строка не реагировала на нажатия и не вела себя как кнопка
+				textController.domElement.style.pointerEvents = 'none';
+
+				// 3. Прячем правую часть (где у кнопок обычно стрелочка или пустая зона)
+				const rightPart = textController.domElement.querySelector('.c');
+				if (rightPart) {
+					rightPart.style.display = 'none';
+				}
+
+				// 4. Задаем начальный текст
+				textController.name(lang.step);
+			}
+			folderClick(fThomsonAnalysis, (firstElementChildNew) => {
+					firstElementChild = firstElementChildNew;
+					tomsonAnalysis(firstElementChild, lang.step + '%step / ');
+				},
+//				(firstElementChildNew) => { firstElementChild = firstElementChildNew;}
+			);
+			folderClick(fThomsonAnalysisGraph, (firstElementChildNew) => {
+//					firstElementChildGraph = firstElementChildNew;
+					graphFolderChild(fThomsonAnalysisGraph);
+				},
+			);
+/*
 			//Вызов tomsonAnalysis() после открытия папки
 			// Находим элемент заголовка папки в DOM
 			const folderTitle = fThomsonAnalysis.domElement.querySelector('.title');
@@ -119,9 +187,10 @@ class HypersphericalUniverse extends SphericalUniverse {
 
 			// 4. Задаем начальный текст
 			textController.name(lang.step);
+*/
 		}
 		const tomsonAnalysisRes = {}, aTomsonAnalysisRes = [];
-		let firstElementChild;
+		let firstElementChild;//, firstElementChildGraph;
 		const anglesLength = classSettings.settings.object.geometry.angles.length;
 		this.tomsonAnalysis = (timeId) => {
 			aTomsonAnalysisRes[timeId] ||= {};
