@@ -98,8 +98,9 @@ class HypersphericalUniverse extends SphericalUniverse {
 					// поэтому проверяем инвертированное значение либо ставим минимальный setTimeout
 					setTimeout(() => {
 						if (!folder.closed) {
-							//									console.log('Папка "Name" была открыта!');
 							const firstElement = textController.__li.firstElementChild.firstElementChild;
+/*							
+//									console.log('Папка "Name" была открыта!');
 
 							//Растягиваем текст на всю длинну контроллера.
 							//Не могу это сделать сразу после создания textController потому что firstElementChild еще не создан
@@ -107,16 +108,46 @@ class HypersphericalUniverse extends SphericalUniverse {
 							firstElement.style.float = 'none';
 							firstElement.style.maxWidth = '100%'; // На случай жестких ограничений в стилях
 //							setFirstElementChild(firstElement);
-
-							func(firstElement, textController);
+*/
+							func(firstElement, textController, timeIdController, createLabel);
 						} else {
 							//									console.log('Папка "Name" была закрыта!');
 						}
 					}, 0);
 				});
 
-				//Добавить в папку строку, в которой будет отображаться текущее состояние процесса анализа результатов выополения задачи Томсона
+				//Добавить в папку строки, в которыч будет отображаться текущее состояние процесса анализа результатов выополения задачи Томсона
 
+				const createLabel = (name) => {
+					
+					// 1. Создаем пустой контроллер-заглушку (привязываем к пустой функции)
+					const dummyObj = { fakeFunction: function () { } };
+					const controller = folder.add(dummyObj, 'fakeFunction');
+	
+					// 2. Отключаем клики, чтобы строка не реагировала на нажатия и не вела себя как кнопка
+					controller.domElement.style.pointerEvents = 'none';
+	
+					// 3. Прячем правую часть (где у кнопок обычно стрелочка или пустая зона)
+					const rightPart = controller.domElement.querySelector('.c');
+					if (rightPart) {
+						rightPart.style.display = 'none';
+					}
+	
+					// 4. Задаем начальный текст
+					controller.name(name);
+	
+					const firstElement = controller.__li.firstElementChild.firstElementChild;
+				
+					//Растягиваем текст на всю длинну контроллера.
+					//Не могу это сделать сразу после создания textController потому что firstElementChild еще не создан
+					firstElement.style.width = '100%';
+					firstElement.style.float = 'none';
+					firstElement.style.maxWidth = '100%'; // На случай жестких ограничений в стилях
+
+					return controller;
+				}
+				const timeIdController = createLabel('timeId');
+/*				
 				// 1. Создаем пустой контроллер-заглушку (привязываем к пустой функции)
 				const dummyObj = { fakeFunction: function () { } };
 				const textController = folder.add(dummyObj, 'fakeFunction');
@@ -132,6 +163,8 @@ class HypersphericalUniverse extends SphericalUniverse {
 
 				// 4. Задаем начальный текст
 				textController.name(lang.step);
+*/				
+				const textController = createLabel(lang.step);//шаг
 			}
 			folderClick(fThomsonAnalysis, (firstElementChildNew) => {
 					firstElementChild = firstElementChildNew;
@@ -140,9 +173,9 @@ class HypersphericalUniverse extends SphericalUniverse {
 				},
 //				(firstElementChildNew) => { firstElementChild = firstElementChildNew;}
 			);
-			folderClick(fThomsonAnalysisGraph, (firstElementChildNew, textController) => {
+			folderClick(fThomsonAnalysisGraph, (firstElementChildNew, textController, timeIdController, createLabel) => {
 //					firstElementChildGraph = firstElementChildNew;
-					graphFolderChild(fThomsonAnalysisGraph, classSettings, textController);
+					graphFolderChild(fThomsonAnalysisGraph, classSettings, textController, timeIdController, createLabel);
 				},
 			);
 		}
