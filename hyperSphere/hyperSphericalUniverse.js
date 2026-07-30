@@ -108,7 +108,7 @@ class HypersphericalUniverse extends SphericalUniverse {
 							firstElement.style.maxWidth = '100%'; // На случай жестких ограничений в стилях
 //							setFirstElementChild(firstElement);
 
-							func(firstElement);
+							func(firstElement, textController);
 						} else {
 							//									console.log('Папка "Name" была закрыта!');
 						}
@@ -140,9 +140,9 @@ class HypersphericalUniverse extends SphericalUniverse {
 				},
 //				(firstElementChildNew) => { firstElementChild = firstElementChildNew;}
 			);
-			folderClick(fThomsonAnalysisGraph, (firstElementChildNew) => {
+			folderClick(fThomsonAnalysisGraph, (firstElementChildNew, textController) => {
 //					firstElementChildGraph = firstElementChildNew;
-					graphFolderChild(fThomsonAnalysisGraph, classSettings);
+					graphFolderChild(fThomsonAnalysisGraph, classSettings, textController);
 				},
 			);
 		}
