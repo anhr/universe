@@ -18,7 +18,7 @@
 import SphericalUniverse from '../sphere/sphericalUniverse.js';
 import HyperSphere3D from '../../../commonNodeJS/master/HyperSphere/hyperSphere3D.js';
 import * as utils from '../../../commonNodeJS/master/HyperSphere/utilsHSphere.js'
-import { evaluateDistribution, graphFolderChild, timeAnalysis } from '../../../commonNodeJS/master/HyperSphere/distanceOfVertices/thomsonAnalysisHSphere.js'
+import { evaluateDistribution, graphFolderChild, graphFolderClose, timeAnalysis } from '../../../commonNodeJS/master/HyperSphere/distanceOfVertices/thomsonAnalysisHSphere.js'
 import { dat } from '../../../commonNodeJS/master/dat/dat.module.js';
 
 //select one:
@@ -88,7 +88,7 @@ class HypersphericalUniverse extends SphericalUniverse {
 			fThomsonAnalysisGraph = fPoints.addFolder(lang.thomsonAnalysisGraph);
 			dat.folderNameAndTitle(fThomsonAnalysisGraph, lang.thomsonAnalysisGraph, lang.thomsonAnalysisGraphTitle);
 
-			const folderClick = (folder, func) => {
+			const folderClick = (folder, func, boCreateTimeIdController=false, graphFolderClose) => {
 				// Находим элемент заголовка папки в DOM
 				const folderTitle = folder.domElement.querySelector('.title');
 
@@ -99,20 +99,8 @@ class HypersphericalUniverse extends SphericalUniverse {
 					setTimeout(() => {
 						if (!folder.closed) {
 							const firstElement = textController.__li.firstElementChild.firstElementChild;
-/*							
-//									console.log('Папка "Name" была открыта!');
-
-							//Растягиваем текст на всю длинну контроллера.
-							//Не могу это сделать сразу после создания textController потому что firstElementChild еще не создан
-							firstElement.style.width = '100%';
-							firstElement.style.float = 'none';
-							firstElement.style.maxWidth = '100%'; // На случай жестких ограничений в стилях
-//							setFirstElementChild(firstElement);
-*/
 							func(firstElement, textController, timeIdController, createLabel);
-						} else {
-							//									console.log('Папка "Name" была закрыта!');
-						}
+						} else if (graphFolderClose) graphFolderClose(fThomsonAnalysisGraph);
 					}, 0);
 				});
 
@@ -146,24 +134,7 @@ class HypersphericalUniverse extends SphericalUniverse {
 
 					return controller;
 				}
-				const timeIdController = createLabel('timeId');
-/*				
-				// 1. Создаем пустой контроллер-заглушку (привязываем к пустой функции)
-				const dummyObj = { fakeFunction: function () { } };
-				const textController = folder.add(dummyObj, 'fakeFunction');
-
-				// 2. Отключаем клики, чтобы строка не реагировала на нажатия и не вела себя как кнопка
-				textController.domElement.style.pointerEvents = 'none';
-
-				// 3. Прячем правую часть (где у кнопок обычно стрелочка или пустая зона)
-				const rightPart = textController.domElement.querySelector('.c');
-				if (rightPart) {
-					rightPart.style.display = 'none';
-				}
-
-				// 4. Задаем начальный текст
-				textController.name(lang.step);
-*/				
+				const timeIdController = boCreateTimeIdController ? createLabel('timeId') : undefined;
 				const textController = createLabel(lang.step);//шаг
 			}
 			folderClick(fThomsonAnalysis, (firstElementChildNew) => {
@@ -173,10 +144,14 @@ class HypersphericalUniverse extends SphericalUniverse {
 				},
 //				(firstElementChildNew) => { firstElementChild = firstElementChildNew;}
 			);
-			folderClick(fThomsonAnalysisGraph, (firstElementChildNew, textController, timeIdController, createLabel) => {
+			folderClick(
+				fThomsonAnalysisGraph,
+				(firstElementChildNew, textController, timeIdController, createLabel) => {
 //					firstElementChildGraph = firstElementChildNew;
 					graphFolderChild(fThomsonAnalysisGraph, classSettings, textController, timeIdController, createLabel);
 				},
+				true,
+				graphFolderClose,
 			);
 		}
 		let firstElementChild;//, firstElementChildGraph;

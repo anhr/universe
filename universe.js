@@ -870,58 +870,6 @@ console.error('Under constraction')
 					fPoints.__ul.insertBefore(elLast, elBefore);
 
 					if (this.tomsonAnalysisFolder) this.tomsonAnalysisFolder(fPoints);
-/*
-					let tomsonAnalysis;//Функция, которая анализирует вершины для данного шагп проигрывателя на предмет удаленности друг от друга
-					if (!fThomsonAnalysis) {
-						fThomsonAnalysis = fPoints.addFolder(lang.thomsonAnalysis);
-//						dat.controllerNameAndTitle(fThomsonAnalysis, lang.thomsonAnalysis, lang.thomsonAnalysisTitle);
-						fThomsonAnalysis.domElement.style.display = 'none';
-
-						//Вызов tomsonAnalysis() после открытия папки
-						// Находим элемент заголовка папки в DOM
-						const folderTitle = fThomsonAnalysis.domElement.querySelector('.title');
-
-						folderTitle.addEventListener('click', () => {
-							// Проверяем свойство .closed, чтобы понять, открылась папка или закрылась
-							// Важно: в момент клика состояние .closed меняется не сразу, 
-							// поэтому проверяем инвертированное значение либо ставим минимальный setTimeout
-							setTimeout(() => {
-								if (!fThomsonAnalysis.closed) {
-//									console.log('Папка "Name" была открыта!');
-									firstElementChild = textController.__li.firstElementChild.firstElementChild;
-
-									//Растягиваем текст на всю длинну контроллера.
-									//Не могу это сделать сразу после создания textController потому что firstElementChild еще не создан
-									firstElementChild.style.width = '100%';
-									firstElementChild.style.float = 'none';
-									firstElementChild.style.maxWidth = '100%'; // На случай жестких ограничений в стилях
-									
-									tomsonAnalysis(firstElementChild, lang.step + '%step / ');
-								} else {
-//									console.log('Папка "Name" была закрыта!');
-								}
-							}, 0);
-						});
-
-						//Добавить в папку строку, в которой будет отображаться текущее состояние процесса анализа результатов выополения задачи Томсона
-
-						// 1. Создаем пустой контроллер-заглушку (привязываем к пустой функции)
-						const dummyObj = { fakeFunction: function () { } };
-						const textController = fThomsonAnalysis.add(dummyObj, 'fakeFunction');
-
-						// 2. Отключаем клики, чтобы строка не реагировала на нажатия и не вела себя как кнопка
-						textController.domElement.style.pointerEvents = 'none';
-
-						// 3. Прячем правую часть (где у кнопок обычно стрелочка или пустая зона)
-						const rightPart = textController.domElement.querySelector('.c');
-						if (rightPart) {
-							rightPart.style.display = 'none';
-						}
-						
-						// 4. Задаем начальный текст
-						textController.name(lang.step);
-					}
-*/
 					const cPointsStyle = cPoints.domElement.parentElement.parentElement.style;
 					if (!cTraceAll.userData) cTraceAll.userData = {}
 					classSettings.settings.options.trace = {
