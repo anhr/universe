@@ -65,7 +65,7 @@
 					//DAMPING: 0.95,
 
 					//Сила отталкивания. Чем меньше значение, тем слабее силы отталкивания между точками, и тем медленнее они двигаются
-					//REPULSION_STRENGTH: 10,//По умолчанию не определено и зависит от количества вершин REPULSION_STRENGTH = config.a / classSettings.settings.object.geometry.angles.length.
+					REPULSION_STRENGTH: 0.3,//10,//По умолчанию не определено и зависит от количества вершин REPULSION_STRENGTH = config.a / classSettings.settings.object.geometry.angles.length.
 					//a: 50,//имеет эффект только если не определен REPULSION_STRENGTH. Default 50
 					
 
@@ -73,7 +73,7 @@
 					//p: 0 Прямая линия: y = x (через точки (0,0) и (π,π)).
 					//p: 1 Два отрезка: вертикальный и горизонтальный
 					//0 < p < 1 Гипербола. График гиперболы млжно посмотреть на http://localhost/anhr/commonNodeJS/master/HyperSphere/Examples/hyperbola.html
-					p: 0.99,//Default 0
+					p: 1,//0.99,//Default 0
 
 					//LOG: true,//log to console all calculated vertices. Default undefined. Внимание!!! отнимает много времени во время итерации
 				},
@@ -115,7 +115,7 @@
 
 				probabilityDensity: false,
 				middleVertice: false,
-				log: false,
+				log: true,
 				edges: false,
 				random: () => { return 0.5 },//replacing random vertices with strictly defined vertices.
 				
@@ -249,7 +249,7 @@
 							[Math.PI / 4, Math.PI / 22, -Math.PI / 2],//3
 							[Math.PI / 5, Math.PI / 23, Math.PI],//4
 						],
-						angles: { count: 500, },
+						//angles: { count: 500, },
 						//angles: { count: 500000, },//недостаточно памяти при количестве шагов плеера 1000
 						//angles: { count: 124875, },//выделяется максимально возможное количество памяти при шагов плеера 134. ВНИМАНИЕ!!! Использовать с осторожностью. Вебстраница сильно зависает.
 						

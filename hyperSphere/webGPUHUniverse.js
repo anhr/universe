@@ -278,13 +278,23 @@ class WebGPUHUniverse {
 						}
 					} else if (typeof event.data === 'object') {
 						//Vertices positions
+						
+						const posData = new Float32Array(event.data), count = config.totalSteps * config.pointsPerStep, THREE = MyThree.three.THREE, pointsPerStep = config.pointsPerStep;
 						const position = settings.bufferGeometry.attributes.position;
-						position.copyArray(new Float32Array(event.data)); 
+//						position.copyArray(new Float32Array(event.data)); 
+						position.copyArray(posData); 
 						position.needsUpdate = true;
 
+						if (settings.debug && settings.debug.log) {
+							for (let i = 0; i < count; i++) {
+								const pointCur = new THREE.Vector4().fromBufferAttribute(position, i);
+								const pointAngles = utils.cartesianToPolar(pointCur);
+								console.log('Step:' + (parseInt(i / pointsPerStep)) + ' Point:' + i + '. x=' + pointCur.x + ' y=' + pointCur.y + ' z=' + pointCur.z + ' w=' + pointCur.w + ',alt=' + pointAngles.altitude + ' lat=' + pointAngles.latitude + ' lon=' + pointAngles.longitude);
+							}
+						}
+
 						//color
-						const posData = new Float32Array(event.data), count = config.totalSteps * config.pointsPerStep;
-						let i = config.pointsPerStep;
+						let i = pointsPerStep;
 						const progressTitle = 'Load vertices<br>Vertice %s / ' + count, progressBar = new ProgressBar(settings.options.renderer.domElement.parentElement, () => {
 							if (i >= count) {
 								progressBar.remove();
@@ -317,7 +327,7 @@ class WebGPUHUniverse {
 									timeIdGroup = timeId;
 //									time.color = point;
 									times[timeId].color = point;
-									color = new MyThree.three.THREE.Vector4().fromBufferAttribute(attributeColor, i);
+									color = new THREE.Vector4().fromBufferAttribute(attributeColor, i);
 								} else attributeColor.setXYZW(i, color.x, color.y, color.z, color.w);
 					            if (config.LOG) {
 									const angles = utils.cartesianToPolar(point, config.DEBUG_MODE);

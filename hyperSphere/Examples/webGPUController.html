@@ -139,7 +139,7 @@
 		const π = Math.PI, sin = Math.sin, cos = Math.cos;
 
 		// --- ГЛОБАЛЬНАЯ КОНФИГУРАЦИЯ ---
-		const DEBUG_MODE = false;
+		const DEBUG_MODE = true;
 
 		//randpm
 
@@ -177,7 +177,7 @@
 		}
 		else random = RANDOM_POINTS ? Math.random : () => { return PSEUDO_RANDOM; };
 
-		const LOG = false;//log attributes to console
+		const LOG = true;//log attributes to console
 		const LOTS_OF_POINTS = false;
 		const totalSteps = LOTS_OF_POINTS ? 50 : 10;
 		const pointsPerStep = LOTS_OF_POINTS ?
@@ -207,7 +207,7 @@
 		//Default 0.95.
 		//See https://chat.deepseek.com/share/azo3y7zgc6hov7mlfp for details.
 		// Демпфирование движения. Вязкость среды. Диапазон от 0 до 1. При 0 среда окаменеет и точки не смогут двигаться. При 1 точки будут летать без сопротивления и пролетать точку равновесия по инерции
-		const DAMPING = 0;//0.95;
+		const DAMPING = 0.95;
 		
 		//Сила отталкивания. Чем меньше значение, тем слабее силы отталкивания между точками, и тем медленнее они двигаются
 		const REPULSION_STRENGTH = 0.3;//50 / pointsPerStep;
@@ -1415,7 +1415,7 @@
 					} else if (typeof event.data === 'object'){
 						//Vertices positions
 						const posData = new Float32Array(event.data);
-						for (let i = pointsPerStep; i < count; i++) {
+						for (let i = 0; i < count; i++) {
 							let index = i * 4;
 							const pointCur = { x: posData[index++], y: posData[index++], z: posData[index++], w: posData[index++], };
 							const itemAngles = cartesianToPolar(pointCur);
@@ -1424,7 +1424,7 @@
 //console.log('i = ' + i + ' angles: ' + JSON.stringify(pointAngles))
 							const s = Math.floor(i / pointsPerStep);
 							const r = baseRadius + s * radiusStep;
-							if (LOG) console.log('Step:' + (parseInt(i / pointsPerStep)) + ' Point:' + index + '. x=' + pointCur.x + ' y=' + pointCur.y + ' z=' + pointCur.z + ' w=' + pointCur.w + ',alt=' + pointAngles.altitude + ' lat=' + pointAngles.latitude + ' lon=' + pointAngles.longitude);
+							if (LOG) console.log('Step:' + (parseInt(i / pointsPerStep)) + ' Point:' + i + '. x=' + pointCur.x + ' y=' + pointCur.y + ' z=' + pointCur.z + ' w=' + pointCur.w + ',alt=' + pointAngles.altitude + ' lat=' + pointAngles.latitude + ' lon=' + pointAngles.longitude);
 							setAttributes(pointAngles, r, i);
 						}
 						posAttr.needsUpdate = true; colorAttr.needsUpdate = true;
