@@ -224,31 +224,6 @@
 			radiusStep = (config.radiusMax - config.baseRadius) / (config.totalSteps - 1);
 			document.getElementById('totalStepsDisplay').innerText = config.totalSteps;
 			progressStep(currentStep);
-/*
-			while (currentStep < config.totalSteps) {
-
-				//Для генератора случайных чисел
-				device.queue.writeBuffer(timeBuffer, 0, new Uint32Array([Math.floor(performance.now() * timeMultiplier)]));
-
-				const newRadius = radiusPrev + radiusStep;
-				device.queue.writeBuffer(paramBuf, 0, new Float32Array([radiusPrev, newRadius, currentStep * config.pointsPerStep]));
-				const encoder = device.createCommandEncoder();
-				const pass = encoder.beginComputePass();
-				pass.setPipeline(pipeline); pass.setBindGroup(0, bindGroup);
-				pass.dispatchWorkgroups(Math.ceil(config.pointsPerStep / 64));
-				pass.end();
-				device.queue.submit([encoder.finish()]);
-				if (config.DEBUG_MODE) await readDebugValue(currentStep);
-				else await readMessageValue(currentStep);
-				updateDisplay();
-				radiusPrev = newRadius; currentStep++;
-			}
-
-			await readMessageValue(currentStep);
-			updateDisplay();
-			await finalSyncGPU();
-//            updateDisplay();
-*/
 		};
 
 		let recommendationThrow;// requiredPosBufSize, adapter, currentDeviceLimit;
@@ -260,7 +235,6 @@
 			const adapter = availableAdapters[idx];
 
 			//Выделяем необходимый размер памяти
-//            device = await adapter.requestDevice();
 			// 1. Рассчитываем точный объем в байтах для самой тяжелой структуры (posBuf)
 			const requiredPosBufSize = config.totalSteps * config.pointsPerStep * 16;
 
@@ -290,34 +264,7 @@
 					}
 				};
 			}
-/*
-			// Базовый лимит WebGPU по умолчанию для всех устройств в мире
-			const DEFAULT_WEBGPU_LIMIT = 268435456; // 256 MB
 
-			let deviceDescriptor = {}; // По умолчанию дескриптор пустой (дефолтные лимиты)
-
-			// 2. Если дефолтных 256 МБ НЕ хватает, динамически расширяем лимит под задачу
-			if (requiredPosBufSize > DEFAULT_WEBGPU_LIMIT) {
-				//console.log(`Task requires ${requiredPosBufSize} bytes. Extending WebGPU limits...`);
-
-				// Проверяем: а потянет ли видеокарта такой объем физически?
-				if (requiredPosBufSize > adapter.limits.maxBufferSize) {
-					throw new Error(`Hardware limit exceeded! Your GPU maximum is ${(adapter.limits.maxBufferSize / (1024 * 1024)).toFixed(0)} MB, but task requires ${(requiredPosBufSize / (1024 * 1024)).toFixed(0)} MB.`);
-				}
-				
-				// Формируем запрос на точечное расширение лимитов
-				deviceDescriptor = {
-					requiredLimits: {
-						// Запрашиваем ровно столько, сколько нужно для расчетов + небольшой запас
-						maxBufferSize: requiredPosBufSize,
-						maxStorageBufferBindingSize: requiredPosBufSize
-					}
-				};
-//console.error('Under constraction')
-			} else {
-				//console.log("Task fits into standard 256MB WebGPU limit. Requesting default device.");
-			}
-*/
 			// 3. Создаем устройство с динамически рассчитанным дескриптором
 			device = await adapter.requestDevice(deviceDescriptor);
 
@@ -374,40 +321,6 @@
 				// Мягко очищаем локальные ссылки
 				cleanupGpuResources();
 			});
-/*
-			device.lost.then((info) => {
-				console.warn(`WebGPU Device was lost! Reason: ${info.reason}, Message: ${info.message}`);
-
-				// Принудительно останавливаем циклы в runAuto
-				currentStep = config.totalSteps;
-
-				let userMessage = `CRITICAL ERROR: GPU Device Lost.`;
-				if (info.reason === 'destroyed') {
-					userMessage += `<br>Device was intentionally destroyed by application.`;
-				} else {
-					userMessage += `<br>Reason: ${info.reason}.` +
-						`<br>Message: ${info.message.replace(/\n/g, '<br>')}` +
-						`<br><br><strong>Analysis:</strong> Your GPU hung up and was restarted by the OS (TDR). ` +
-						`The current task size (${config.pointsPerStep} points) requires a quadratic O(N²) calculation path ` +
-						`which is too heavy for a single compute pass.` +// Please drastically reduce 'pointsPerStep'.`;
-						`<br>To fix this, please decrease` +
-						`<br>'classSettings.settings.object.geometry.angles.length'` +
-						`<br>or 'myThreeOptions.playerOptions.marks'` +
-						`<br>See <a href="../../jsdoc/module-HypersphericalUniverse-HypersphericalUniverse.html" target="_blank" style="color: blue;">HypersphericalUniverse</a>` + 
-						`<br>When processing large-scale 4D math or dense point clouds in the Hypersphere Universe Engine, your GPU might take longer than 2 seconds to complete a single compute pass (dispatchWorkgroups).` + 
-						`<br>By default, Windows monitors the GPU response time. If a single GPU operation takes longer than 2 seconds, the operating system assumes the graphics card is frozen, forcibly restarts the display driver, and terminates the application context. In your browser console, this results in the following crash errors:` + 
-						`<br>DXGI_ERROR_DEVICE_HUNG (0x887A0006)` + 
-						`<br>CRITICAL ERROR: GPU Device Lost` + 
-						`<br>To solve this issue, please read <a href="https://github.com/anhr/universe/blob/main/hyperSphere/TDR_GUIDE.md" target="_blank" style="color: blue;">How to Increase or Disable the TDR (Timeout Detection and Recovery) Limit in Windows</a>`;
-				}
-
-				// Выводим развернутый текст на страницу пользователя
-				setState(userMessage, true);
-
-				// Мягко очищаем локальные ссылки
-				cleanupGpuResources();
-			});
-*/
 
 			//for random function in WebGPU
 
@@ -726,10 +639,6 @@
 
 								//точка в 4D-пространстве оказывается на самой оси W (то есть её декартовы координаты x = 0, y = 0, z = 0), её проекция на всё трехмерное пространство XYZ сжимается в сингулярную точку — ноль.
 								if (rXY < 0.0001 && abs(v.z) < 0.0001) {
-/*								
-									lat = 0;
-									lon = 0;
-*/									
 								} else {
 									// Math.atan2(z, rXY) сохраняет правильный знак и четверть широты
 									lat = atan2(v.z, rXY);
@@ -738,31 +647,6 @@
 
 								return PolarAngles(lat, lon, alt, 0.0);
 							}
-/*
-							fn cartesianToPolar(v: vec4<f32>) -> PolarAngles {
-								let R = length(v);
-								if (R < 1e-10) {
-
-									messageBuffer.errorCode = 2u; // Код ошибки 2 = "cartesianToPolar: Under construction"
-									messageBuffer.i = 0;
-									messageBuffer.value = R;
-
-									return PolarAngles(0.0, 0.0, 0.0, 0.0);
-								}
-								let alt = acos(clamp(v.w / R, -1.0, 1.0));
-
-								let rXYZ = length(v.xyz);
-								// Если rXYZ близок к 0, значит точка лежит на оси W,
-								// и широта с долготой не определены (принимаем за 0)
-								if (rXYZ < 1e-10) {
-									return PolarAngles(0.0, 0.0, alt, 0.0);
-								}
-
-								let lat = asin(clamp(v.z / rXYZ, -1.0, 1.0));
-								let lon = atan2(v.y, v.x);
-								return PolarAngles(lat, lon, alt, 0.0);
-							}
-*/
 
 							fn cartesianToPolarRandom(Q: vec4<f32>) -> PolarAngles {
 								return cartesianToPolar(vec4<f32>(Q[2], Q[3], Q[1], Q[0] ));
@@ -794,13 +678,7 @@
 								${config.RANDOM_POINTS === 1 ? `
 								// Инициализируем локальное состояние один раз
 								var seed = i ^ uTime;` : ``}
-/*
-// Получаем 4 случайных числа
-let r1 = random(&state);
-let r2 = random(&state);
-let r3 = random(&state);
-let r4 = random(&state);
-*/
+
 								${config.DEBUG_MODE ? `if (i == 0u) { isDebugInfo = true; } else { isDebugInfo = false; }` : ``}
 
 								${config.DEBUG_MODE ? `if (isDebugInfo) {
@@ -885,30 +763,11 @@ let r4 = random(&state);
 					`<br>'classSettings.settings.object.geometry.angles.length' to ${maxPointsPerStep}` +
 					`<br>or 'myThreeOptions.playerOptions.marks' to ${maxTotalSteps}.` +
 					`<br>See <a href="../../jsdoc/module-HypersphericalUniverse-HypersphericalUniverse.html" target="_blank" style="color: blue;">HypersphericalUniverse</a>`;
-				//                recommendation += `To fix this, please decrease 'totalSteps' or 'pointsPerStep' at least ${excessRatio} times.`;
 
 				throw new Error(recommendation);
 			}
 			if (requiredPosBufSize > currentDeviceLimit) {
 				recommendationThrow();
-/*
-				const reqMb = (requiredPosBufSize / (1024 * 1024)).toFixed(1);
-				const maxMb = (currentDeviceLimit / (1024 * 1024)).toFixed(1);
-				
-				// Вычисляем коэффициент превышения
-//                const excessRatio = Math.ceil(requiredPosBufSize / currentDeviceLimit);
-				
-				// Формируем рекомендацию
-				let recommendation = `<br>Required buffer (${reqMb} MB) exceeds WebGPU Device limit (${maxMb} MB). `;
-				const maxTotalSteps = parseInt(currentDeviceLimit / (config.pointsPerStep * 16)), maxPointsPerStep = parseInt(currentDeviceLimit / (config.totalSteps * 16));
-				recommendation += `<br>To fix this, please decrease` +
-					`<br>'classSettings.settings.object.geometry.angles.length' to ${maxPointsPerStep}` +
-					`<br>or 'myThreeOptions.playerOptions.marks' to ${maxTotalSteps}.` +
-					`<br>See <a href="../../jsdoc/module-HypersphericalUniverse-HypersphericalUniverse.html" target="_blank" style="color: blue;">HypersphericalUniverse</a>`;
-//                recommendation += `To fix this, please decrease 'totalSteps' or 'pointsPerStep' at least ${excessRatio} times.`;
-				
-				throw new Error(recommendation);
-*/
 			}
 			
 			//Сейчас использую универсальный перехватчик во время исполнения
@@ -920,17 +779,7 @@ let r4 = random(&state);
 			paramBuf = device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
 			debugBuf = device.createBuffer({ size: 32, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
 			messageArray = device.createBuffer({ size: 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
-/*
-			// 2. Извлекаем ошибку валидации
-			const validationError = await device.popErrorScope();
-			if (validationError) {
-				// Если буфер превысил лимит, мы попадем сюда. Прерываем выполнение!
-				const reqMb = (requiredPosBufSize / (1024 * 1024)).toFixed(1);
-				const maxMb = (adapter.limits.maxBufferSize / (1024 * 1024)).toFixed(1);
-				
-				throw new Error(`Validation Failed: Buffer size (${reqMb} MB) exceeds the max buffer size limit (${maxMb} MB). Please reduce totalSteps or pointsPerStep.`);
-			}            
-*/            
+
 			// Создаем буфер для одного числа u32. Этот буфер используется для генератора случайных чисел в GPU.
 			timeBuffer = device.createBuffer({ size: 4, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
 
@@ -1200,7 +1049,6 @@ let r4 = random(&state);
 								break;
 							default:
 								const error = 'socket message: Invalid data.type: ' + data.type;
-//                                console.error(error);
 								setState(error, true);
 						}
 					} else {
@@ -1235,91 +1083,6 @@ let r4 = random(&state);
 		if (await findAdapters()) {
 			await connectToServer();
 		}
-/*
-		if (await findAdapters()) {
-
-			socket = new WebSocket('ws://localhost:5000/ws?type=gpu');
-			socket.binaryType = 'arraybuffer';
-
-			const elStatus = document.getElementById('status');
-			const elClient = document.getElementById('client')
-
-			// 1. Error handling (incorrect address, connection refused)
-			socket.onerror = (error) => {
-				setState(error.target.url + " ERROR: Server unreachable or incorrect address.", true);
-				console.error("WebSocket Error:", error);
-			};
-
-			// 2. Connection closure handling
-			socket.onclose = (event) => {
-				if (event.wasClean) {
-					setState(event.reason ? event.reason : "The connection was closed successfully.",
-						event.code === 4001 ? true :// Эта страница уже открыта
-						false
-					);
-				} else {
-					const rfcLink = '<a href="https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1" target="_blank">7.4.1.  Defined Status Codes</a>';
-					const mozillaLink = '<a href="https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code" target="_blank">CloseEvent: code property</a>';
-					const errorDetail = event.reason ? `Reason: ${event.reason}` : `Error Code: ${event.code}`;
-					const sError = `The connection was closed. ${errorDetail}. See RFC: ${rfcLink}, mozilla: ${mozillaLink}`
-					console.error(sError);
-					setState(sError, true);
-				}
-				console.log(`Close code: ${event.code}, reason: ${event.reason}`);
-			};
-
-			// 3. Successful connection
-			socket.onopen = (event) => {
-				setState("Connection established. Ready for computation.");
-			};
-			socket.onmessage = async (event) => {
-				const sError = "WebGPU ERROR: ";
-				try {
-					if (typeof event.data === 'string') {
-						const data = JSON.parse(event.data);
-						switch (data.type) {
-							case "START_COMPUTE":
-								window.config = data;
-								count = config.totalSteps * config.pointsPerStep;
-								elStatus.innerText = "CONFIG RECEIVED";
-								const clientText = event.origin || "Localhost";
-								elClient.innerText = clientText;
-								currentStep = 1;
-								log('Start compute. Source: ' + clientText);//"Configuration loaded.");
-								break;
-							case "MAIN_DISCONNECTED":
-								//Главная страница отсоеденилась от сервера. Если идут вычисления, то остановить их.
-								elStatus.innerText = "IDLE";
-								currentStep = config.totalSteps - 1;
-								log('Main page disconnected.');
-								break;
-							default: console.error('socket message: Invalid data.type: ' + data.type);
-						}
-					} else {
-						// Binary data received
-						elStatus.innerText = "Binary data received";
-						const initialAngles = new Float32Array(event.data);
-						angles = new Array(count).fill(null).map(() => ({ latitude: 0, longitude: 0, altitude: 0 }));
-						const anglesItemSize = 4;
-						for (let i = 0; i < config.pointsPerStep; i++) {
-							const anglesItem = angles[i];
-							let index = i * anglesItemSize;
-							anglesItem.latitude = initialAngles[index++];
-							anglesItem.longitude = initialAngles[index++];
-							anglesItem.altitude = initialAngles[index++];
-						}
-						try {
-							await runAuto();
-						} catch (e) {
-							setState(sError + e.message, true);
-						}
-					}
-				} catch (e) {
-					setState(sError + e.message, true);
-				}
-			};
-		}
-*/
 		function log(m) { document.getElementById('log').innerHTML += `<div>> ${m}</div>`; }
 		// Безопасная функция для уничтожения буферов
 		function destroyIfBuffer(buf) {
@@ -1355,38 +1118,7 @@ let r4 = random(&state);
 				console.warn('Device destroy error:', e);
 			}
 			device = null; // Обязательно освобождаем ссылку!
-		}/*
-		function cleanupGpuResources() {
-			destroyIfBuffer(posBuf);
-			destroyIfBuffer(velBuf);
-			destroyIfBuffer(paramBuf);
-			destroyIfBuffer(debugBuf);
-			destroyIfBuffer(messageArray);
-			destroyIfBuffer(timeBuffer);
-			// Обнуляем ссылки
-			posBuf = velBuf = paramBuf = debugBuf = messageArray = timeBuffer = null;
-			// Сброс bindGroup / pipeline (они не имеют destroy в спецификации)
-			bindGroup = pipeline = null;
-			// Не вызываем device.destroy() — вместо этого просто забываем ссылку
-			// и даём браузеру управлять lifecycle; если реализация поддерживает,
-			// можно проверить и вызвать, но это не стандартно.
-			try { if (device && typeof device.destroy === 'function') device.destroy(); } catch (e) { }
-
-			//Снять обработчик device.onuncaughterror
-			try {
-				if (device) {
-					device.onuncaughterror = null; // Снимаем обработчик перед удалением
-					if (typeof device.destroy === 'function') {
-						device.destroy();
-					}
-				}
-			} catch (e) {
-				console.warn('Device destroy error:', e);
-			}
-			device = null;
-			availableAdapters.length = 0;
 		}
-*/
 		window.addEventListener('beforeunload', () => {
 			cleanupGpuResources();
 		});
