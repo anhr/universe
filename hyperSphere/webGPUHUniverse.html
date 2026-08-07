@@ -714,6 +714,32 @@
 
                             /* МАТЕМАТИКА ВНУТРИ GPU */
                             fn cartesianToPolar(v: vec4<f32>) -> PolarAngles {
+                                let r = length(v);
+
+                                // altitude рассчитывается корректно через acos (от 0 до PI)
+                                let alt = acos(clamp(v.w / r, -1.0, 1.0));
+
+	                            // Считаем длину проекции на плоскость XY для определения четверти широты
+	                            let rXY = length(v.xy);
+
+                                var lat = 0.0f; var lon = 0.0f;
+
+	                            //точка в 4D-пространстве оказывается на самой оси W (то есть её декартовы координаты x = 0, y = 0, z = 0), её проекция на всё трехмерное пространство XYZ сжимается в сингулярную точку — ноль.
+	                            if (rXY < 0.0001 && abs(v.z) < 0.0001) {
+/*								
+		                            lat = 0;
+		                            lon = 0;
+*/									
+	                            } else {
+		                            // Math.atan2(z, rXY) сохраняет правильный знак и четверть широты
+		                            lat = atan2(v.z, rXY);
+		                            lon = atan2(v.y, v.x);
+	                            }
+
+                                return PolarAngles(lat, lon, alt, 0.0);
+                            }
+/*
+                            fn cartesianToPolar(v: vec4<f32>) -> PolarAngles {
                                 let R = length(v);
                                 if (R < 1e-10) {
 
@@ -736,6 +762,7 @@
                                 let lon = atan2(v.y, v.x);
                                 return PolarAngles(lat, lon, alt, 0.0);
                             }
+*/
 
                             fn cartesianToPolarRandom(Q: vec4<f32>) -> PolarAngles {
                                 return cartesianToPolar(vec4<f32>(Q[2], Q[3], Q[1], Q[0] ));
