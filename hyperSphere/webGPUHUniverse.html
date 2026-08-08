@@ -680,13 +680,14 @@
 								var seed = i ^ uTime;` : ``}
 
 								${config.DEBUG_MODE ? `if (i == 0u) { isDebugInfo = true; } else { isDebugInfo = false; }` : ``}
-
+								/*
 								${config.DEBUG_MODE ? `if (isDebugInfo) {
 									debug.i = i;
 									debug.j = 0;
 									//debug.value = vec4<f32>(r1, r2, r3, r4);
-									debug.value = vec4<f32>(0.0, 0.0, 0.0, 0.0);
+									debug.value = vec4<f32>(0.1, 0.2, 0.3, 0.4);
 								}` : ``}
+								*/
 
 
 								let prevOffset = u32(p_param.stepOffset - f32(POINTS_PER_STEP));
@@ -729,11 +730,20 @@
 								// ИНТЕГРАЦИЯ СКОРОСТИ И ПОЗИЦИИ
 								let v_new = velocities[i] * DAMPING + force;
 								velocities[i] = v_new;
-								let next_pos_unit = normalize(p1 + v_new);
+//								let next_pos_unit = normalize(p1 + v_new);
+								let next_pos_unit = p1 + v_new;
 
 								//пересчитываем декартовые коодинаты для текущего шага проигрывателя
-								let polar = cartesianToPolar(next_pos_unit * p_param.radiusPrev);
+//								let polar = cartesianToPolar(next_pos_unit * p_param.radiusPrev);
+								let polar = cartesianToPolar(next_pos_unit);
 								positions[currOffset + i] = polarToCartesian(polar.latitude, polar.longitude, polar.altitude, p_param.radius);
+								${config.DEBUG_MODE ? `if (isDebugInfo) {
+									debug.i = i;
+									debug.j = 0;
+									debug.value = positions[currOffset + i];
+									//debug.value = next_pos_unit;
+									//debug.value = vec4<f32>(polar.latitude, polar.longitude, polar.altitude, p_param.radius);
+								}` : ``}
 
 							}
 						`;
