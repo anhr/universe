@@ -198,8 +198,16 @@ console.error('Under constraction')
 
 											case 'player': return this.hyperSphere.anglesPlayer(timeId);
 											case 'length': return verticesCount;
+											case 'forEach': return (item) => {
+
+												const time = times[timeId];
+												for (let angleId = 0; angleId < time.length; angleId++) item(time[angleId], angleId);
+			
+											}
 										}
-										return timeAngles[name];
+										console.error(sUniverse + ': Under constraction');
+										return timeAngles[name];//здесь timeAngles пустой
+//										return times[timeId][name];//Здесь стек прерполняется если name = forEach
 
 									},
 									set: (timeAngles, name, value) => {
