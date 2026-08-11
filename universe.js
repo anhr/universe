@@ -204,6 +204,7 @@ console.error('Under constraction')
 												for (let angleId = 0; angleId < time.length; angleId++) item(time[angleId], angleId);
 			
 											}
+											case 'push': return timeAngles[name];
 										}
 										console.error(sUniverse + ': Under constraction');
 										return timeAngles[name];//здесь timeAngles пустой
