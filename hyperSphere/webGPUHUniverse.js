@@ -326,7 +326,10 @@ class WebGPUHUniverse {
 								) {
 									timeIdGroup = timeId;
 //									time.color = point;
+									const isDataReady = this.isDataReady;
+									this.isDataReady = false;//Если так не установить, то цвета вершин сдвинутся на одну группу по времени. В результате цвета вершин для timeId = 1 не будут установлены.
 									times[timeId].color = point;
+									this.isDataReady = isDataReady;
 									color = new THREE.Vector4().fromBufferAttribute(attributeColor, i);
 								} else attributeColor.setXYZW(i, color.x, color.y, color.z, color.w);
 					            if (config.LOG) {
