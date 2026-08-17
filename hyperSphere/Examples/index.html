@@ -62,7 +62,7 @@
 					//  1 - No damping. Not recommended for production
 					//Default 0.95.
 					//See https://chat.deepseek.com/share/azo3y7zgc6hov7mlfp for details.
-					//DAMPING: 0.95,
+					//DAMPING: 10,
 
 					//Сила отталкивания. Чем меньше значение, тем слабее силы отталкивания между точками, и тем медленнее они двигаются
 					REPULSION_STRENGTH: 0.3,//10,//По умолчанию не определено и зависит от количества вершин REPULSION_STRENGTH = config.a / classSettings.settings.object.geometry.angles.length.
@@ -249,7 +249,7 @@
 							[Math.PI / 4, Math.PI / 22, -Math.PI / 2],//3
 							[Math.PI / 5, Math.PI / 23, Math.PI],//4
 						],
-						//angles: { count: 500, },
+						angles: { count: 500, },
 						//angles: { count: 500000, },//недостаточно памяти при количестве шагов плеера 1000
 						//angles: { count: 124875, },//выделяется максимально возможное количество памяти при шагов плеера 134. ВНИМАНИЕ!!! Использовать с осторожностью. Вебстраница сильно зависает.
 						
