@@ -152,7 +152,7 @@ class Universe
 								if (times.length != timeId) console.error(sUniverse + ': get times[' + timeId + '] failed. Invalid timeId = ' + timeId);
 								
 								const webGPU = classSettings.distanceOfVertices.webGPU;
-								let verticesCount = webGPU && webGPU.isDataReady ? classSettings.settings.object.geometry.angles.length ://положение вершин успешно вычислено на GPU
+								let verticesCount = webGPU && webGPU.isDataReady ? classSettings.settings.object.geometry.angles.length://положение вершин успешно вычислено на GPU
 													0;
 								times[timeId] = new Proxy([], {
 
@@ -225,8 +225,9 @@ console.error('Under constraction')
 												break;
 */												
 											case 'color':
-												this.hyperSphere.setColorAttributeFromPoint(verticesCount, value, timeId);
-												verticesCount++;
+												this.hyperSphere.setColorAttributeFromPoint(0,//verticesCount,
+																							value, timeId);
+//												verticesCount++;
 												break;
 										}
 										return true;
