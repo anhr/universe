@@ -36,7 +36,6 @@ class SphericalUniverse extends Universe {
 	 **/
 	constructor(classSettings = {}, myThreeOptions={}) {
 
-//		classSettings.continue = () => this.logUniverse2D();
 		myThreeOptions.scales = myThreeOptions.scales || { z: {}, };
 		myThreeOptions.orbitControls = myThreeOptions.orbitControls || { enableRotate: true, };
 		myThreeOptions.camera = myThreeOptions.camera || { position: [ 0.4, 0.4, 2 ] };

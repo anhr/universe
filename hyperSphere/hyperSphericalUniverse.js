@@ -18,7 +18,7 @@
 import SphericalUniverse from '../sphere/sphericalUniverse.js';
 import HyperSphere3D from '../../../commonNodeJS/master/HyperSphere/hyperSphere3D.js';
 import * as utils from '../../../commonNodeJS/master/HyperSphere/utilsHSphere.js'
-import { evaluateDistribution, graphFolderChild, graphFolderClose, timeAnalysis } from '../../../commonNodeJS/master/HyperSphere/distanceOfVertices/thomsonAnalysisHSphere.js'
+import { graphFolderChild, graphFolderClose, timeAnalysis } from '../../../commonNodeJS/master/HyperSphere/distanceOfVertices/thomsonAnalysisHSphere.js'
 import { dat } from '../../../commonNodeJS/master/dat/dat.module.js';
 
 //select one:
@@ -73,7 +73,6 @@ class HypersphericalUniverse extends SphericalUniverse {
 		//Thomson analysis. Analysis the iterative process known as [Thomson problem]{@link https://en.wikipedia.org/wiki/Thomson_problem} in which, at each step, all vertices gradually move toward a position in which the vertices are at the maximum distance from each other on the hypersphere.
 		this.timesOnChange = (display) => {
 			fThomsonAnalysis.domElement.style.display = display;
-//			if (!fThomsonAnalysis.closed) tomsonAnalysis(firstElementChild, lang.step + '%step / ');
 			if (!fThomsonAnalysis.closed) timeAnalysis(fThomsonAnalysis, firstElementChild, lang.step + '%step / ', classSettings);
 		}
 		let tomsonAnalysis;//Функция, которая анализирует вершины для данного шагп проигрывателя на предмет удаленности друг от друга
@@ -140,14 +139,11 @@ class HypersphericalUniverse extends SphericalUniverse {
 			folderClick(fThomsonAnalysis, (firstElementChildNew) => {
 					firstElementChild = firstElementChildNew;
 					timeAnalysis(fThomsonAnalysis, firstElementChild, lang.step + '%step / ', classSettings);
-//					tomsonAnalysis(firstElementChild, lang.step + '%step / ');
 				},
-//				(firstElementChildNew) => { firstElementChild = firstElementChildNew;}
 			);
 			folderClick(
 				fThomsonAnalysisGraph,
 				(firstElementChildNew, textController, timeIdController, createLabel) => {
-//					firstElementChildGraph = firstElementChildNew;
 					graphFolderChild(fThomsonAnalysisGraph, classSettings, textController, timeIdController, createLabel);
 				},
 				true,
@@ -155,11 +151,6 @@ class HypersphericalUniverse extends SphericalUniverse {
 			);
 		}
 		let firstElementChild;//, firstElementChildGraph;
-/*		
-		const tomsonAnalysisRes = {}, aTomsonAnalysisRes = [];
-		const anglesLength = classSettings.settings.object.geometry.angles.length;
-*/		
-//		this.tomsonAnalysis = (timeId) => { console.error('Убрать this.tomsonAnalysis'); }
 	}
 	getHyperSphere(options, classSettings) {
 		

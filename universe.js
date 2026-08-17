@@ -34,7 +34,6 @@ MyThree.three.THREE = THREE;
 
 import { dat } from '../../commonNodeJS/master/dat/dat.module.js';
 import ND from '../../commonNodeJS/master/nD/nD.js';
-//import { evaluateDistribution } from '../../commonNodeJS/master/HyperSphere/distanceOfVertices/thomsonAnalysisHSphere.js'
 let utils;
 
 const sUniverse = 'Universe';
@@ -159,12 +158,6 @@ class Universe
 									get: (timeAngles, name) => {
 
 										const verticeId = parseInt(name);
-//const v = classSettings.settings.object.geometry.angles[0];
-/*										
-const p = classSettings.settings.object.geometry.position[0];
-const x = p.x;
-console.error('Under constraction')
-*/
 										if (!isNaN(verticeId)) {
 											const positionData = this.hyperSphere.getPositionData(verticeId, timeId);
 											const position = classSettings.settings.bufferGeometry.attributes.position;
@@ -179,7 +172,7 @@ console.error('Under constraction')
 													break;
 												default: console.error(sUniverse + ': get angles. Invalid position.itemSize = ' + position.itemSize);
 											}
-											return new Proxy(utils.cartesianToPolar(verticePosition)/*timeAngles[verticeId]*/, {
+											return new Proxy(utils.cartesianToPolar(verticePosition), {
 
 												get: (verticeAngles, name) => {
 
@@ -208,26 +201,17 @@ console.error('Under constraction')
 										}
 										console.error(sUniverse + ': Under constraction');
 										return timeAngles[name];//здесь timeAngles пустой
-//										return times[timeId][name];//Здесь стек прерполняется если name = forEach
 
 									},
 									set: (timeAngles, name, value) => {
 
-//										timeAngles[name] = value;
 										const timeAnglesId = parseInt(name);
 										if (!isNaN(timeAnglesId)) {
 											verticesCount++;
 											this.hyperSphere.setPositionAttributeFromPoint(timeAnglesId, utils.polarToCartesian(value, this.hyperSphere.r), timeId);
 										} else switch(name) {
-/*												
-											case 'increaseVerticesCount':
-												verticesCount += value;
-												break;
-*/												
 											case 'color':
-												this.hyperSphere.setColorAttributeFromPoint(0,//verticesCount,
-																							value, timeId);
-//												verticesCount++;
+												this.hyperSphere.setColorAttributeFromPoint(0, value, timeId);
 												break;
 										}
 										return true;
@@ -374,7 +358,6 @@ console.error('Under constraction')
 								angles = array;
 
 							}
-//							if (!angles.tomsonAnalysisRes) angles.tomsonAnalysisRes = {};
 							return new Proxy(angles, {
 								
 								get: (angles, name) => {
@@ -382,7 +365,6 @@ console.error('Under constraction')
 									switch (name) {
 
 										case 'ranges': return angles0[name];
-//										case 'tomsonAnalysisRes': return angles.tomsonAnalysisRes;
 											
 									}
 									return angles[name];
@@ -830,9 +812,6 @@ console.error('Under constraction')
 						time: 'Time',
 						timeTitle: 'Position of vertices at selected time',
 
-//						thomsonAnalysis: 'Thomson Analysis',
-//						thomsonAnalysisTitle: 'Analysis of the results of solving the Thomson problem, in which at each step all vertices gradually move to a position in which the vertices are at the maximum distance from each other on the hypersphere.',
-//						step: 'Step: ',
 						deviationPercentTitle: 'Коэффициент вариации (дисбаланс). Коэффициент вариации (deviationPercent) высокий (например, > 15-20%): Точки распределены хаотично, решетка не сформировалась. Скорее всего, силам отталкивания не хватает итераций, либо коэффициент затухания скорости (DAMPING) гасит движение слишком рано. deviationPercent стремится к 0% (например, < 2-5%): Алгоритм работает отлично, структура симметрична, точки распределились максимально равномерно.',
 
 					};
@@ -846,9 +825,6 @@ console.error('Under constraction')
 							lang.time = 'Время';
 							lang.timeTitle = 'Выбрать список вершин в выбранное время';
 
-//							lang.thomsonAnalysis = 'Анализ задачи Томсона';
-//							lang.thomsonAnalysisTitle = 'Анализ результатов решения задачи Томсона, в которой на каждом шаге все вершины постепенно перемещаются к положению, в котором вершины находятся на максимальном расстоянии друг от друга на гиперсфере.';
-//							lang.step = 'Шаг: ';
 							break;
 
 					}
@@ -893,8 +869,6 @@ console.error('Under constraction')
 						}
 
 					}
-//					const tomsonAnalysisRes = {}, aTomsonAnalysisRes = [];
-//					let firstElementChild;
 					cTimes.onChange((timeId) => {
 
 						const selectPoints = cPoints.__select;
@@ -935,16 +909,6 @@ console.error('Under constraction')
 	
 							});
 							guiPoints.timeId = timeId;
-/*							
-							guiPoints.timeAngles.forEach((verticeAngles, verticeId) => {
-	
-								const opt = document.createElement('option');
-								opt.innerHTML = verticeId;
-								opt.setAttribute('value', verticeId);
-								selectPoints.appendChild(opt);
-	
-							});
-*/							
 							hyperSphereObject.userData.myObject.guiPoints.setTimeId = (newTimeId) => { timeId = newTimeId }
 							hyperSphereObject.userData.myObject.guiPoints.getPositionId = (timeAnglesId) => {
 	
@@ -973,10 +937,6 @@ console.error('Under constraction')
 						cPointsStyle.display = display;
 
 						if (this.timesOnChange) this.timesOnChange(display);
-/*						
-						fThomsonAnalysis.domElement.style.display = display;
-						if (!fThomsonAnalysis.closed) tomsonAnalysis(firstElementChild, lang.step + '%step / ');
-*/						
 						
 						cTraceAll.userData.display = none;
 						guiPoints.pointsStyleDisplay = cPointsStyle.display;

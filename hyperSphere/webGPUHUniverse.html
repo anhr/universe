@@ -730,11 +730,9 @@
 								// ИНТЕГРАЦИЯ СКОРОСТИ И ПОЗИЦИИ
 								let v_new = velocities[i] * DAMPING + force;
 								velocities[i] = v_new;
-//								let next_pos_unit = normalize(p1 + v_new);
 								let next_pos_unit = p1 + v_new;
 
 								//пересчитываем декартовые коодинаты для текущего шага проигрывателя
-//								let polar = cartesianToPolar(next_pos_unit * p_param.radiusPrev);
 								let polar = cartesianToPolar(next_pos_unit);
 								positions[currOffset + i] = polarToCartesian(polar.latitude, polar.longitude, polar.altitude, p_param.radius);
 								${config.DEBUG_MODE ? `if (isDebugInfo) {

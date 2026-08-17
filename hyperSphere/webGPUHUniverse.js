@@ -27,7 +27,7 @@ const sWebGPU = 'WebGPU';
 
 class WebGPUHUniverse {
 
-	constructor(/*onerror*/) {
+	constructor() {
 
 		const serverAddress = 'ws://localhost:5000/ws?type=main';
 		let socket;
@@ -67,18 +67,11 @@ class WebGPUHUniverse {
 				elProgress.style.padding = '2px';
 				
 				elTitle = document.createElement('div');
-//					elTitle.innerHTML = 'GPU';
 				elTitle.innerHTML = 'GPU<div id="socket-status">'
 						+ '<strong>Server Address:</strong> <span>' + serverAddress + '</span><br>'
 						+ '<strong>Socket Status:</strong> <span id="stateText">Waiting for connection to server...</span><br>'
 						+ '<strong>Step:</strong> <span id="stepCounter">0</span> / <span>' + config.totalSteps + '</span> | R: <span id="radVal">' + config.baseRadius + '</span><br>'
 						+ '<strong>Elapsed Time:</strong> <span id="timeResult">---</span> sec.<br>'
-/*					
-						+ '<div id="info">Step: <span id="stepCounter">0</span> / <span id="totalStepsDisplay">0</span> | R: <span id="radVal">0.0</span>'
-				        + '    <span id="timeResult" class="timer"></span>'
-//				        + '    <span id="activeGpu"></span>'
-				        + '</div>'
-*/						
 						+ '<button type="button" id="btnCPU" title="Use CPU for computation" style="display: none;">CPU</button>'
 						+ '<button type="button" id="btnClose" title="Close this window" style="display: none;">Close</button>'
 					+ '</div>';
@@ -195,34 +188,6 @@ class WebGPUHUniverse {
 				};
 				// 3. Успешное подключение
 				socket.onopen = () => {
-/*					
-					const config = {
-						type: 'START_COMPUTE',
-						DEBUG_MODE: DEBUG_MODE,
-						RANDOM_POINTS: RANDOM_POINTS,
-						DAMPING: DAMPING,
-						REPULSION_STRENGTH: REPULSION_STRENGTH,
-						PSEUDO_RANDOM: PSEUDO_RANDOM,
-						p: p,
-						baseRadius: baseRadius,
-						radiusMax: radiusMax,
-						totalSteps: totalSteps,
-						pointsPerStep: pointsPerStep
-					};
-*/
-/*
-					socket.send(JSON.stringify(config));
-
-					const anglesItemSize = 4, initialAngles = new Float32Array(config.pointsPerStep * anglesItemSize), angles = settings.object.geometry.angles;
-					settings.bufferGeometry.userData.timeId--;//Углы вершин брать из предыдущего шага проигрывателя
-					for (let i = 0; i < config.pointsPerStep; i++) {
-						let index = i * anglesItemSize;
-						const vertuceAngles = angles[i];
-						initialAngles[index++] = vertuceAngles.latitude; initialAngles[index++] = vertuceAngles.longitude; initialAngles[index++] = vertuceAngles.altitude;
-					}
-					settings.bufferGeometry.userData.timeId++;
-					socket.send(initialAngles.buffer);
-*/
 					
 				};
 				settings.options.player.onStep = () => {
@@ -231,7 +196,6 @@ class WebGPUHUniverse {
 						socket.send(JSON.stringify({ type: "PROGRESS", currentStep: currentStep + 1 }));
 				}					
 				socket.onmessage = (event) => {
-//					console.log('socket.onmessage: ' + (typeof event.data === 'string' ? JSON.parse(event.data).type : typeof event.data === 'object' ? 'object' : 'Unknown event.data type'))
 					if (typeof event.data === 'string') {
 						const data = JSON.parse(event.data);
 
@@ -240,21 +204,6 @@ class WebGPUHUniverse {
 								setStatus(data.message, data.code);
 								if (data.code === 1) {
 									//Connection established. Ready to work.
-				/*					
-									const config = {
-										type: 'START_COMPUTE',
-										DEBUG_MODE: DEBUG_MODE,
-										RANDOM_POINTS: RANDOM_POINTS,
-										DAMPING: DAMPING,
-										REPULSION_STRENGTH: REPULSION_STRENGTH,
-										PSEUDO_RANDOM: PSEUDO_RANDOM,
-										p: p,
-										baseRadius: baseRadius,
-										radiusMax: radiusMax,
-										totalSteps: totalSteps,
-										pointsPerStep: pointsPerStep
-									};
-				*/
 									socket.send(JSON.stringify(config));
 
 									const anglesItemSize = 4, initialAngles = new Float32Array(config.pointsPerStep * anglesItemSize), angles = settings.object.geometry.angles;
@@ -281,7 +230,6 @@ class WebGPUHUniverse {
 						
 						const posData = new Float32Array(event.data), count = config.totalSteps * config.pointsPerStep, THREE = MyThree.three.THREE, pointsPerStep = config.pointsPerStep;
 						const position = settings.bufferGeometry.attributes.position;
-//						position.copyArray(new Float32Array(event.data)); 
 						position.copyArray(posData); 
 						position.needsUpdate = true;
 
@@ -314,12 +262,10 @@ class WebGPUHUniverse {
 							while ((i < iEnd) && (i < count)) {
 								const timeId = parseInt(i / config.pointsPerStep);
 								if (timeId >= timesLength) {
-//									time = times[timeId];//add item to times
 									timesLength = times.length;
 								}
 								let index = i * colorItemSize;
 								const point = { x: posData[index++], y: posData[index++], z: posData[index++], w: posData[index++],};
-//								times[timeId].color = point;
 								if (
 									(timeIdGroup === undefined) ||//Первая группа вершин
 									(timeIdGroup != timeId)//Новая группа вершин
