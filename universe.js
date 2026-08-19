@@ -24,9 +24,9 @@ import * as THREE from '../../three.js/dev/build/three.module.js';
 //import * as THREE from 'https://threejs.org/build/three.module.js';
 //import * as THREE from 'https://raw.githack.com/anhr/three.js/dev/build/three.module.js';
 
-import MyThree from '../../commonNodeJS/master/myThree/myThree.js';
+//import MyThree from '../../commonNodeJS/master/myThree/myThree.js';
 //import MyThree from '../../commonNodeJS/master/myThree/build/myThree.module.js';
-//import MyThree from '../../commonNodeJS/master/myThree/build/myThree.module.min.js';
+import MyThree from '../../commonNodeJS/master/myThree/build/myThree.module.min.js';
 //import MyThree from 'https://raw.githack.com/anhr/commonNodeJS/master/myThree/myThree.js';
 //import MyThree from 'https://raw.githack.com/anhr/commonNodeJS/master/myThree/build/myThree.module.js';
 //import MyThree from 'https://raw.githack.com/anhr/commonNodeJS/master/myThree/build/myThree.module.min.js';
@@ -1276,7 +1276,7 @@ class Universe
 
 }
 
-Universe.release = 'v1.5';
+Universe.release = 'v1.6';
 if (Universe.release != MyThree.release) console.error(sUniverse + ': Incompatible Universe.release = ' + Universe.release + ' version with MyThree.release = ' + MyThree.release + ' version.')
 
 export default Universe;

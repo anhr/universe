@@ -1,6 +1,6 @@
 {
   "name": "SphericalUniverse",
-  "version": "1.4",
+  "version": "1.6",
   "description": "All the vertices of the SphericalUniverse form a sphere.",
   "main": "build/sphericalUniverse.js",
   "repository": {

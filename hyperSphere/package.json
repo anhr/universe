@@ -1,6 +1,6 @@
 {
   "name": "HypersphericalUniverse",
-  "version": "1.4",
+  "version": "1.6",
   "description": "All the vertices of the HypersphericalUniverse form a 3D hypersphere.",
   "main": "build/hyperSphericalUniverse.js",
   "repository": {

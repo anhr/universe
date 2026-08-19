@@ -13,12 +13,13 @@
  * http://www.apache.org/licenses/LICENSE-2.0
 */
 
-import MyThree from '../../../commonNodeJS/master/myThree/myThree.js';
+//import MyThree from '../../../commonNodeJS/master/myThree/myThree.js';
 //import MyThree from '../../../commonNodeJS/master/myThree/build/myThree.module.js';
 //import MyThree from '../../../commonNodeJS/master/myThree/build/myThree.module.min.js';
 //import MyThree from 'https://raw.githack.com/anhr/commonNodeJS/master/myThree/myThree.js';
 //import MyThree from 'https://raw.githack.com/anhr/commonNodeJS/master/myThree/build/myThree.module.js';
 //import MyThree from 'https://raw.githack.com/anhr/commonNodeJS/master/myThree/build/myThree.module.min.js';
+const MyThree = window.__myThree__;
 
 import ProgressBar from '../../../commonNodeJS/master/ProgressBar/ProgressBar.js'
 import * as utils from '../../../commonNodeJS/master/HyperSphere/utilsHSphere.js'
