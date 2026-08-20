@@ -1,6 +1,6 @@
 {
   "name": "CircularUniverse",
-  "version": "1.4",
+  "version": "1.6",
   "description": "All vertices of the Universe form a circle.",
   "main": "build/circularUniverse.js",
   "repository": {

@@ -17,6 +17,12 @@
 
 import Universe from '../universe.js';
 import Sphere from '../../../commonNodeJS/master/HyperSphere/sphere.js';
+import * as utils from '../../../commonNodeJS/master/HyperSphere/utilsSphere.js'
+
+//select one:
+import distanceOfVertices from '../../../commonNodeJS/master/HyperSphere/distanceOfVertices/averageVerticesSphere.js';
+//or
+//import distanceOfVertices from '../../../commonNodeJS/master/HyperSphere/distanceOfVertices/middleVerticesSphere.js';
 
 //const sSphericalUniverse = 'SphericalUniverse',
 //	π = Math.PI;
@@ -26,17 +32,23 @@ class SphericalUniverse extends Universe {
 	/**
 	 * All the vertices of the <b>SphericalUniverse</b> form a sphere.
 	 * @param {object} [classSettings={}] See <a href="../../../commonNodeJS/master/HyperSphere/jsdoc/module-HyperSphere-HyperSphere.html" target="_blank">HyperSphere classSettings</a> parameter.
+	 * @param {object} [myThreeOptions={}] See <a href="../../../commonNodeJS/master/myThree/jsdoc/module-MyThree-MyThree.html" target="_blank">MyThree options</a> parameter.
 	 **/
 	constructor(classSettings = {}, myThreeOptions={}) {
 
-		classSettings.continue = () => this.logUniverse2D();
 		myThreeOptions.scales = myThreeOptions.scales || { z: {}, };
 		myThreeOptions.orbitControls = myThreeOptions.orbitControls || { enableRotate: true, };
 		myThreeOptions.camera = myThreeOptions.camera || { position: [ 0.4, 0.4, 2 ] };
+		classSettings.utils ||= utils;
 		super(classSettings, myThreeOptions);
 
 	}
-	getHyperSphere(options, classSettings) { return new Sphere(options, classSettings); }
+	getHyperSphere(options, classSettings) {
+		
+		classSettings.distanceOfVertices = distanceOfVertices;
+		return new Sphere(options, classSettings);
+	
+	}
 	name( getLanguageCode ) {
 
 		//Localization

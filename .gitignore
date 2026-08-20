@@ -25,8 +25,3 @@ node_modules
 package-lock.json
 
 /.vs
-
-/hyperSphere/UniverseSocketServer/.vs
-/hyperSphere/UniverseSocketServer/bin
-/hyperSphere/UniverseSocketServer/obj
-/hyperSphere/UniverseSocketServer/Downloads

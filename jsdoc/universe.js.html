@@ -53,14 +53,17 @@ import * as THREE from '../../three.js/dev/build/three.module.js';
 //import * as THREE from 'https://raw.githack.com/anhr/three.js/dev/build/three.module.js';
 
 import MyThree from '../../commonNodeJS/master/myThree/myThree.js';
-//import MyThree from '../../../commonNodeJS/master/myThree/build/myThree.module.js';
-//import MyThree from '../../../commonNodeJS/master/myThree/build/myThree.module.min.js';
+//import MyThree from '../../commonNodeJS/master/myThree/build/myThree.module.js';
+//import MyThree from '../../commonNodeJS/master/myThree/build/myThree.module.min.js';
 //import MyThree from 'https://raw.githack.com/anhr/commonNodeJS/master/myThree/myThree.js';
 //import MyThree from 'https://raw.githack.com/anhr/commonNodeJS/master/myThree/build/myThree.module.js';
 //import MyThree from 'https://raw.githack.com/anhr/commonNodeJS/master/myThree/build/myThree.module.min.js';
 MyThree.three.THREE = THREE;
 
 import { dat } from '../../commonNodeJS/master/dat/dat.module.js';
+import ND from '../../commonNodeJS/master/nD/nD.js';
+//import * as utils from '../../commonNodeJS/master/HyperSphere/utilsHSphere.js'
+let utils;
 
 const sUniverse = 'Universe';
 
@@ -71,11 +74,15 @@ class Universe
 	 * @param {object} [classSettings={}] See &lt;a href="../../../commonNodeJS/master/HyperSphere/jsdoc/module-HyperSphere-HyperSphere.html" target="_blank">HyperSphere classSettings&lt;/a> parameter.
 	 * @param {Array} [classSettings.settings.object.geometry.timesAngles] Array of vertices angles for different time of the &lt;a href="../../../commonNodeJS/master/player/jsdoc/" target="_blank">player&lt;/a>.
 	 * Every item of the &lt;b>timeAngles&lt;/b> array is array of the vertices angles. See &lt;b>classSettings.settings.object.geometry.angles&lt;/b> of the &lt;a href="../../../commonNodeJS/master/HyperSphere/jsdoc/module-HyperSphere-HyperSphere.html" target="_blank">HyperSphere&lt;/a> for details
-	 * @param {object} [myThreeOptions={}] See &lt;a href="../../../commonNodeJS/master/myThree/jsdoc/module-MyThree-MyThree.html" target="_blank">MyThree optionss&lt;/a> parameter.
+	 * @param {object} [myThreeOptions={}] See &lt;a href="../../../commonNodeJS/master/myThree/jsdoc/module-MyThree-MyThree.html" target="_blank">MyThree options&lt;/a> parameter.
 	 */
 	constructor(classSettings = {}, myThreeOptions = {}) {
 
+		utils = classSettings.utils;
 		const _this = this;
+		//myThreeOptions.playerOptions ||= {};Not compatible with buid of hyperSphericalUniverse.module.min.js
+		if (!myThreeOptions.playerOptions) myThreeOptions.playerOptions = {};
+		myThreeOptions.playerOptions.interval = myThreeOptions.playerOptions.interval != undefined ? myThreeOptions.playerOptions.interval : Infinity;
 		myThreeOptions.scales = myThreeOptions.scales || {};
 		myThreeOptions.scales.x = myThreeOptions.scales.x || {};
 		myThreeOptions.scales.y = myThreeOptions.scales.y || {};
@@ -86,7 +93,6 @@ class Universe
 		myThreeOptions.scales.text.rect.displayRect = myThreeOptions.scales.text.rect.displayRect != undefined ? myThreeOptions.scales.text.rect.displayRect : false;
 
 		myThreeOptions.playerOptions = myThreeOptions.playerOptions || {};
-		
 		if (myThreeOptions.playerOptions.min === undefined) myThreeOptions.playerOptions.min = 0.1;
 
 		//w
@@ -116,13 +122,18 @@ class Universe
 
 			if (myThreeOptions.camera.position instanceof Array === true)
 				myThreeOptions.camera.position = new THREE.Vector3(myThreeOptions.camera.position[0], myThreeOptions.camera.position[1], myThreeOptions.camera.position[2]);
+			
 		}
 		else myThreeOptions.camera.position = new THREE.Vector3(0, 0, 2);
 
 		myThreeOptions.canvas = myThreeOptions.canvas || {};
 		myThreeOptions.canvas.noButtonFullScreen = myThreeOptions.canvas.noButtonFullScreen != undefined ? myThreeOptions.canvas.noButtonFullScreen : true;
 
+		if (myThreeOptions.palette === undefined) myThreeOptions.palette = MyThree.ColorPicker.paletteIndexes.rainbow;
+		
 		new MyThree((scene, options) => {
+
+			let traces, traceVerticeId;
 
 			//classSettings.projectParams ||= {};//Эта строка выдает ошибку "[!] (cleanup plugin) SyntaxError: Unexpected token (63:36)" при выполнении команды "npm run build"
 			classSettings.projectParams = classSettings.projectParams || {};
@@ -132,19 +143,22 @@ class Universe
 			classSettings.settings.object = classSettings.settings.object || {};
 			classSettings.settings.object.name = classSettings.settings.object.name || this.name(options.getLanguageCode);
 
-			if (classSettings.settings.object.color === undefined) classSettings.settings.object.color = () => { return options.player.getTime(); }
+			if (classSettings.settings.object.color === undefined) classSettings.settings.object.color = (timeId) => { return options.player.getTime(timeId); }
 
 			classSettings.projectParams.scene.userData.endSelect = () => {}
 
 			classSettings.settings.isSetPosition = true;//при выполнении шага в Player не надо вычислять позицию вершин в самом Player
+			
+			if (classSettings.settings.object.geometry.opacity === undefined) classSettings.settings.object.geometry.opacity = 1;//Непрозрачность нужна для выделения трека одной вершины
+			
 			classSettings.settings.object.geometry.rCount = options.playerOptions.marks;//количество возможных радиусов вселенной
-			{//hide timeAngles
-				
-				const timeAngles = classSettings.settings.object.geometry.timesAngles;
-				if (timeAngles) {
+			{//hide times
+
+				const times = classSettings.settings.object.geometry.times;
+				if (times) {
 					
-					const timeAnglesLength = timeAngles.length;
-					if (timeAnglesLength > 0 )classSettings.settings.object.geometry.timeAnglesLength = timeAnglesLength;
+					const timesLength = times.length;
+					if (timesLength > 0 ) classSettings.settings.object.geometry.timesLength = timesLength;
 
 				}
 
@@ -153,141 +167,204 @@ class Universe
 			{//hide geometryAngles
 
 				const geometryAngles = classSettings.settings.object.geometry.angles;
-				classSettings.settings.object.geometry.timesAngles = new Proxy(classSettings.settings.object.geometry.timesAngles || [], {
-		
-					get: (timeAngles, name) => {
-	
+				classSettings.settings.object.geometry.times = new Proxy(classSettings.settings.object.geometry.times || [], {
+
+					get: (times, name) => {
+
 						const timeId = parseInt(name);
 						if (!isNaN(timeId)) {
-	
-							if (timeId === 0) return timeAngles[timeId] || geometryAngles;
-							if (!timeAngles[timeId]) {
 
-								if (timeAngles.length != timeId) console.error(sUniverse + ': get timeAngles[' + timeId + '] failed. Invalid timeId = ' + timeId);
-								timeAngles[timeId] = new Proxy([], {
+							if (timeId === 0) return times[timeId] || geometryAngles;
+							if (!times[timeId]) {
+
+								if (times.length != timeId) console.error(sUniverse + ': get times[' + timeId + '] failed. Invalid timeId = ' + timeId);
+								let verticesCount = 0;
+								times[timeId] = new Proxy([], {
 
 									get: (timeAngles, name) => {
-										
-										const verticeId = parseInt(name);
-										if (!isNaN(verticeId)) {
 
-/*											
-											const vertice = new Proxy(timeAngles[verticeId], {
-											
+										const verticeId = parseInt(name);
+//const v = classSettings.settings.object.geometry.angles[0];
+/*										
+const p = classSettings.settings.object.geometry.position[0];
+const x = p.x;
+console.error('Under constraction')
+*/
+										if (!isNaN(verticeId)) {
+											const positionData = this.hyperSphere.getPositionData(verticeId, timeId);
+											const position = classSettings.settings.bufferGeometry.attributes.position;
+											const index = positionData.positionId / position.itemSize;
+											let verticePosition;
+											switch (position.itemSize) {
+												case 4:
+													verticePosition = new THREE.Vector4().fromBufferAttribute(position, index);
+													break;
+												case 3:
+													verticePosition = new THREE.Vector3().fromBufferAttribute(position, index);
+													break;
+												default: console.error(sUniverse + ': get angles. Invalid position.itemSize = ' + position.itemSize);
+											}
+											return new Proxy(utils.cartesianToPolar(verticePosition)/*timeAngles[verticeId]*/, {
+
 												get: (verticeAngles, name) => {
 
+													switch (name) {
+
+														case 'edges': return times[0][verticeId].edges;
+															
+													}
 													return verticeAngles[name];
 													
-												},
-														
+												}
+												
 											});
-											return vertice;
-*/
-											return timeAngles[verticeId];
-
 										}
 										switch (name) {
-	
+
 											case 'player': return this.hyperSphere.anglesPlayer(timeId);
-												
+											case 'length': return verticesCount;
+
 										}
 										return timeAngles[name];
-										
+
 									},
 									set: (timeAngles, name, value) => {
-					
-										timeAngles[name] = value;
+
+//										timeAngles[name] = value;
 										const timeAnglesId = parseInt(name);
-										if (!isNaN(timeAnglesId)) this.hyperSphere.setPositionAttributeFromPoint(timeAnglesId, undefined, timeId);
+										if (!isNaN(timeAnglesId)) {
+											verticesCount++;
+											this.hyperSphere.setPositionAttributeFromPoint(timeAnglesId, utils.polarToCartesian(value, this.hyperSphere.r), timeId);
+										} else switch(name) {
+/*												
+											case 'increaseVerticesCount':
+												verticesCount += value;
+												break;
+*/												
+											case 'color':
+												this.hyperSphere.setColorAttributeFromPoint(verticesCount, value, timeId);
+												verticesCount++;
+												break;
+										}
 										return true;
-										
+
 									},
-									
+
 								});
 
 							}
-							return timeAngles[timeId];
-	
+							return times[timeId];
+
 						}
 						switch (name) {
 
-							case 'length': if (timeAngles.length === 0) return 1;
+							case 'length': if (times.length === 0) return 1;
 								break;
-								
+
 						}
-						return timeAngles[name];
-						
+						return times[name];
+
 					},
-					set: (timeAngles, name, value) => {
+					set: (times, name, value) => {
 
 						const timeId = parseInt(name);
 						if (!isNaN(timeId)) {
 
-							const timeAngles0 = timeAngles[0];
-							timeAngles[timeId] = new Proxy(value, {
+							const timeAngles0 = times[0];
+							times[timeId] = new Proxy(value, {
 
 								get: (timeAngles, name) => {
 
 									switch (name) {
 
 										case 'isTimeAnglesProxy': return true;
-										case 'player': 
+										case 'player':
 											if (!this.hyperSphere) {
 
-												if (timeId != 0) console.error(sUniverse + ': set timeAngles, get player. Invalid timeId = ' + timeId);
 												const t = classSettings.settings.options.player.getTime(timeId);
 												return {
 
 													id: timeId,
 													t: t,
 													r: t * classSettings.r,
-														
+
 												}
-												
+
 											};
 											return this.hyperSphere.anglesPlayer(timeId);
 										case 'forEach': return (item) => {
-										
+
 											for (let verticeId = 0; verticeId &lt; timeAngles0.length; verticeId++) {
 
 												const verticeAngles = timeAngles[verticeId];
 												item(verticeAngles ? verticeAngles : timeAngles0[verticeId], verticeId);
 
 											}
-											
+
 										}
 										case 'length':
 											if (timeId > 0) return timeAngles0.length;
-											return timeAngles.length;
-											
+											return timeAngles.length != undefined ? timeAngles.length : 0;
+
 									}
 									const verticeId = parseInt(name);
 									if (!isNaN(verticeId)) {
-										
+
 										let verticeAngles = timeAngles[verticeId];
-										if (!verticeAngles) {
+										if (!verticeAngles || ((timeId > 0) &amp;&amp; (verticeAngles[verticeId] === undefined)))
+										{
 
 											if (timeId === 0) {
-												
+
 												console.error(sUniverse + ': get vertice angles failed. Invalid timeId = ' + timeId);
 												return;
 
 											}
-											verticeAngles = timeAngles[timeId - 1][verticeId];
+											//похоже если вершины для данного timeId нет, то берется вершина из предыдущего timeId
+											verticeAngles = times[timeId - 1][verticeId];
 										}
-										return verticeAngles;
+										return new Proxy(verticeAngles, {
+
+											get: (verticeAngles, name) => {
+
+												const angleId = parseInt(name);
+												if (!isNaN(angleId)) {
+
+													const angle = verticeAngles[angleId];
+													if (angle === undefined) {
+
+														if (timeId === 0) return 0;
+														else return times[timeId - 1][verticeId][angleId];
+														
+													}
+													return angle;
+													
+												}
+												switch (name) {
+
+													case 'length': 
+														const maxAngles = classSettings.dimension - 1;
+														if (classSettings.debug &amp;&amp; (verticeAngles.length > maxAngles)) console.error(sUniverse + ': Invalid classSettings.settings.object.geometry.times[' + timeId + '][' + verticeId + '].length = ' + verticeAngles.length + '. Every vertice is limited to ' + maxAngles + ' angles.');
+														return maxAngles;
+														
+												}
+												return verticeAngles[name];
+												
+											},
+											
+										});
 
 									}
 									return timeAngles[name];
-									
+
 								},
-								
+
 							});
-							
+
 						}
-						else timeAngles[name] = value;
+						else times[name] = value;
 						return true;
-						
+
 					},
 					
 				});
@@ -300,11 +377,11 @@ class Universe
 					switch (name) {
 
 						case 'angles': 
-							const timeAngles = geometry.timesAngles;
-							if (timeAngles.length === 0) return;
-							else if (timeAngles.length === 1) return timeAngles[0];
-							const timeId = classSettings.settings.guiPoints.timeId, angles0 = timeAngles[0];
-							let angles = timeAngles[timeId === undefined ? 0 : timeId];
+							const times = geometry.times;
+							if (times.length === 0) return;
+							else if (times.length === 1) return times[0];
+							const timeId = classSettings.settings.guiPoints.timeId, angles0 = times[0];
+							let angles = times[timeId === undefined ? 0 : timeId];
 							
 							if (!(angles instanceof Array)) {
 								
@@ -321,19 +398,6 @@ class Universe
 									switch (name) {
 
 										case 'ranges': return angles0[name];
-/*
-										case 'count':
-										case 'length':
-										case 'forEach':
-										case 'guiLength':
-										case 'arguments':
-										case 'player':
-										case 'pushRandomAngle':
-										case 'push':
-										case 'isTimeAnglesProxy':
-											break;
-										default: if (isNaN(name)) console.error(sUniverse + ': get geometry.angles. Invalid name: ' + name);
-*/
 											
 									}
 									return angles[name];
@@ -363,6 +427,7 @@ class Universe
 										const timeId = parseInt(name);
 										if (!isNaN(timeId)) {
 	
+											const playerPositionItem0 = playerPosition[0];
 											if ((timeId != 0) &amp;&amp; !playerPosition[timeId]) return new Proxy([], {
 	
 												get: (playerPositionItem, name) => {
@@ -370,23 +435,24 @@ class Universe
 													switch (name) {
 	
 														case 'length': {
-	
-															const length = playerPosition[0].length;
+
+															const length = playerPositionItem0.length;
 															if (classSettings.debug &amp;&amp; (length != classSettings.settings.object.geometry.angles.length))
 																console.error(sUniverse + ': get player position item failed! Invalid length = ' + length);
 															return length;
 	
 														}
-														case 'angles': return classSettings.settings.object.geometry.timesAngles[timeId];
+														case 'angles': return classSettings.settings.object.geometry.times[timeId];
 															
 													}
 													const playerIndexItemId = parseInt(name);
 													if (!isNaN(playerIndexItemId)) {
 	
 														const userData = classSettings.settings.bufferGeometry.userData, playerIndexOld = userData.timeId;
-														userData.timeId = timeId;
+														userData.timeId = userData.selectedTimeId === undefined ? timeId : userData.selectedTimeId;
 														const vertice = userData.position[playerIndexItemId];
 														userData.timeId = playerIndexOld;
+														vertice.timeId = timeId;
 														return vertice;
 														
 													}
@@ -403,41 +469,272 @@ class Universe
 									},
 									
 								});
-								classSettings.overriddenProperties ||= {};
-								classSettings.overriddenProperties.oppositeVertice ||= (oppositeAngleId, timeId) => { return geometry.playerPosition[timeId - 1][oppositeAngleId]; }
-								if (!classSettings.overriddenProperties.position) Object.defineProperty(classSettings.overriddenProperties, 'position', { get: () => { return geometry.playerPosition[classSettings.settings.bufferGeometry.userData.timeId]; }, });
-								if (!classSettings.overriddenProperties.position0) Object.defineProperty(classSettings.overriddenProperties, 'position0', { get: () => { return geometry.playerPosition[0]; }, });
-								classSettings.overriddenProperties.updateVertices ||= (vertices) => { this.hyperSphere.bufferGeometry.attributes.position.needsUpdate = true; }
-								classSettings.overriddenProperties.vertices ||= () => {}
-//								if (!classSettings.overriddenProperties.r) Object.defineProperty(classSettings.overriddenProperties, 'r', { get: () => { return classSettings.settings.object.geometry.angles.player.r; }, });
-//								if (!classSettings.overriddenProperties.r) Object.defineProperty(classSettings.overriddenProperties, 'r', { get: () => { return classSettings.settings.object.geometry.timesAngles[0].player.r; }, });
-								classSettings.overriddenProperties.r ||= (timeId) => { return classSettings.settings.object.geometry.timesAngles[timeId != undefined ? timeId : 0].player.r; }
-//								classSettings.overriddenProperties.timeR ||= (timeId) => { return classSettings.settings.object.geometry.timesAngles[timeId].player.r; }
-								classSettings.overriddenProperties.pushMiddleVertice ||= (timeId, middleVertice) => { geometry.timesAngles[timeId].push(middleVertice); }
-								classSettings.overriddenProperties.angles ||= (anglesId, timeId) => { return classSettings.settings.object.geometry.timesAngles[timeId][anglesId]; }
-								classSettings.overriddenProperties.verticeAngles ||= (anglesCur, verticeId) => {
 
-/*									
-									const timeAngles = classSettings.settings.object.geometry.timesAngles;
-									let anglesCount = 0;
-//									timeAngles.forEach((timeAngles, timeId) =>
-									for (let timeId = 0; timeId &lt; timeAngles.length; timeId++) {
+								//иммитация наследования классов
+								//classSettings.overriddenProperties ||= {};Is not compatible with build of hyperSphericalUniverse.module.min.js
+								if (!classSettings.overriddenProperties) classSettings.overriddenProperties = {};
+								const overriddenProperties = classSettings.overriddenProperties, settings = classSettings.settings;
+								//overriddenProperties.oppositeVertice ||= (oppositeAngleId, timeId) => { return geometry.playerPosition[timeId - 1][oppositeAngleId]; }Is not compatible with build of hyperSphericalUniverse.module.min.js
+								if (!overriddenProperties.oppositeVertice) overriddenProperties.oppositeVertice = (oppositeAngleId, timeId) => { return geometry.playerPosition[timeId - 1][oppositeAngleId]; }
+								if (!overriddenProperties.position) Object.defineProperty(overriddenProperties, 'position', { get: () => { return geometry.playerPosition[settings.bufferGeometry.userData.timeId]; }, });
+								if (!overriddenProperties.position0) Object.defineProperty(overriddenProperties, 'position0', { get: () => { return geometry.playerPosition[0]; }, });
+								if (!overriddenProperties.updateVertices) overriddenProperties.updateVertices = (vertices) => {
 
-										const timeAnglesItem = timeAngles[timeId];
-//										const opt = appendChild(timeAngles.player.t, timeId);
-										const anglesCountOld = anglesCount;
-										anglesCount += timeAnglesItem.length;
-										if((verticeId >= anglesCountOld) &amp;&amp; (verticeId &lt; anglesCount)) {
+									if (traces) traces.bufferGeometry.userData.setDrawRange(classSettings.settings.options.player.getTimeId());
+									this.hyperSphere.bufferGeometry.attributes.position.needsUpdate = true;
+								
+								}
+								if (!overriddenProperties.vertices) overriddenProperties.vertices = () => {}
+								if (!overriddenProperties.r) overriddenProperties.r = (timeId) => { return settings.object.geometry.times[timeId != undefined ? timeId : 0].player.r; }
+								if (!overriddenProperties.pushMiddleVertice) overriddenProperties.pushMiddleVertice = (timeId, middleVertice) => {
+									
+									geometry.times[timeId].push(middleVertice);
+									return true;
+							
+								}
+								if (!overriddenProperties.angles) overriddenProperties.angles = (anglesId, timeId = 0) => { return settings.object.geometry.times[timeId][anglesId]; }
+								if (!overriddenProperties.verticeAngles) overriddenProperties.verticeAngles = (anglesCur, verticeId) => {
 
-											classSettings.settings.guiPoints.timeAngles = timeAnglesItem;
-											return timeAnglesItem[verticeId - anglesCountOld];
+									const guiPoints = settings.guiPoints;
+									return guiPoints.timeAngles[guiPoints.verticeId != undefined ? guiPoints.verticeId : verticeId];
+									
+								}
+								if (!overriddenProperties.verticeText) overriddenProperties.verticeText = (intersection, text) => {
+									
+									const times = settings.object.geometry.times;
+									let verticeId = intersection.index, tRes = '';
+									if (classSettings.edges.project) {
 
+										//Localization
+							
+										const getLanguageCode = settings.options.getLanguageCode;
+							
+										const lang = {
+							
+											pointId: "point Id",
+											edgeId: "edge Id",
+							
+										};
+							
+										const _languageCode = getLanguageCode();
+							
+										switch (_languageCode) {
+							
+											case 'ru'://Russian language
+							
+												lang.pointId = 'Индекс вершины';
+												lang.edgeId = 'Индекс ребра';
+												break;
+							
+										}
+
+										verticeId = this.hyperSphere.searchNearestEdgeVerticeId(verticeId, intersection);
+
+										//find edge Id
+										let edgeId = intersection.index;
+										const timeEdgesCount = settings.object.geometry.indices.edges.timeEdgesCount * 2;//в intersection.object.geometry.attributes.position на каждое ребро приходится по два индекса. Поэтому приходится умножать на 2
+										for (let i = 0; i &lt; timeEdgesCount; i++) {
+
+											if ((edgeId - timeEdgesCount) &lt; 0) break;
+											edgeId -= timeEdgesCount;
+											
+										}
+										edgeId = edgeId / 2;
+										tRes = lang.edgeId + ' ' + edgeId;
+										
+									}
+									let index = 0;
+									for (let i = 0; i &lt; times.length; i++) {
+
+										const timeAngles = times[i];
+										index += timeAngles.length;
+										if (index > verticeId) {
+
+											index = verticeId - index + timeAngles.length;
+											return (tRes === '' ? '' : '\n' + tRes) + text(timeAngles, index);
+											
 										}
 										
 									}
-*/
-									const guiPoints = classSettings.settings.guiPoints;
-									return guiPoints.timeAngles[guiPoints.verticeId != undefined ? guiPoints.verticeId : verticeId];
+									
+								}
+								if (!overriddenProperties.text) overriddenProperties.text = (tab, timeAngles, lang) => {
+									
+									return '\n' + tab + 'time Id: ' + timeAngles.player.id
+										+ '\n' + tab + 't: ' + timeAngles.player.t
+										+ '\n' + tab + lang.radius + ': ' + timeAngles.player.r;
+								
+								}
+								if (!overriddenProperties.onSelectSceneEndSetDrawRange) overriddenProperties.onSelectSceneEndSetDrawRange = (timeId) => {
+
+									const appendTimesChild = classSettings.settings.guiPoints.appendTimesChild;
+									if (appendTimesChild) appendTimesChild(undefined, timeId);
+									
+									if ((classSettings.edges === false) || (classSettings.edges.project === false)) return;//Ребра не отбражаются на холсте. Не нужно устанавливать bufferGeometry.drawRange в зависимость от индекса ребер.
+									this.hyperSphere.setEdgesRange();
+									
+								}
+								overriddenProperties.isEdgesOnly = () => {
+
+
+									//Localization
+
+									const lang = {
+
+										isEdgesOnly: 'Only vertices with edges are available in the universe.',
+
+									};
+
+									switch (classSettings.settings.options.getLanguageCode()) {
+
+										case 'ru'://Russian language
+											lang.isEdgesOnly = 'Во вселенной доступны только вершины с ребрами.';
+											break;
+
+									}
+
+									alert(lang.isEdgesOnly)
+									return true;
+
+								}
+								if (!overriddenProperties.project) overriddenProperties.project = () => {
+
+									const scene = classSettings.projectParams.scene;
+									if (!classSettings.boTraces) {
+
+										if (traces) {
+											
+											scene.remove(traces.object3D);
+											traces = undefined;
+
+										}
+										return;
+
+									}
+
+									class Traces extends ND {
+
+										constructor() {
+
+											const settings = classSettings.settings;
+											const angles = settings.object.geometry.angles, timeVerticesLength = angles.length, lines = [], playerMarks = settings.options.playerOptions.marks;
+											let verticeId = timeVerticesLength, timeIndexCount;
+											for (let timeId = 1; timeId &lt; playerMarks; timeId++) {
+												
+												angles.forEach((angle, angleId) => {
+
+													if ((traceVerticeId === undefined) || (traceVerticeId === angleId)) {
+														
+														const line = [verticeId - timeVerticesLength, verticeId];
+														lines.push(line);
+
+													}
+													verticeId++;
+													
+												});
+												if (timeIndexCount === undefined) timeIndexCount = lines.length * 2;
+												
+											}
+											super(_this.hyperSphere.dimension, {
+										
+												options: settings.options,
+												bufferAttributes: settings.bufferGeometry.attributes,
+												scene: scene,
+												options: settings.options,
+												isRaycaster: false,
+												object: {
+
+													name: 'Traces',
+													geometry: {
+
+														position: settings.object.geometry.position,
+														//indices: [[ [0,1], [1,2], [2,3], [3,0], ]],//Debug. Edges
+														indices: [lines],
+														opacity: 1,//задать этот параметр, чтобы можно было делать треки прозрачными
+											
+													}
+												},
+												overriddenProperties: { setTracesIndices: (bufferGeometry) => {
+
+													bufferGeometry.userData = { setDrawRange: (timeId = classSettings.settings.options.player.getTimeId()) => { bufferGeometry.setDrawRange(0, timeIndexCount * timeId); } }
+													bufferGeometry.userData.setDrawRange();
+											
+												} },
+									
+											});
+											
+										}
+										
+									}
+									
+									traces = new Traces();
+										
+								}
+								if (!overriddenProperties.addSettingsFolder) overriddenProperties.addSettingsFolder = (fParent, getLanguageCode) => {
+
+									//Localization
+									
+									const lang = {
+							
+										name: "Universe",
+										traces: 'Traces',
+										tracesTitle: 'Display tracks of universe vertices',
+							
+									};
+							
+									const _languageCode = getLanguageCode();
+							
+									switch (_languageCode) {
+							
+										case 'ru'://Russian language
+							
+											lang.name = 'Вселенная';
+											
+											lang.traces = 'Треки';
+											lang.tracesTitle = 'Показать перемещения всех вершин вселенной';
+							
+											break;
+							
+									}
+									
+									const fUniverse = fParent.addFolder(lang.name);
+
+									const cookieName = 'Traces', boTracesDefault = false;
+									//let boTraces = classSettings.boTraces ||= options.dat ? options.dat.cookie.get(cookieName, boTracesDefault) : boTracesDefault,Is not compatible with build of hyperSphericalUniverse.module.min.js
+									let boTraces = classSettings.boTraces === true ? classSettings.boTraces : options.dat ?  options.dat.cookie.get(cookieName, boTracesDefault): boTracesDefault,
+										cTraces;
+									Object.defineProperty(classSettings, 'boTraces', {
+
+										get: () => { return boTraces; },
+										set: (newValue) => {
+
+											if (cTraces.getValue() === newValue) return;
+											boTraces = newValue;
+											classSettings.overriddenProperties.project();
+											cTraces.setValue(newValue);//Add/remove traces
+										
+										},
+					
+									});
+									
+									cTraces = fUniverse.add(classSettings, 'boTraces').onChange((boTraces) => { if (options.dat)  options.dat.cookie.set(cookieName, boTraces); });
+									dat.controllerNameAndTitle(cTraces, lang.traces, lang.tracesTitle);
+									
+								}
+
+								settings.overriddenProperties.setDrawRange = (start, count) => { settings.bufferGeometry.setDrawRange(start, count); }
+								settings.overriddenProperties.getPlayerTimesLength = () => { return settings.object.geometry.times.length; }
+								settings.overriddenProperties.position = (position, i, userData) => {
+
+									userData.timeId--;
+									const pos = position[i];
+									userData.timeId++;
+									return pos;
+									
+								}
+								settings.overriddenProperties.editVertice = (timeId, vertice) => {
+									
+									classSettings.overriddenProperties.pushMiddleVertice(timeId, vertice);//добавляем новый item в classSettings.settings.object.geometry.times[data.timeId]. Это нужно что бы после выполнения шага проигрывателя при наедении мыши на вершину отображалась полная информачия о вершине
 									
 								}
 
@@ -453,7 +750,7 @@ class Universe
 					switch (name) {
 
 						case 'angles':
-							geometry.timesAngles[0] = value;
+							geometry.times[0] = value;
 							return true;
 						case 'position':
 							geometry.playerPosition[0] = value;
@@ -466,9 +763,14 @@ class Universe
 				},
 				
 			});
+			const block = 'block', none = 'none';
+			let cTimes;
 			classSettings.settings.guiPoints = {
 
-
+				get timeAngles() { return classSettings.settings.object.geometry.times[this.timeId != undefined ? this.timeId : 0]; },
+				//for debug
+				//set timeAngles(value) { console.warn(sUniverse + ': set classSettings.settings.guiPoints.timeAngles is deprecated'); },
+				isSetIntersectionIndex: false,
 				seletedIndex: (guiIndexStr) => {
 
 					let guiIndex = parseInt(guiIndexStr);
@@ -476,9 +778,62 @@ class Universe
 					const anglesLength = classSettings.settings.object.geometry.angles.length;
 					while (guiIndex > anglesLength) guiIndex -= anglesLength;
 					return guiIndex;
+
+				},
+				setControllers: (index) => {
+
+					const guiPoints = classSettings.settings.guiPoints;
+					guiPoints.getVerticeId(index);
+					guiPoints.changeControllers();
+
+				},
+				searchNearestEdgeVerticeId: (index, intersection) => { return this.hyperSphere.searchNearestEdgeVerticeId(index, intersection); },
+				resetControllers: () => {
+					
+					if(!cTimes) return;
+
+					//сбросить выбранное время
+					cTimes.__onChange( -1 );
+					cTimes.__select[0].selected = true;
+					delete classSettings.settings.guiPoints.timeId;
 				
 				},
-				create: (fPoints, cPoints, count, intersectionSelected) => {
+				getVerticeId: (index, timesItemCallBack) => {
+
+					if (
+						!timesItemCallBack &amp;&amp; (
+							(index === undefined) ||
+							(classSettings.settings.guiPoints.verticeId === undefined)
+						)
+					) return index;
+
+					//User has mouse clicked a vertice
+
+					let anglesCount = 0;//, timeIdSelected;
+					const guiPoints = classSettings.settings.guiPoints;
+					classSettings.settings.object.geometry.times.forEach((timeAngles, timeId) => {
+
+						if (timesItemCallBack) timesItemCallBack(timeAngles, timeId);
+						const anglesCountOld = anglesCount;
+						anglesCount += timeAngles.length;
+						if ((index >= anglesCountOld) &amp;&amp; (index &lt; anglesCount)) {
+
+							const verticeId = index - anglesCountOld;
+							if ((guiPoints.verticeId != verticeId) || (guiPoints.timeId != timeId)) {
+
+								guiPoints.timeId = timeId;
+								guiPoints.verticeId = verticeId;
+
+							}
+
+						}
+
+					});
+					return guiPoints.verticeId;
+
+				},
+				pointsStyleDisplay: none,
+				create: (fPoints, cPoints, cTrace, cTraceAll, count, intersectionSelected) => {
 
 					//Localization
 
@@ -500,16 +855,46 @@ class Universe
 							break;
 
 					}
-					
-					const cTimes = fPoints.add({ Points: lang.notSelected }, 'Points', { [lang.notSelected]: -1 });
-					dat.controllerNameAndTitle(cTimes, lang.time, lang.timeTitle);
+
+					const sTimes = 'Times', guiPoints = classSettings.settings.guiPoints;
+
+					//find duplicate cTimes
+					fPoints.__controllers.forEach((controller) => {
+
+						if (controller.property === sTimes) {
+
+							cTimes = controller;
+							for (let i = cTimes.__select.length - 1; i > 0; i--) cTimes.__select.remove(i);
+							return;
+							
+						}
+							
+					});
+					if (!cTimes) {
+						
+						cTimes = fPoints.add({ Times: lang.notSelected }, 'Times', { [lang.notSelected]: -1 });
+						dat.controllerNameAndTitle(cTimes, lang.time, lang.timeTitle);
+
+					}
 
 					//Переместить список Time вверх
 					const elBefore = fPoints.__ul.children[1], elLast = fPoints.__ul.children[fPoints.__ul.children.length - 1];
 					fPoints.__ul.removeChild(elLast);
 					fPoints.__ul.insertBefore(elLast, elBefore);
 
-					const timeAngles = classSettings.settings.object.geometry.timesAngles;
+					const cPointsStyle = cPoints.domElement.parentElement.parentElement.style;
+					if (!cTraceAll.userData) cTraceAll.userData = {}
+					classSettings.settings.options.trace = {
+
+						onChange: (boTrace, verticeId) => {
+
+							traceVerticeId = verticeId;
+							classSettings.boTraces = boTrace;//Add/remove traces
+							traceVerticeId = undefined;
+						
+						}
+
+					}
 					cTimes.onChange((timeId) => {
 
 						const selectPoints = cPoints.__select;
@@ -520,152 +905,306 @@ class Universe
 
 							console.error(sUniverse + ': cTimes.onChange. Invalid timeId = ' + timeId);
 							return;
+
+						}
+						const anglesLength = classSettings.settings.object.geometry.angles.length, hyperSphereObject = this.hyperSphere.object3D;
+						let display, start, end;
+						if (timeId != -1) {
+							
+							display = block;
+							start = timeId;
+							end = timeId + 1;
+							this.selectTime = (newStart, newEnd) => {
+
+								if (newStart != undefined) start = newStart;
+								if (newEnd != undefined) end = newEnd;
+								
+								if (classSettings.edges.project)
+									this.hyperSphere.setEdgesRange(start, end);
+								else this.hyperSphere.setVerticesRange(anglesLength * start, anglesLength * (end - start));
+								
+							}
+								
+							guiPoints.timeId = timeId;
+							guiPoints.timeAngles.forEach((verticeAngles, verticeId) => {
+	
+								const opt = document.createElement('option');
+								opt.innerHTML = verticeId;
+								opt.setAttribute('value', verticeId);
+								selectPoints.appendChild(opt);
+	
+							});
+							hyperSphereObject.userData.myObject.guiPoints.setTimeId = (newTimeId) => { timeId = newTimeId }
+							hyperSphereObject.userData.myObject.guiPoints.getPositionId = (timeAnglesId) => {
+	
+								if (timeAnglesId >= anglesLength) {
+
+									//не выводить сообщение об ошибке если пользователь проводит мышкой над вершиной.
+									if ((timeId === 0) &amp;&amp; !hyperSphereObject.userData.myObject.guiPoints.boMouseOver) console.error(sUniverse + ': guiPoints.getPositionId. timeAnglesId = ' + timeAnglesId + ' >= anglesLength = ' + anglesLength);
+									return timeAnglesId;
+	
+								}
+								return timeId * anglesLength + timeAnglesId;
+							
+							}
+
+						} else {
+							
+							display = none;
+							start = 0;
+							end = classSettings.settings.options.player.getTimeId() + 1;
+							hyperSphereObject.userData.myObject.guiPoints.getPositionId = (timeAnglesId) => { return timeAnglesId; }
 							
 						}
-						classSettings.settings.guiPoints.timeAngles = timeAngles[timeId];
-						classSettings.settings.guiPoints.timeAngles.forEach((verticeAngles, verticeId) => {
-
-							const opt = document.createElement('option');
-							opt.innerHTML = verticeId;
-							opt.setAttribute('value', verticeId);
-							selectPoints.appendChild(opt);
-
-						});
-						let positionOffset = 0;
-/*						
-						for (let i = 0; i &lt; timeId; i++) {
-
-							const timeAngles = timeAngles[i];
-							positionOffset += timeAngles.length;
-							
-						}
-*/						
-						for (let i = 0; i &lt; timeId; i++) positionOffset += timeAngles[i].length;
-						
-						classSettings.settings.guiPoints.positionOffset = positionOffset;
-						classSettings.settings.guiPoints.timeId = timeId;
+						if (classSettings.edges.project)
+							this.hyperSphere.setEdgesRange(start, end);
+						else this.hyperSphere.setVerticesRange(anglesLength * start, anglesLength * (end - start));
+						cPointsStyle.display = display;
+						cTraceAll.userData.display = none;
+						guiPoints.pointsStyleDisplay = cPointsStyle.display;
 
 					});
-//					let pointId = 0;//Порядковый номер вершины в classSettings.settings.bufferGeometry.attributes.position
-					const appendChild = (name, pointId) => {
-						
+					guiPoints.appendTimesChild = (time, timeId) => {
+
 						const opt = document.createElement('option');
-						opt.innerHTML = name;
-						if (pointId != undefined) opt.setAttribute('value', pointId);
+
+						if (time === undefined) time = classSettings.settings.options.player.getTime(timeId);
+						opt.innerHTML = '(' + timeId + ') ' + time;
+
+						if (timeId != undefined) opt.setAttribute('value', timeId);
 						cTimes.__select.appendChild(opt);
 						return opt;
-						
+
 					}
-					let anglesCount = 0, timeIdSelected;
-					const index = intersectionSelected ? intersectionSelected.index : undefined;
-					timeAngles.forEach((timeAngles, timeId) => {
+					guiPoints.getVerticeId(intersectionSelected ? intersectionSelected.index : undefined, (timeAngles, timeId) => { guiPoints.appendTimesChild(timeAngles.player.t, timeId); });
+					guiPoints.setIntersection = (intersection) => { intersectionSelected = intersection; }
+					guiPoints.changeControllers = () => {
 
-//						const opt = appendChild(timeAngles.player.t, timeId);
-						appendChild(timeAngles.player.t, timeId);
-						if (index === undefined) return;
-						const anglesCountOld = anglesCount;
-						anglesCount += timeAngles.length;
-						if((index >= anglesCountOld) &amp;&amp; (index &lt; anglesCount)) {
+						let end;
+						if (classSettings.edges.project) {
 
-/*							
-							opt.selected = true;
-							classSettings.settings.guiPoints.positionOffset = anglesCountOld;
-							classSettings.settings.guiPoints.timeId = timeId;
-							intersectionSelected.index -= anglesCountOld;
-*/							
-							timeIdSelected = timeId;
-							classSettings.settings.guiPoints.verticeId = index - anglesCountOld;
+							//edges
+
+							if (intersectionSelected) {
+								
+								intersectionSelected.index = this.hyperSphere.searchNearestEdgeVerticeId(intersectionSelected.index, intersectionSelected);
+								guiPoints.getVerticeId(intersectionSelected.index);//, (timeAngles, timeId) => { guiPoints.appendTimesChild(timeAngles.player.t, timeId); });
+
+							}
+							if (guiPoints.timeId === undefined) return;
+							const timeId = guiPoints.timeId, start = timeId;
+							end = timeId + 1;
+							this.hyperSphere.setEdgesRange(start, end);
+
+ 						} else {
+
+							if (guiPoints.timeId === undefined) return;
+							end = guiPoints.timeId + 1;
+							if (cTimes.__select.selectedIndex === end) {
+
+								guiPoints.getVerticeId(intersectionSelected.index, () => {});//Get guiPoints.timeId
+								this.selectTime(guiPoints.timeId, guiPoints.timeId + 1);
+								guiPoints.setTimeId(guiPoints.timeId);
+								return;
+								
+							}
 
 						}
+
+						const option = cTimes.__select[end];
+
+						//для устранения бесконечного цикла.
+						//Для проверки
+						//запустить http://localhost/anhr/universe/main/hyperSphere/Examples/
+						//Сделать ребра видимыми
+						//Мышью выбать ребро
+						if (option.selected === true) return;
 						
-					});
-/*					
-					if (timeIdSelected === undefined) console.error(sUniverse + ': classSettings.settings.guiPoints.create. Invalid timeIdSelected = ' + timeIdSelected);
-					else cTimes.__onChange(timeIdSelected);
-*/					
-					if (timeIdSelected != undefined) cTimes.__onChange(timeIdSelected);
-					
-				},
-				getValue: (cPoints) => {
+						cTimes.__onChange(guiPoints.timeId);
+						option.selected = true;
+							
+						if (guiPoints.verticeId === undefined) return;
+						options.guiSelectPoint.selectPoint(guiPoints.verticeId);
 
-					const value = cPoints.getValue();
-					if (isNaN(value)) return -1;//точка не выбрана
-					return value;
-				
-				},
+					}
+					guiPoints.changeControllers();
 
+				},
+				getValue: (cPoints) => { return cPoints.__select.options.selectedIndex - 1; },
 
 			}
+
 			classSettings.anglesObject2Array = () => {
 
-				const settings = classSettings.settings, timeAngles = settings.object.geometry.timesAngles;
-				if (timeAngles.length > settings.options.playerOptions.marks) console.warn(sUniverse +': anglesObject2Array. Invalid classSettings.settings.object.geometry.timesAngles.length = ' + timeAngles.length);
-				timeAngles.forEach((geometryAngles, timeId) => {
+				const settings = classSettings.settings, times = settings.object.geometry.times;
+				if (times.length > settings.options.playerOptions.marks) console.warn(sUniverse + ': anglesObject2Array. Invalid classSettings.settings.object.geometry.times.length = ' + times.length);
+				times.forEach((timeAngles, timeId) => {
 
-					if (geometryAngles.isTimeAnglesProxy) return;
-					if (geometryAngles instanceof Array) {
+					if (timeAngles instanceof Array) {
 
-						if (timeId > 0) timeAngles[timeId] = timeAngles[timeId];
+						if (timeId > 0) times[timeId] = times[timeId];
 						return;
 
 					}
-					if ((timeId > 0) &amp;&amp; (geometryAngles.count != undefined)) console.warn(sUniverse +': anglesObject2Array. classSettings.settings.object.geometry.timesAngles[' + timeId + '].count = ' + geometryAngles.count + ' is ignore.');
+					if ((timeId > 0) &amp;&amp; (timeAngles.count != undefined)) console.warn(sUniverse + ': anglesObject2Array. classSettings.settings.object.geometry.timesAngles[' + timeId + '].count = ' + timeAngles.count + ' is ignore.');
 					const angles = [];
-					Object.keys(geometryAngles).forEach((key) => angles[key] = geometryAngles[key]);
-					timeAngles[timeId] = angles;
-							
+					Object.keys(timeAngles).forEach((key) => angles[key] = timeAngles[key]);
+					times[timeId] = angles;
+
 				});
 				
 			}
+			if (!classSettings.overriddenProperties) classSettings.overriddenProperties = {};
+			if (!classSettings.overriddenProperties.edges) classSettings.overriddenProperties.edges = () => {
+
+				//во вселенной ребра должны быть обязательно.
+				console.error(sUniverse + ': classSettings.edges = false is impossible in the Universe');
+				return {};
+			
+			};
 			this.hyperSphere = this.getHyperSphere(options, classSettings);
-			{
+			if (classSettings.edges) classSettings.edges = new Proxy(classSettings.edges, {
+
+				set: (edges, name, value) => {
+
+					switch(name) {
+
+						case 'project':
+							if (value) 
+								this.hyperSphere.setEdgesRange();
+							else {
+								
+								//display of vertices
+								//Время не выбрано. Показать все вершины до времени проигрывателя
+								this.hyperSphere.setVerticesRange(0, classSettings.overriddenProperties.position0.length * (classSettings.settings.options.player.getTimeId() + 1));
+								
+							}
+							break;
+							
+					}
+					edges[name] = value;
+					return true;
+					
+				}
+					
+			});
+			{//hide geometry
+
+				const geometry = classSettings.settings.object.geometry;
+				geometry.position = new Proxy(geometry.position, {
+		
+					get: (positions, name) => {
+	
+						switch (name) {
+		
+							case 'intersection': return (i) => {
+
+								const times = geometry.times;
+								if (times) {
+			
+									let timeAnglesId = 0, positionId = times[timeAnglesId].length;
+									while(i >= positionId) {
+			
+										timeAnglesId++;
+										positionId += times[timeAnglesId].length;
+										
+									}
+									const guiPoints = classSettings.settings.guiPoints, timeIdOld = guiPoints.timeId;
+									guiPoints.timeId = timeAnglesId;
+									i -= positionId - geometry.angles.length;
+									const position = positions[i];
+									guiPoints.timeId = timeIdOld;
+									return position;
+									
+								}
+								return positions[i];
+							
+							}
+		
+						}
+						return positions[name];
+						
+					},
+					
+				});
+	
+			}
+			{//hide timeId
 
 				let timeId;
 				Object.defineProperty(classSettings.settings.bufferGeometry.userData, 'timeId', {
 
-					get: () => { return timeId != undefined ? timeId : settings.options.playerOptions.selectSceneIndex; },
+					get: () => {
+
+						if (timeId === undefined) {
+
+							//Кажется мне сюда на должно попадать
+							console.error(sUniverse + ': classSettings.settings.bufferGeometry.userData get timeId. Invalid timeId = ' + timeId);
+							timeId = classSettings.settings.options.playerOptions.selectSceneIndex;
+							
+						}
+						return timeId;
+					
+					},
 					set: (playerIndexNew) => { timeId = playerIndexNew; },
 
 				});
-/*
-				let timeId;
-				Object.defineProperty(classSettings.settings.bufferGeometry.userData, 'timeId', {
-					
-					get: () => { return timeId != undefined ? timeId : settings.options.playerOptions.selectSceneIndex; },
-					set: (playerIndexNew) => { timeId = playerIndexNew; },
-					
-				});
-*/
 				
 			}
 
 			classSettings.projectParams.scene.userData = new Proxy(classSettings.projectParams.scene.userData, {
 	
 				set: (userData, name, value) => {
-	
+
+					//сначала надо установить время
+					userData[name] = value;
+
+					//а потом выполнять какие то действия
 					switch (name) {
 	
 						case 't':
 							this.hyperSphere.oldR = userData.t;
-							if (!classSettings.onSelectScene) this.onSelectScene.copyAngles(classSettings.settings.bufferGeometry.userData.timeId, value);
 							break;
 							
 					}
-					userData[name] = value;
 					return true;
 	
 				}
 				
 			});
-			{//hide onSelectScene
-				
-				const onSelectScene = options.onSelectScene;
-				options.onSelectScene = (index, t) => {
-		
-					if (onSelectScene) onSelectScene(index, t);
-				
-				}
+			options.onSelectScene = (index, t) => {
 
+				const times = classSettings.settings.object.geometry.times, length = times.length;
+				if ((length > 1) &amp;&amp; (length > index)) {
+
+					//пользователь передвинул проигрыватель назад
+					const settings = classSettings.settings, bufferGeometry = settings.bufferGeometry, drawRange = bufferGeometry.drawRange;
+					if (classSettings.edges.project) {
+
+						//Видны ребра
+						const timeEdgesCount = settings.object.geometry.indices[0].timeEdgesCount;
+						if (timeEdgesCount)
+							this.hyperSphere.setEdgesRange();
+						
+					} else {
+						
+						this.hyperSphere.setVerticesRange(drawRange.start, times[0].length * (index + 1) - drawRange.start);
+						classSettings.overriddenProperties.updateVertices();
+
+					}
+					return false;//Сдедующий шаг проигрывателя выполняется немедленно
+					
+				}
+					
+				if (classSettings.onSelectScene) { return classSettings.onSelectScene(this.hyperSphere, index, t); }
+				/*до сюда не доходит потому что сейчас по умолчанию classSettings.onSelectScene создается в констркуторе HyperSphere.
+				Иначе на странице http://localhost/anhr/commonNodeJS/master/HyperSphere/Examples/hyperSphere.html
+				не будет выполняться шаг проигрывателя при нажатии →
+				при условии что в hyperSphere.html не будет задана classSettings.onSelectScene
+				else return this.onSelectScene.copyAngles(index, t);
+				return true;//Сдедующий шаг проигрывателя выполняется только после посторения всех вершин без временной задержки
+				*/
+			
 			}
 			this.hyperSphere.child = this;
 
@@ -675,9 +1214,9 @@ class Universe
 			copyAngles: (timeId, t) => {
 
 				if (timeId === 0) return;
-				const geometry = classSettings.settings.object.geometry, timeAngles = geometry.timesAngles,
-					timeAnglesSrc  = timeAngles[timeId - 1],
-					timeAnglesDest = timeAngles[timeId],
+				const geometry = classSettings.settings.object.geometry, times = geometry.times,
+					timeAnglesSrc  = times[timeId - 1],
+					timeAnglesDest = times[timeId],
 					boLog = classSettings.debug &amp;&amp; (classSettings.debug != false);
 				if (boLog) console.log('timeId = ' + classSettings.settings.bufferGeometry.userData.timeId + ' t = ' + t);
 				timeAnglesSrc.forEach((timeAngles, i) => {
@@ -694,7 +1233,12 @@ class Universe
 					}
 				
 				});
-				this.hyperSphere.bufferGeometry.attributes.position.needsUpdate = true;
+				const bufferGeometry = this.hyperSphere.bufferGeometry, drawRange = bufferGeometry.drawRange;
+				bufferGeometry.attributes.position.needsUpdate = true;
+				bufferGeometry.setDrawRange(drawRange.start, geometry.indices[0].timeEdgesCount * (timeId + 1) * 2);
+				classSettings.overriddenProperties.updateVertices();
+				this.hyperSphere.onSelectSceneEnd(timeId);
+				return false;//Немедленно выпоняется следующий шаг проигрывателя потому что copyAngles выполняется синхронно
 				
 			},
 			
@@ -730,7 +1274,6 @@ class Universe
 		aAngleControls.arc = this.hyperSphere.line({
 
 			cookieName: 'arc',//если не задать cookieName, то настройки дуги будут браться из настроек вселенной
-			//edges: false,
 			object: {
 
 				name: lang.arc,
@@ -755,6 +1298,9 @@ class Universe
 
 }
 
+Universe.release = 'v1.5';
+if (Universe.release != MyThree.release) console.error(sUniverse + ': Incompatible Universe.release = ' + Universe.release + ' version with MyThree.release = ' + MyThree.release + ' version.')
+
 export default Universe;</code></pre>
         </article>
     </section>
@@ -771,7 +1317,7 @@ export default Universe;</code></pre>
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.11</a> on Sat Aug 03 2024 07:42:22 GMT+0700 (Красноярск, стандартное время)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Fri Jun 12 2026 08:29:53 GMT+0700 (Красноярск, стандартное время)
 </footer>
 
 <script> prettyPrint(); </script>
