@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 	<meta charset="UTF-8">
-	<title>GPU Controller</title>
+	<title>Damping graph</title>
 	<style>
 		body {
 			margin: 0;
@@ -95,8 +95,8 @@
 
 	<div id="ui">
 		<div class="controls">
-<!--			<button id="stepBtn">Шаг (CPU)</button>
-			<button id="startBtn">Старт (CPU)</button>-->
+<!--			<button id="stepBtn">Шаг (CPU)</button>-->
+			<button id="startDampingGraph">Start Damping Graph</button>
 			<button id="gpuBtn">Старт (GPU)</button>
 			<button id="analysisBtn">Анализ конфигурации</button>
 		</div>
@@ -401,11 +401,14 @@
 			document.getElementById('timeResult').innerText = `Итог (${((end - start) / 1000).toFixed(3)} сек.`;
 			document.querySelectorAll('button').forEach(b => b.disabled = false);
 		};
+		const dampingGraph = async () => {
+			runAuto();
+		}
 
 //		document.getElementById('stepBtn').onclick = () => performStepCPU();
-//		document.getElementById('startBtn').onclick = () => runAuto('CPU');
+		document.getElementById('startDampingGraph').onclick = () => dampingGraph();
 		document.getElementById('gpuBtn').onclick = () => runAuto();
-		const totalSteps = config.totalSteps, pointsPerStep = config.pointsPerStep;
+		const totalSteps = config.totalSteps, pointsPerStep = config.pointsPerStep; 
 		document.getElementById('analysisBtn').onclick = () => analysis({
 			totalSteps,
 			pointsPerStep,
