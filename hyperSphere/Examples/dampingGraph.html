@@ -201,9 +201,6 @@
 				500
 				: 5,
 		};
-		//		const DEBUG_MODE = true;
-
-		//		const PSEUDO_RANDOM = 0.5;
 		let random;
 		if (config.DEBUG_MODE) {
 			random = config.RANDOM_POINTS ? () => {
@@ -212,27 +209,7 @@
 		}
 		else random = config.RANDOM_POINTS ? Math.random : () => { return config.PSEUDO_RANDOM; };
 
-		/*
-				const totalSteps = LOTS_OF_POINTS ? 50 : 10;
-				const pointsPerStep = LOTS_OF_POINTS ?
-					//5 //заранее определенные в angles точки
-					//2 //две антиподальные точки, расположенные на противоположных концах гиперсферы
-					500
-					: 5;
-		*/
 		const count = config.totalSteps * config.pointsPerStep;
-		/*
-				//Hyperbola parametr. See calculateHyperbola.
-				//Select one:
-				//const p = 0.0;//Прямая линия: y = x (через точки (0,0) и (π,π))
-				//const p = 1;// Два отрезка: вертикальный и горизонтальный
-				const p = 1.0;//0.99;
-		*/
-
-		/*
-				const baseRadius = 0.1;
-				const radiusMax = 1;
-		*/
 		const radiusStep = (config.radiusMax - config.baseRadius) / (config.totalSteps - 1);
 
 		let currentStep = 1;
@@ -268,369 +245,6 @@
 			colorAttr.setXYZ(index, color.r, color.g, color.b);
 		}
 
-
-		// --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ МАТЕМАТИКИ ---
-/*		
-		const polarToCartesian = (la, lo, al, r = 1) => {
-			const r_xyz = r * Math.sin(al);
-			return { x: r_xyz * Math.cos(la) * Math.cos(lo), y: r_xyz * Math.cos(la) * Math.sin(lo), z: r_xyz * Math.sin(la), w: r * Math.cos(al) };
-		};
-		const cartesianToPolar = (vertice) => {
-			const x = vertice.x;
-			const y = vertice.y;
-			const z = vertice.z;
-			const w = vertice.w;
-			const xyz = x * x + y * y + z * z;
-
-			// 1. Полный радиус гиперсферы
-			const R = Math.sqrt(xyz + w * w);
-
-			if (R < 1e-10) {
-				console.error('cartesianToPolar: Invalid R = ' + R + '. Under constraction');
-				return { altitude: 0, latitude: 0, longitude: 0 };
-			}
-
-			// 2. Вычисление Altitude (относительно оси W)
-			// Диапазон [0, PI]
-			const altitude = Math.acos(w / R);
-
-			// Вычисляем радиус проекции в 3D пространстве (xyz)
-			const rXYZ = Math.sqrt(xyz);
-
-			// Если rXYZ близок к 0, значит точка лежит на оси W,
-			// и широта с долготой не определены (принимаем за 0)
-			if (rXYZ < 1e-10) {
-				return { altitude: altitude, latitude: 0, longitude: 0 };
-			}
-
-			// 3. Вычисление Latitude (аналогично 3D сфере)
-			// Диапазон [-PI/2, PI/2]
-			const latitude = Math.asin(z / rXYZ);
-
-			// 4. Вычисление Longitude
-			// Диапазон (-PI, PI]
-			const longitude = Math.atan2(y, x);
-
-			return { altitude: altitude, latitude: latitude, longitude: longitude };
-		};
-*/		
-
-		// --- ВСПОМОГАТЕЛЬНЫЕ  ФУНКЦИИ ВЫЧИСЛЕНИЯ СЛУЧАЙНОЙ ТОЧКИ ---
-
-		/**
-		 *<pre>
-		 [Deepseek. Гипербола через три точки]{@link https://chat.deepseek.com/a/chat/s/1f8ddb5d-b9de-43d3-aa0d-3cfe49cd48a3}
-		Есть декартова система координат. Ось x обозначим как arc. Найди элементарную функцию гиперболы которая пересекает три точки:
-		(arc1 = 0, y1 = 0),
-		(arc2 = π / 100, y2 = π - π / 100),
-		(arc3 = π, y3 = π)
-		 arc меняется только в диапазоне от 0 до π. arc это не угол.
-		Написать код на javascript.
-
-		Tеперь для построения функции для нахождения коэффициентов гиперболы оставим только две крайних точки, первую и третью, уберем среднюю точку,
-		а вместо нее добавим некоторый параметр p, который будет меняться в диапазоне допустим от 0 до 1.
-		Если p = 0, то гипербола вырождется в прямую.
-		Если p = 1, то гипербола вырождется в два отрезка прямых:
-		   Первый отрезок: (arc1 = 0, y1 = 0), (arc2 = 0, y2 = π) вертикальная прямая из начала координат.
-		   Второй отрезок: (arc1 = 0, y1 = π), (arc2 = π, y2 = π) горизональная прямая.
-		Написать код на javascript.
-		Для визуализации примеров сделать [веб страницу]{@link https://raw.githack.com/anhr/commonNodeJS/master/HyperSphere/Examples/hyperbola.html}, в которой применить библиотеку three.js
-
-		 Функция для вычисления коэффициентов гиперболы по параметру p
-		 * </pre>
-		 * @param {float} p <pre>Параметр, который меняется в диапазоне от 0 до 1 и который используется для вычисления параметров гиперболы.
-		Если p = 0, то гипербола вырождется в прямую.
-		Если p = 1, то гипербола вырождется в два отрезка прямых:
-		   Первый отрезок: (arc1 = 0, y1 = 0), (arc2 = 0, y2 = π) вертикальная прямая из начала координат.
-		   Второй отрезок: (arc1 = 0, y1 = π), (arc2 = π, y2 = π) горизональная прямая.
-		 * </pre>
-		 */
-/*		
-		const calculateHyperbola = (p) => {
-
-			// Крайние случаи
-			if (p === 0) {
-				// Прямая линия: y = x (через точки (0,0) и (π,π))
-				return (arc) => { return arc; }
-			}
-
-			if (p === 1) {
-				// Два отрезка: вертикальный и горизонтальный
-				return (arc) => {
-
-					if (arc === 0) return 0
-					return π;
-
-				}
-			}
-
-			// Общий случай: гипербола вида y = a/(x - h) + k
-			// У нас есть две точки: (0,0) и (π,π)
-			// и дополнительное условие: при x = 0, y = 0
-			// при x = π, y = π
-
-			// Из точки (0,0): 0 = a/(0 - h) + k => k = a/h
-
-			// Из точки (π,π): π = a/(π - h) + a/h
-
-			// Вводим параметр p для контроля кривизны
-			// Будем использовать p для определения положения асимптоты h
-			// При p -> 0: h -> -∞ (гипербола вырождается в прямую)
-			// При p -> 1: h -> 0 (гипербола вырождается в вертикальную линию)
-
-			// Свяжем h с p: h = - (1-p)/p * C, где C некоторая константа
-			// Чтобы при p=1, h=0; при p=0, h=-∞
-			// Возьмем C = π/2 для хорошей визуализации
-
-			const C = π / 2;
-
-			// Избегаем деления на ноль при p=0 (уже обработано выше)
-			let h;
-			if (p < 0.001) {
-				// Для очень малых p используем линейную аппроксимацию
-				h = -C / p;
-			} else {
-				h = -C * (1 - p) / p;
-			}
-
-			// Вычисляем a из уравнения π = a/(π - h) + a/h
-			// a = π / (1/(π - h) + 1/h) = π / ((h + π - h)/(h(π - h))) = π * h(π - h) / π = h(π - h)
-			// Упростим: a = h * (PI - h)
-
-			const a = h * (π - h);
-
-			// Вычисляем k
-			const k = a / h;
-			return (x) => {
-
-				// Гипербола
-
-				// Генерируем точки слева от асимптоты (если асимптота слева от 0)
-				// В нашем случае h всегда отрицательное, так что асимптота слева от 0
-				// Проверяем, что не попадаем в асимптоту
-				if (Math.abs(x - h) < 0.001) {
-
-					console.error(sRandomVertice + ': calculateHyperbola. Under consraction');
-					return x;
-
-				}
-				return a / (x - h) + k;
-
-			}
-
-		}
-		const hyperbola = calculateHyperbola(config.p);
-*/		
-
-		// 4. Преобразование декартовых координат в углы
-//		const cartesianToPolarRandom = (Q) => { return cartesianToPolar({ x: Q[2], y: Q[3], z: Q[1], w: Q[0] }); }
-/*
-		// 2. Создание ортонормированного базиса в касательном пространстве
-		const createTangentBasis = (latitude, longitude, altitude) => {
-			const a = altitude, b = Math.PI / 2 - latitude, c = longitude,
-				sina = sin(a), cosa = cos(a),
-				sinb = sin(b), cosb = cos(b),
-				sinc = sin(c), cosc = cos(c);
-
-			// e1 - направление увеличения altitude
-			const e1 = [
-				-sina,
-				cosa * cosb,
-				cosa * sinb * cosc,
-				cosa * sinb * sinc
-			];
-			// Нормализация e1 (уже единичный, но для точности)
-			//e1.reduce вычисляет сумму квадратов улементов e1
-			const norm_e1 = Math.sqrt(e1.reduce((sum, val) => sum + val * val, 0));
-			//e1.map создает новый массив путем деления каждого элемента на norm_e1
-			const e1_norm = e1.map(v => v / norm_e1);
-
-			// e2 - направление увеличения b (уменьшения latitude)
-			const e2_raw = [
-				0,
-				-sina * sinb,
-				sina * cosb * cosc,
-				sina * cosb * sinc
-			];
-			const norm_e2 = Math.sqrt(e2_raw.reduce((sum, val) => sum + val * val, 0));
-			const e2_norm = norm_e2 > 1e-10 ? e2_raw.map(v => v / norm_e2) : [0, 0, 0, 0];
-
-			// e3 - направление увеличения longitude
-			const e3_raw = [
-				0,
-				0,
-				-sina * sinb * sinc,
-				sina * sinb * cosc
-			];
-			const norm_e3 = Math.sqrt(e3_raw.reduce((sum, val) => sum + val * val, 0));
-			const e3_norm = norm_e3 > 1e-10 ? e3_raw.map(v => v / norm_e3) : [0, 0, 0, 0];
-
-			return [e1_norm, e2_norm, e3_norm];
-		}
-*/		
-
-		/**
-		 * Вычисление новой точки
-		 * @param {object} startingPointParams see startingPointParams above.
-		 * @param {any} distance геодезическое расстояние. Диапазон значений: 0 ≤ distance ≤ πR
-		 * @param {any} eta первый угол направления (полярный угол). Определяет наклон направления движения относительно "вертикали" в касательном пространстве.
-		 * Аналог "широты" направления или "угла места".
-		 * Диапазон значений: 0 ≤ eta ≤ π
-		 * @param {any} psi второй угол направления (азимутальный угол)
-		 * Назначение:
-		 * Определяет азимут направления движения в горизонтальной плоскости касательного пространства
-		 * Задает вращение вокруг оси e1
-		 * Диапазон значений:
-		 * Необходимый и достаточный: 0 ≤ psi < 2π
-		 * Но обычно достаточно: -π ≤ psi ≤ π (как в коде)
-		 * @returns координаты новой точки в полярной системе координат
-		 */
-/*		
-		const calculateNewPoint = (startingPointParams, distance, eta, psi, R) => {
-			// Исходная точка
-			const P = startingPointParams.P;
-
-			// Касательный базис
-			const [e1, e2, e3] = [startingPointParams.e1, startingPointParams.e2, startingPointParams.e3];
-
-			const coseta = cos(eta), sineta = sin(eta), cospsi = cos(psi), sinpsi = sin(psi), sinetacospsi = sineta * cospsi, sinetasinpsi = sineta * sinpsi;
-
-			// Направляющий вектор в касательном пространстве
-			const u = [0, 0, 0, 0];
-			for (let i = 0; i < 4; i++) {
-				u[i] = coseta * e1[i] +
-					sinetacospsi * e2[i] +
-					sinetasinpsi * e3[i];
-			}
-
-			// Угловое расстояние
-			const delta = distance / R;
-
-			// Экспоненциальное отображение
-			const Q = [0, 0, 0, 0];
-			for (let i = 0; i < 4; i++) {
-				Q[i] = Math.cos(delta) * P[i] + R * Math.sin(delta) * u[i];
-			}
-
-			// Обратное преобразование в углы
-			const angles = cartesianToPolarRandom(Q);
-
-			if (Math.abs((Math.abs(startingPointParams.lat) - π / 2)) < 1e-12) angles.longitude = random() * 2 * π - π;//Противоположная вершина находится на полюсе
-			return angles;
-		}
-*/
-/*		
-		const getStartingPointParams = (oppositeVertice) => {
-			const lat = oppositeVertice.latitude, lon = oppositeVertice.longitude, alt = oppositeVertice.altitude;
-
-			// Исходная точка
-			const objectP = polarToCartesian(lat, lon, alt), P = [objectP.w, objectP.z, objectP.x, objectP.y];
-
-			// Касательный базис
-			const [e1, e2, e3] = createTangentBasis(lat, lon, alt);
-
-			return {
-
-				lat: lat,
-				alt: alt,
-				P: P,
-				e1: e1,
-				e2: e2,
-				e3: e3,
-
-			}
-
-		}
-*/
-		/**
-		 * Функция распределения (CDF) для расстояния на S³
-		 */
-/*		
-		const CDF_S3 = (theta) => {
-			// CDF(θ) = (3θ - 3sinθcosθ + 2sin³θ) / 4
-			const sinTheta = Math.sin(theta);
-			const cosTheta = Math.cos(theta);
-			const sin3Theta = sinTheta * sinTheta * sinTheta;
-
-			return (3 * theta - 3 * sinTheta * cosTheta + 2 * sin3Theta) / 4;
-		}
-		const getDistance = (distance, R, arc) => {
-
-			if (arc === 0) return 0;
-			//https://chat.deepseek.com/a/chat/s/0b71542a-46a2-47e2-9888-f95f26f0fa37
-			const y = 1 / arc - 1 / π;
-
-			return distance / (1 + (y * R * random()));
-
-		}
-		const getRandomAngles = (startingPointParams, arc) => {
-
-
-			// Правильное распределение для равномерного покрытия:
-			// Вероятность попасть в сферическую шапочку радиуса d пропорциональна sin^3(d/R)
-			const R = 1, distance = getDistance(R * inverseCDF_S3(random()), R, arc) * 2;
-
-			return calculateNewPoint(
-				startingPointParams,
-				distance,//максимальная дистанция находится на противоположной стороне гиперсферы
-				Math.acos(2 * random() - 1),//eta. первый угол направления (полярный угол). 0 ≤ eta ≤ π
-				random() * 2 * π,//psi. второй угол направления (азимутальный угол). 0 ≤ psi < 2π или -π ≤ psi ≤ π
-				R
-			);
-
-		}
-*/			
-//		const GetRandomVertice = (arc, oppositeVertice) => { return getRandomAngles(getStartingPointParams(oppositeVertice), arc); }
-		/**
-		 * Обратная функция распределения для равномерной выборки на S³
-		 * Для равномерного распределения на 3-сфере от северного полюса:
-		 * Плотность: f(θ) ∝ sin³(θ), где θ = distance/R
-		 * CDF: F(θ) = (3θ - 3sinθcosθ + 2sin³θ) / 4
-		 * Здесь используем численное решение обратной функции
-		 */
-/*		
-		const inverseCDF_S3 = (u) => {
-			// u ∈ [0, 1] равномерно
-			// Ищем θ такой, что CDF(θ) = u, θ ∈ [0, π]
-
-			// Численное решение методом бисекции
-			let low = 0;
-			let high = Math.PI;
-			const tolerance = 1e-10;
-			const maxIterations = 100;
-
-			for (let i = 0; i < maxIterations; i++) {
-				const mid = (low + high) / 2;
-				const cdfValue = CDF_S3(mid);
-
-				if (Math.abs(cdfValue - u) < tolerance) {
-					return mid;
-				}
-
-				if (cdfValue < u) {
-					low = mid;
-				} else {
-					high = mid;
-				}
-			}
-
-			return (low + high) / 2;
-		}
-*/
-/*		
-		// --- ЛОГИКА CPU (СИНХРОНИЗИРОВАНА С GPU j=0) ---
-		const setVelocities = (velociti, DAMPING, force) => {
-
-			velociti.x = velociti.x * DAMPING + force.x;
-			velociti.y = velociti.y * DAMPING + force.y;
-			velociti.z = velociti.z * DAMPING + force.z;
-			velociti.w = velociti.w * DAMPING + force.w;
-
-		}
-		const setForse = (force, d, dist, m) => { force.x += (d.x / dist) * m; force.y += (d.y / dist) * m; force.z += (d.z / dist) * m; force.w += (d.w / dist) * m; }
-		const getD = (p1, p2) => { return { x: p1.x - p2.x, y: p1.y - p2.y, z: p1.z - p2.z, w: p1.w - p2.w } }
-		const getD2 = (d) => { return d.x * d.x + d.y * d.y + d.z * d.z + d.w * d.w }
-*/
 		function initPoints() {
 			const color = new THREE.Color();
 			if (!config.RANDOM_POINTS) {
@@ -655,7 +269,6 @@
 					const norm = Math.sqrt(u.reduce((a, b) => a + b * b, 0)) || 1;
 					angles[i] = cartesianToPolar({ x: u[0] / norm, y: u[1] / norm, z: u[2] / norm, w: u[3] / norm });
 				}
-//				const p = utils.polarToCartesian(angles[i].latitude, angles[i].longitude, angles[i].altitude, config.baseRadius);
 				const p = utils.polarToCartesian(angles[i], config.baseRadius);
 				posAttr.setXYZ(i, p.x, p.y, p.z);
 				const t = (p.w + config.radiusMax) / (2 * config.radiusMax);
@@ -732,24 +345,8 @@
 			*/
 			// 3. Успешное подключение
 			socket.onopen = () => {
-				//clearTimeout(connectionTimeout); // Успели! Отменяем таймер.
 				stateText.innerText = "Связь установлена. Готов к работе.";
 				stateText.style.color = "#00ffcc";
-				/*
-									const config = {
-										type: 'START_COMPUTE',
-										DEBUG_MODE: DEBUG_MODE,
-										RANDOM_POINTS: RANDOM_POINTS,
-										DAMPING: DAMPING,
-										REPULSION_STRENGTH: REPULSION_STRENGTH,
-										PSEUDO_RANDOM: PSEUDO_RANDOM,
-										p: p,
-										baseRadius: baseRadius,
-										radiusMax: radiusMax,
-										totalSteps: totalSteps,
-										pointsPerStep: pointsPerStep
-									};
-				*/
 				socket.send(JSON.stringify(config));
 
 				const anglesItemSize = 4, initialAngles = new Float32Array(config.pointsPerStep * anglesItemSize);
@@ -823,7 +420,6 @@
 
 		});
 		function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
-		//        findAdapters();
 		initPoints();
 		animate();
 	</script>
