@@ -132,6 +132,8 @@
 		import { OrbitControls } from '../../../../three.js/dev/examples/jsm/controls/OrbitControls.js';
 		import { analysis } from '../../../../commonNodeJS/master/HyperSphere/distanceOfVertices/thomsonAnalysisHSphere.js'
 
+		import * as utils from '../../../../commonNodeJS/master/HyperSphere/utilsHSphere.js'
+
 		//"WebGPU Hyperspherical Universe" in https://gemini.google.com
 
 		const π = Math.PI, sin = Math.sin, cos = Math.cos;
@@ -257,16 +259,18 @@
 		scene.add(new THREE.Points(geometry, new THREE.PointsMaterial({ size: 0.015, vertexColors: true })));
 
 		const setAttributes = (pointAngles, r, index) => {
-			const p = polarToCartesian(pointAngles.latitude, pointAngles.longitude, pointAngles.altitude, r);
+//			const p = polarToCartesian(pointAngles.latitude, pointAngles.longitude, pointAngles.altitude, r);
+			const p = utils.polarToCartesian(pointAngles, r);
 			posAttr.setXYZ(index, p.x, p.y, p.z);
 			const t = (p.w + config.radiusMax) / (2 * config.radiusMax);
 			const color = new THREE.Color();
 			color.setHSL(0.7 * (1 - t), 1, 0.5);
 			colorAttr.setXYZ(index, color.r, color.g, color.b);
-			//            if (LOG) console.log('Step:' + (parseInt(index / pointsPerStep)) + ' Point:' + index + '. x=' + p.x + ' y=' + p.y + ' z=' + p.z + ' w=' + p.w + ',alt=' + pointAngles.altitude + ' lat=' + pointAngles.latitude + ' lon=' + pointAngles.longitude);
 		}
 
+
 		// --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ МАТЕМАТИКИ ---
+/*		
 		const polarToCartesian = (la, lo, al, r = 1) => {
 			const r_xyz = r * Math.sin(al);
 			return { x: r_xyz * Math.cos(la) * Math.cos(lo), y: r_xyz * Math.cos(la) * Math.sin(lo), z: r_xyz * Math.sin(la), w: r * Math.cos(al) };
@@ -309,6 +313,7 @@
 
 			return { altitude: altitude, latitude: latitude, longitude: longitude };
 		};
+*/		
 
 		// --- ВСПОМОГАТЕЛЬНЫЕ  ФУНКЦИИ ВЫЧИСЛЕНИЯ СЛУЧАЙНОЙ ТОЧКИ ---
 
@@ -340,30 +345,17 @@
 		   Второй отрезок: (arc1 = 0, y1 = π), (arc2 = π, y2 = π) горизональная прямая.
 		 * </pre>
 		 */
-		//        let hyperbola_gpu;
+/*		
 		const calculateHyperbola = (p) => {
 
 			// Крайние случаи
 			if (p === 0) {
 				// Прямая линия: y = x (через точки (0,0) и (π,π))
-				/*
-								hyperbola_gpu = `
-											fn hyperbola_gpu(arc: f32, i: u32) -> f32 {
-												return arc;
-											}`;
-				*/
 				return (arc) => { return arc; }
 			}
 
 			if (p === 1) {
 				// Два отрезка: вертикальный и горизонтальный
-				/*
-								hyperbola_gpu = `
-											fn hyperbola_gpu(arc: f32, i: u32) -> f32 {
-												if (arc == 0) { return 0.0; }
-												return PI;
-											}`;
-				*/
 				return (arc) => {
 
 					if (arc === 0) return 0
@@ -409,18 +401,6 @@
 
 			// Вычисляем k
 			const k = a / h;
-			/*
-						hyperbola_gpu = `
-										fn hyperbola_gpu(x: f32, i: u32) -> f32 {
-											if (abs(x - (${h})) < 0.001) {
-												messageBuffer.errorCode = 1u; // Код ошибки 1 = "hyperbola_gpu: Under construction"
-												messageBuffer.i = i;
-												messageBuffer.value = x;
-												return PI;
-											}
-											return ${a} / (x - (${h})) + (${k});
-										}`;
-			*/
 			return (x) => {
 
 				// Гипербола
@@ -440,10 +420,11 @@
 
 		}
 		const hyperbola = calculateHyperbola(config.p);
+*/		
 
 		// 4. Преобразование декартовых координат в углы
-		const cartesianToPolarRandom = (Q) => { return cartesianToPolar({ x: Q[2], y: Q[3], z: Q[1], w: Q[0] }); }
-
+//		const cartesianToPolarRandom = (Q) => { return cartesianToPolar({ x: Q[2], y: Q[3], z: Q[1], w: Q[0] }); }
+/*
 		// 2. Создание ортонормированного базиса в касательном пространстве
 		const createTangentBasis = (latitude, longitude, altitude) => {
 			const a = altitude, b = Math.PI / 2 - latitude, c = longitude,
@@ -486,6 +467,7 @@
 
 			return [e1_norm, e2_norm, e3_norm];
 		}
+*/		
 
 		/**
 		 * Вычисление новой точки
@@ -503,6 +485,7 @@
 		 * Но обычно достаточно: -π ≤ psi ≤ π (как в коде)
 		 * @returns координаты новой точки в полярной системе координат
 		 */
+/*		
 		const calculateNewPoint = (startingPointParams, distance, eta, psi, R) => {
 			// Исходная точка
 			const P = startingPointParams.P;
@@ -535,6 +518,8 @@
 			if (Math.abs((Math.abs(startingPointParams.lat) - π / 2)) < 1e-12) angles.longitude = random() * 2 * π - π;//Противоположная вершина находится на полюсе
 			return angles;
 		}
+*/
+/*		
 		const getStartingPointParams = (oppositeVertice) => {
 			const lat = oppositeVertice.latitude, lon = oppositeVertice.longitude, alt = oppositeVertice.altitude;
 
@@ -556,10 +541,11 @@
 			}
 
 		}
-
+*/
 		/**
 		 * Функция распределения (CDF) для расстояния на S³
 		 */
+/*		
 		const CDF_S3 = (theta) => {
 			// CDF(θ) = (3θ - 3sinθcosθ + 2sin³θ) / 4
 			const sinTheta = Math.sin(theta);
@@ -571,11 +557,6 @@
 		const getDistance = (distance, R, arc) => {
 
 			if (arc === 0) return 0;
-
-			/*Есть декартова система координат. Ось x обозначим как arc. Найди элементарную функцию которая неогранниченно растет в точке arc = 0 и равна нулю в точке arc = π.
-			arc меняется только в диапазоне от 0 до π. arc это не угол.
-			Написать код на javascript
-			*/
 			//https://chat.deepseek.com/a/chat/s/0b71542a-46a2-47e2-9888-f95f26f0fa37
 			const y = 1 / arc - 1 / π;
 
@@ -598,7 +579,8 @@
 			);
 
 		}
-		const GetRandomVertice = (arc, oppositeVertice) => { return getRandomAngles(getStartingPointParams(oppositeVertice), arc); }
+*/			
+//		const GetRandomVertice = (arc, oppositeVertice) => { return getRandomAngles(getStartingPointParams(oppositeVertice), arc); }
 		/**
 		 * Обратная функция распределения для равномерной выборки на S³
 		 * Для равномерного распределения на 3-сфере от северного полюса:
@@ -606,6 +588,7 @@
 		 * CDF: F(θ) = (3θ - 3sinθcosθ + 2sin³θ) / 4
 		 * Здесь используем численное решение обратной функции
 		 */
+/*		
 		const inverseCDF_S3 = (u) => {
 			// u ∈ [0, 1] равномерно
 			// Ищем θ такой, что CDF(θ) = u, θ ∈ [0, π]
@@ -633,6 +616,8 @@
 
 			return (low + high) / 2;
 		}
+*/
+/*		
 		// --- ЛОГИКА CPU (СИНХРОНИЗИРОВАНА С GPU j=0) ---
 		const setVelocities = (velociti, DAMPING, force) => {
 
@@ -645,7 +630,7 @@
 		const setForse = (force, d, dist, m) => { force.x += (d.x / dist) * m; force.y += (d.y / dist) * m; force.z += (d.z / dist) * m; force.w += (d.w / dist) * m; }
 		const getD = (p1, p2) => { return { x: p1.x - p2.x, y: p1.y - p2.y, z: p1.z - p2.z, w: p1.w - p2.w } }
 		const getD2 = (d) => { return d.x * d.x + d.y * d.y + d.z * d.z + d.w * d.w }
-
+*/
 		function initPoints() {
 			const color = new THREE.Color();
 			if (!config.RANDOM_POINTS) {
@@ -670,7 +655,8 @@
 					const norm = Math.sqrt(u.reduce((a, b) => a + b * b, 0)) || 1;
 					angles[i] = cartesianToPolar({ x: u[0] / norm, y: u[1] / norm, z: u[2] / norm, w: u[3] / norm });
 				}
-				const p = polarToCartesian(angles[i].latitude, angles[i].longitude, angles[i].altitude, config.baseRadius);
+//				const p = utils.polarToCartesian(angles[i].latitude, angles[i].longitude, angles[i].altitude, config.baseRadius);
+				const p = utils.polarToCartesian(angles[i], config.baseRadius);
 				posAttr.setXYZ(i, p.x, p.y, p.z);
 				const t = (p.w + config.radiusMax) / (2 * config.radiusMax);
 				color.setHSL(0.7 * (1 - t), 1, 0.5); colorAttr.setXYZ(i, color.r, color.g, color.b);
@@ -800,7 +786,7 @@
 					for (let i = 0; i < count; i++) {
 						let index = i * 4;
 						const pointCur = { x: posData[index++], y: posData[index++], z: posData[index++], w: posData[index++], };
-						const itemAngles = cartesianToPolar(pointCur);
+						const itemAngles = utils.cartesianToPolar(pointCur);
 						const pointAngles = angles[i];
 						pointAngles.latitude = itemAngles.latitude; pointAngles.longitude = itemAngles.longitude; pointAngles.altitude = itemAngles.altitude;
 						//console.log('i = ' + i + ' angles: ' + JSON.stringify(pointAngles))
