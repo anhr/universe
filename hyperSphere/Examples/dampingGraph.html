@@ -136,6 +136,14 @@
 
 		//"WebGPU Hyperspherical Universe" in https://gemini.google.com
 
+		import HypersphericalUniverse from '../hyperSphericalUniverse.js';
+		//import HypersphericalUniverse from '../build/hyperSphericalUniverse.module.js';
+		//import HypersphericalUniverse from '../build/hyperSphericalUniverse.module.min.js';
+		//import HypersphericalUniverse from 'https://raw.githack.com/anhr/universe/main/hyperSphere/hyperSphericalUniverse.js';
+		//import HypersphericalUniverse from 'https://raw.githack.com/anhr/universe/main/hyperSphere/build/hyperSphericalUniverse.module.js';
+		//import HypersphericalUniverse from 'https://raw.githack.com/anhr/universe/main/hyperSphere/build/hyperSphericalUniverse.module.min.js';
+		//if ( HypersphericalUniverse.default ) HypersphericalUniverse = HypersphericalUniverse.default;
+
 		const π = Math.PI, sin = Math.sin, cos = Math.cos;
 
 		// --- ГЛОБАЛЬНАЯ КОНФИГУРАЦИЯ ---
@@ -402,7 +410,156 @@
 			document.querySelectorAll('button').forEach(b => b.disabled = false);
 		};
 		const dampingGraph = async () => {
-			runAuto();
+//			runAuto();
+
+			new HypersphericalUniverse({
+
+				compute: {
+					//isUseCPU: true,
+					config: config,
+				},
+				/*
+				intersection: {
+					
+					position: 1,
+					//color: 'red',
+					
+				},
+				*/
+				onSelectScene: (hyperSphere, timeId, t) => {
+
+					//				if (hyperSphere.middleVertices) return hyperSphere.middleVertices(timeId, t);
+					if (hyperSphere.distanceOfVertices) return hyperSphere.distanceOfVertices(timeId, t);
+
+				},
+
+				//Have effect only if 3DUniverse cookie is empty
+				edges: {
+
+					project: false,//Doesn't project edges onto canvas
+					creationMethod: HypersphericalUniverse.edgesCreationMethod.Random,
+
+				},
+				edges: false,
+				//boTraces: true,
+				//r: 0.1,
+				/*
+				rRange: {
+					
+					min: -10,
+					max: 25
+				
+				},
+				*/
+				debug: {
+
+					probabilityDensity: false,
+					middleVertice: false,
+					log: false,
+					edges: false,
+					random: () => { return 0.5 },//replacing random vertices with strictly defined vertices.
+
+				},
+				//debug: false,
+				settings: {
+
+					object: {
+
+						//name: 'edges',
+						//color: 'red',
+						//color: 0xffffff,
+						geometry: {
+
+							//angles: angles,
+							angles: { count: 500, },
+							//angles: { count: 500000, },//недостаточно памяти при количестве шагов плеера 1000
+							//angles: { count: 124875, },//выделяется максимально возможное количество памяти при шагов плеера 134. ВНИМАНИЕ!!! Использовать с осторожностью. Вебстраница сильно зависает.
+
+							//Для тестирования GPU при условии, что adapter.requestDevice() вызывается без аргуметов.
+							//В этом случае базовый лимит WebGPU по умолчанию для всех устройств в мире равен 268435456 (256 MB).
+							//Выделяется максимально возможное количество памяти при шагов плеера равном 250.
+							//В настояшее время я выделяю памяти больше базового лимита. Смотри async function initWebGPU(idx) в D:\My documents\MyProjects\webgl\three.js\GitHub\universe\main\hyperSphere\webGPUHUniverse.html
+							//angles: { count: 67109, },//выделяется максимально возможное количество памяти при шагов плеера 1001. ВНИМАНИЕ!!! Использовать с осторожностью. Вебстраница сильно зависает.
+
+							//angles: angles,
+							/*
+							colors: [
+								1, 0, 0,//red
+								0, 1, 0,//green
+								0, 0, 1,//blue
+								//1, 1, 1,//white
+							],
+							*/
+							//opacity: [1, 0.2],
+							indices: {
+
+								edges: { count: 6, },
+								/*
+								//Tesseract
+								edges: [
+									//cube 1
+									[0,1], [1,2], [2,3], [3,0],
+									[4,5], [5,6], [6,7], [7,4],
+									[0,5], [1,6], [2,7], [3,4],
+									//cube 2
+									[ 8,9 ], [ 9,10], [10,11], [11,8 ],
+									[12,13], [13,14], [14,15], [15,12],
+									[ 8,13], [ 9,14], [10,15], [11,12],
+									//cube 1 to //cube 2
+									[ 0,8], [ 1,9], [2,10], [3,11],
+									[ 4,12], [ 5,13], [6,14], [7,15],
+								],
+								*/
+
+							}
+
+						}
+
+					}
+
+				},
+
+			}, {
+
+				//axesHelper: false,
+				playerOptions: {
+
+					//marks: 100,
+					//marks: 750,//при количестве вершин равном 124875 GPU зависает и перезапускается с предупреждением: A valid external Instance reference no longer exists.
+					//marks: 1000,//недостаточно памяти при количестве вершин равном 500000
+
+					//при количестве вершин равном 124875 получаю предупреждение:
+					//ID3D12Device:: GetDeviceRemovedReason failed with DXGI_ERROR_DEVICE_HUNG(0x887A0006)
+					//    - While handling unexpected error type Internal when allowed errors are(Validation|DeviceLost).
+					//		at CheckHRESULTImpl(..\..\third_party\dawn\src\dawn\native\d3d\D3DError.cpp: 121)
+					//
+					//Backend messages:
+					//* Device removed reason: DXGI_ERROR_DEVICE_HUNG(0x887A0006).
+					//
+					//В этом случае надо добавить TdrDelay в реестр Windows
+					//marks: 250,
+
+					//Для тестирования GPU при условии, что adapter.requestDevice() вызывается без аргуметов.
+					//В этом случае базовый лимит WebGPU по умолчанию для всех устройств в мире равен 268435456 (256 MB).
+					//Выделяется максимально возможное количество памяти при количестве вершин равном 124875.
+					//В настояшее время я выделяю памяти больше базового лимита. Смотри async function initWebGPU(idx) в D:\My documents\MyProjects\webgl\three.js\GitHub\universe\main\hyperSphere\webGPUHUniverse.html
+					//marks: 134,
+
+					//min: 1,
+					//max: 1,
+					//interval: 30,
+					/*
+					intervalOptions: {
+						
+						//min: 0,
+						max: 10,//Infinity,
+						
+					},
+					*/
+
+				}
+
+			});
 		}
 
 //		document.getElementById('stepBtn').onclick = () => performStepCPU();
