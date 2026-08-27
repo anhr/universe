@@ -35,6 +35,7 @@
 		//if ( HypersphericalUniverse.default ) HypersphericalUniverse = HypersphericalUniverse.default;
 		
 		import * as HUniverseParams from './HUniverseParams.js'
+		import ND from '../../../../commonNodeJS/master/nD/nD.js';
 
 		const hypersphericalUniverse = new HypersphericalUniverse(HUniverseParams.classSettings, HUniverseParams.myThreeOptions);
 		hypersphericalUniverse.hyperSphere.classSettings.settings.options.onDataReady = () => {
@@ -62,6 +63,61 @@
 									const timeId = selectedPointId - 1;
 									option.mesh.userData.myObject.guiPoints.timeId = timeId;
 									cPoints.__onChange(timeId);
+									gui.cTrace.setValue(true);
+									class Trace extends ND {
+
+										constructor(traces) {
+
+											const settings = {object: {geometry: { angles: []}}};//classSettings.settings;
+											const tracesPosition = traces.geometry.attributes.position,
+												tracesIndex = traces.geometry.index,
+												tracesIndexArray = tracesIndex.array,
+												THREE = window.__myThree__.three.THREE;
+											for (let i = 0; i < tracesIndex.count; i++){
+												const linePositionStart = new THREE.Vector4().fromBufferAttribute(tracesPosition, tracesIndexArray[i]);
+												i++;
+												const linePositionEnd = new THREE.Vector4().fromBufferAttribute(tracesPosition, tracesIndexArray[i]);
+												console.log(linePositionStart)
+											}
+											super(_this.hyperSphere.dimension, {
+
+												options: settings.options,
+												bufferAttributes: settings.bufferGeometry.attributes,
+												scene: scene,
+												options: settings.options,
+												isRaycaster: false,
+												object: {
+
+													name: 'Traces',
+													geometry: {
+
+														position: settings.object.geometry.position,
+														//indices: [[ [0,1], [1,2], [2,3], [3,0], ]],//Debug. Edges
+														indices: [lines],
+														opacity: 1,//задать этот параметр, чтобы можно было делать треки прозрачными
+
+													}
+												},
+												overriddenProperties: {
+													setTracesIndices: (bufferGeometry) => {
+
+														bufferGeometry.userData = { setDrawRange: (timeId = classSettings.settings.options.player.getTimeId()) => { bufferGeometry.setDrawRange(0, timeIndexCount * timeId); } }
+														bufferGeometry.userData.setDrawRange();
+
+													}
+												},
+
+											});
+
+										}
+
+									}
+									for (let i = 0; i < cMeshs.__select.length; i++ ) {
+										const option = cMeshs.__select[i];
+										if(option.mesh && option.mesh.name === 'Traces') {
+											const traces = new Trace(option.mesh);
+										}
+									}
 								}
 							}, 0);
 						}, 0);
