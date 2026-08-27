@@ -81,6 +81,7 @@ class WebGPUHUniverse {
 				btnCPU.onclick =  () => {
 					elcontainer.remove();
 					if (socket.readyState === WebSocket.OPEN) socket.close();
+					settings.options.isComputeCPU = true;
 					computeCPU();
 				}
 
@@ -300,6 +301,8 @@ class WebGPUHUniverse {
 						socket.close();
 						btnClose.style.display = "";//сделать кнопку видимой
 						this.isDataReady = true;
+//						if (config.onDataReady) config.onDataReady()
+						if (settings.options.onDataReady) settings.options.onDataReady()
 					} else console.error(sWebGPU + ': socket message: Invalid event.data type: ' + (typeof event.data));
 				};
 				return;

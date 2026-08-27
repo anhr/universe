@@ -1,140 +1,30 @@
-<!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-	<meta charset="UTF-8">
-	<title>Damping graph</title>
-	<style>
-		body {
-			margin: 0;
-			overflow: hidden;
-			background-color: #000;
-			font-family: sans-serif;
-		}
+	<title>Dumping Graph</title>
 
-		canvas {
-			display: block;
-		}
+	<!--for mobile devices-->
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 
-		#ui {
-			position: absolute;
-			top: 20px;
-			left: 20px;
-			z-index: 10;
-			display: flex;
-			flex-direction: column;
-			gap: 10px;
-		}
+	<meta name="author" content="Andrej Hristoliubov https://github.com/anhr">
+	<!--<link type="text/css" rel="stylesheet" href="https://threejs.org/examples/main.css">-->
+	<link type="text/css" rel="stylesheet" href="../../../../three.js/dev/examples/main.css">
 
-		.controls {
-			display: flex;
-			gap: 5px;
-			align-items: center;
-		}
+	<!--
+	//Uncaught SyntaxError: Missing initializer in const declaration (at sphericalUniverse.js:47731:7)
+	//Похоже нельзя использовать символ π
+	<script src="../build/hyperSphericalUniverse.js"></script>
 
-		button, select {
-			padding: 10px 15px;
-			cursor: pointer;
-			background: #222;
-			color: #fff;
-			border: 1px solid #444;
-			border-radius: 4px;
-			font-size: 13px;
-			outline: none;
-		}
-
-			button:hover {
-				background: #333;
-			}
-
-			button:disabled {
-				opacity: 0.5;
-				cursor: wait;
-			}
-
-		#info {
-			color: #aaa;
-			font-size: 13px;
-			background: rgba(0,0,0,0.6);
-			padding: 8px;
-			border-radius: 4px;
-		}
-		
-		#analysisInfo {
-			color: #aaa;
-			font-size: 13px;
-			background: rgba(0,0,0,0.6);
-			padding: 8px;
-			border-radius: 4px;
-			display: none;
-		}
-
-		.timer {
-			color: #00ffcc;
-			font-weight: bold;
-			margin-top: 5px;
-			display: block;
-		}
-
-		#activeGpu {
-			color: #777;
-			font-size: 11px;
-			margin-top: 3px;
-			display: block;
-			font-style: italic;
-		}
-		#socket-status {
-			margin-top: 20px;
-			padding: 15px;
-			border-left: 4px solid #00ffcc;
-			background: #222;
-			color: white;
-		}
-	</style>
+	<script src="../build/hyperSphericalUniverse.min.js"></script>
+	-->
 </head>
 <body>
-
-	<div id="ui">
-		<div class="controls">
-<!--			<button id="stepBtn">Шаг (CPU)</button>-->
-			<button id="startDampingGraph">Start Damping Graph</button>
-			<button id="gpuBtn">Старт (GPU)</button>
-			<button id="analysisBtn">Анализ конфигурации</button>
-		</div>
-		<div id="analysisInfo">
-			<div></span>Точка: <span id="analysisVerticeStep">-</span> / <span id="totalVertices">-</span></div>
-			<div>Шаг анализа: <span id="analysisStepCounter">-</span> / <span id="analysisTotalStepsDisplay">-</span></div>
-			<span id="analysisTimeResult" class="timer"></span>
-		</div>
-		<div id="info">
-			Шаг: <span id="stepCounter">0</span> / <span id="totalStepsDisplay">0</span> | R: <span id="radVal">0.0</span>
-			<span id="timeResult" class="timer"></span>
-			<span id="activeGpu"></span>
-		</div>
-
-		<div id="socket-status">
-			<strong>Socket Status:</strong> <span id="stateText">Waiting for connection to server...</span><br>
-		</div>
+	<script nomodule>alert('Fatal error: Your browser do not support modular JavaScript code.');</script>
+	<div id="info">
+		<a href="https://github.com/anhr/universe" target="_blank" rel="noopener">Hyperspherical Universe</a>.
+		By <a href="https://github.com/anhr" target="_blank" rel="noopener">anhr</a>
 	</div>
-	<script type="importmap">
-		{
-			"imports": {
-				"three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-				"three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-			}
-		}
-	</script>
-	
+
 	<script type="module">
-		import * as THREE from '../../../../three.js/dev/build/three.module.js';
-		//import * as THREE from 'https://threejs.org/build/three.module.js';
-		//import * as THREE from 'https://raw.githack.com/anhr/three.js/dev/build/three.module.js';
-		
-		import { OrbitControls } from '../../../../three.js/dev/examples/jsm/controls/OrbitControls.js';
-		import { analysis } from '../../../../commonNodeJS/master/HyperSphere/distanceOfVertices/thomsonAnalysisHSphere.js'
-
-		import * as utils from '../../../../commonNodeJS/master/HyperSphere/utilsHSphere.js'
-
-		//"WebGPU Hyperspherical Universe" in https://gemini.google.com
 
 		import HypersphericalUniverse from '../hyperSphericalUniverse.js';
 		//import HypersphericalUniverse from '../build/hyperSphericalUniverse.module.js';
@@ -143,445 +33,48 @@
 		//import HypersphericalUniverse from 'https://raw.githack.com/anhr/universe/main/hyperSphere/build/hyperSphericalUniverse.module.js';
 		//import HypersphericalUniverse from 'https://raw.githack.com/anhr/universe/main/hyperSphere/build/hyperSphericalUniverse.module.min.js';
 		//if ( HypersphericalUniverse.default ) HypersphericalUniverse = HypersphericalUniverse.default;
+		
+		import * as HUniverseParams from './HUniverseParams.js'
 
-		const π = Math.PI, sin = Math.sin, cos = Math.cos;
+		const hypersphericalUniverse = new HypersphericalUniverse(HUniverseParams.classSettings, HUniverseParams.myThreeOptions);
+		hypersphericalUniverse.hyperSphere.classSettings.settings.options.onDataReady = () => {
+			const gui = hypersphericalUniverse.hyperSphere.classSettings.settings.options.dat.gui, cMeshs = gui.cMeshs;
+			for (let i = 0; i < cMeshs.__select.length; i++ ) {
+				const option = cMeshs.__select[i];
+				if(option.mesh && option.mesh.userData.type === 'Universe') {
+//					hypersphericalUniverse.hyperSphere.classSettings.settings.options.guiSelectPoint.select( {} );//Выбрать вершину
+					setTimeout(() => {
+						cMeshs.__select[i].selected = true;
+						cMeshs.__onChange(i);
 
-		// --- ГЛОБАЛЬНАЯ КОНФИГУРАЦИЯ ---
-		const LOG = true;//log attributes to console
-		const LOTS_OF_POINTS = false;
-		const config = {
-			type: 'START_COMPUTE',
-			DEBUG_MODE: true,
-
-			//randpm
-
-			//select one:
-
-			//Случайная точка не вычисляется. Вместо этого возвращается PSEUDO_RANDOM
-			RANDOM_POINTS: 0,
-
-			//Вычисляется случайное число.
-			//В GPU для получения случайного числа применяется хеширование(Hashing).Простой генератор псевдослучайных чисел(PCG).Permuted Congruential Generator(Перемешанный конгруэнтный генератор).
-			//Этот метод лучше всего вычисляет случайное число, но требует много времени на вычисления если не оптимизировать Google Chrome.
-			//Инструкция по оптимизации находится в Technical Guide: Enabling High-Performance GPU for Google Chrome https://github.com/anhr/universe/blob/main/hyperSphere/HUniverseEngine.md#technical-guide-enabling-high-performance-gpu-for-google-chromeИнструкцию по оттимизации смотри в D:\My documents\MyProjects\webgl\three.js\GitHub\universe\main\hyperSphere\webGPUHUniverse.js
-			//RANDOM_POINTS: 1,
-
-			//Вычисляется случайное число.
-			//Анализ производительности вычислений в GPU показал, что генерация случайного числа внутри WebGPU по методу хеширования(Hashing) (RANDOM_POINTS = 1) крайне затратно.
-			//Для того, что бы генерация случайного числа внутри WebGPU по методу хеширования(Hashing) (RANDOM_POINTS = 1) проходила быстро на Goole Chrome, браузер надо оптимизировать.
-			//Инструкция находится в Technical Guide: Enabling High-Performance GPU for Google Chrome https://github.com/anhr/universe/blob/main/hyperSphere/HUniverseEngine.md#technical-guide-enabling-high-performance-gpu-for-google-chrome
-			//Например при totalSteps = 100; и pointsPerStep = 500; время итерации заняло 14.644 сек.
-			//по сравненияю со временем итерации без генератора случайного числа RANDOM_POINTS = false 4.733 сек.
-			//Поэтому для GPU применяю метод Lookup Table (LUT) — таблицу предварительно вычисленных значений.
-			//Случайные числа вычисляются на JS и затем через буфер передаются на GPU.
-			//Этот метод работает гораздо быстрее но случайные числа не сосвем случайные.
-			//const RANDOM_POINTS = 2;
-
-			//Метод Weyl Sequence (последовательность Вейля) или просто линейным конгруэнтным методом поверх хеша.
-			//RANDOM_POINTS: 3,
-
-			//Damping is a velocity reduction factor applied at each iteration step.
-			//It simulates friction or energy dissipation in the system.
-			//Without damping, particles would oscillate indefinitely around equilibrium positions, never stabilizing.
-			//Valid DAMPING value range:
-			//  0 - Heavy damping, quick stopping. Fast stabilization, no oscillations
-			//  1 - No damping. Not recommended for production
-			//Default 0.95.
-			//See https://chat.deepseek.com/share/azo3y7zgc6hov7mlfp for details.
-			// Демпфирование движения. Вязкость среды. Диапазон от 0 до 1. При 0 среда окаменеет и точки не смогут двигаться. При 1 точки будут летать без сопротивления и пролетать точку равновесия по инерции
-			DAMPING: 0.95,
-
-			//Сила отталкивания. Чем меньше значение, тем слабее силы отталкивания между точками, и тем медленнее они двигаются
-			REPULSION_STRENGTH: 0.3,//50 / pointsPerStep,
-
-			PSEUDO_RANDOM: 0.5,
-			//Hyperbola parametr. See calculateHyperbola.
-			//Select one:
-			//p: 0.0,//Прямая линия: y = x (через точки (0,0) и (π,π))
-			//p: 1,// Два отрезка: вертикальный и горизонтальный
-			p: 1.0,//0.99,
-			baseRadius: 0.1,
-			radiusMax: 1,
-			totalSteps: LOTS_OF_POINTS ? 50 : 10,
-			pointsPerStep: LOTS_OF_POINTS ?
-				//5 //заранее определенные в angles точки
-				//2 //две антиподальные точки, расположенные на противоположных концах гиперсферы
-				500
-				: 5,
-		};
-		let random;
-		if (config.DEBUG_MODE) {
-			random = config.RANDOM_POINTS ? () => {
-				return Math.random();
-			} : () => { return config.PSEUDO_RANDOM; };
-		}
-		else random = config.RANDOM_POINTS ? Math.random : () => { return config.PSEUDO_RANDOM; };
-
-		const count = config.totalSteps * config.pointsPerStep;
-		const radiusStep = (config.radiusMax - config.baseRadius) / (config.totalSteps - 1);
-
-		let currentStep = 1;
-		let radiusPrev = config.baseRadius;
-		let velocities = Array.from({ length: config.pointsPerStep }, () => ({ x: 0, y: 0, z: 0, w: 0 }));
-		const angles = new Array(count).fill(null).map(() => ({ latitude: 0, longitude: 0, altitude: 0 }));
-
-		document.getElementById('totalStepsDisplay').innerText = config.totalSteps;
-
-		// --- THREE.JS ИНИЦИАЛИЗАЦИЯ ---
-		const scene = new THREE.Scene();
-		const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000);
-		camera.position.set(3, 3, 3);
-		const renderer = new THREE.WebGLRenderer({ antialias: true });
-		renderer.setSize(window.innerWidth, window.innerHeight);
-		document.body.appendChild(renderer.domElement);
-		const controls = new OrbitControls(camera, renderer.domElement);
-
-		const geometry = new THREE.BufferGeometry();
-		const posAttr = new THREE.BufferAttribute(new Float32Array(count * 3), 3);
-		const colorAttr = new THREE.BufferAttribute(new Float32Array(count * 3), 3);
-		geometry.setAttribute('position', posAttr);
-		geometry.setAttribute('color', colorAttr);
-		scene.add(new THREE.Points(geometry, new THREE.PointsMaterial({ size: 0.015, vertexColors: true })));
-
-		const setAttributes = (pointAngles, r, index) => {
-//			const p = polarToCartesian(pointAngles.latitude, pointAngles.longitude, pointAngles.altitude, r);
-			const p = utils.polarToCartesian(pointAngles, r);
-			posAttr.setXYZ(index, p.x, p.y, p.z);
-			const t = (p.w + config.radiusMax) / (2 * config.radiusMax);
-			const color = new THREE.Color();
-			color.setHSL(0.7 * (1 - t), 1, 0.5);
-			colorAttr.setXYZ(index, color.r, color.g, color.b);
-		}
-
-		function initPoints() {
-			const color = new THREE.Color();
-			if (!config.RANDOM_POINTS) {
-				//angles[0] = { altitude: Math.PI / 1, latitude: Math.PI / 19, longitude: Math.PI / 10 };// Эта вершина лежит на оси W потомучто Altitude = Math.PI. Это приводит к тому что в функции cartesianToPolar величина rXYZ < 1e-10 и широта с долготой не определены (принимаем за 0)
-				angles[0] = { altitude: Math.PI / 1.5, latitude: Math.PI / 19, longitude: Math.PI / 10 };
-				angles[1] = { altitude: Math.PI / 2, latitude: Math.PI / 20, longitude: Math.PI / 11 };
-				angles[2] = { altitude: Math.PI / 3, latitude: Math.PI / 21, longitude: Math.PI / 2 };
-				angles[3] = { altitude: Math.PI / 4, latitude: Math.PI / 22, longitude: -Math.PI / 2 };
-				angles[4] = { altitude: Math.PI / 5, latitude: Math.PI / 23, longitude: Math.PI };
-				/*
-				//антиподальные точки. Расположены на противоположных концах гиперсферы
-				// Точка 1: Произвольное положение на гиперсфере
-				angles[0] = { altitude: 1.0, latitude: 0.5, longitude: 2.0 };
-				// Точка 2: Максимально удаленная (антипод для Точки 1)
-//				angles[1] = { altitude: Math.PI - 1.0, latitude: Math.PI - 0.5, longitude: (2.0 + Math.PI) % (2 * Math.PI) };
-				angles[1] = { altitude: Math.PI - 1.0, latitude: 0.5, longitude: (2.0 + Math.PI) % (2 * Math.PI) };
-				*/
+						setTimeout(() => {
+							const cTimes = gui.cTimes;
+							const selectedTimeId = 1;
+							cTimes.__select[selectedTimeId].selected = true;
+							cTimes.__onChange(selectedTimeId);
+							
+							setTimeout(() => {
+								const cPoints = gui.cPoints;
+								const selectedPointId = 1;
+								if (selectedPointId < 1) console.error('onDataReady: Invalid selectedPointId = ' + selectedPointId);
+								else {
+									cPoints.__select[selectedPointId].selected = true;
+									const timeId = selectedPointId - 1;
+									option.mesh.userData.myObject.guiPoints.timeId = timeId;
+									cPoints.__onChange(timeId);
+								}
+							}, 0);
+						}, 0);
+					}, 0);
+					break;
+				}
+//				if ( option.selected && Object.is( option.mesh, intersectionSelected.object ) ) setPosition( intersectionSelected );
 			}
-			for (let i = 0; i < config.pointsPerStep; i++) {
-				if (config.RANDOM_POINTS || i >= config.pointsPerStep) {
-					const u = Array.from({ length: 4 }, () => Math.random() * 2 - 1);
-					const norm = Math.sqrt(u.reduce((a, b) => a + b * b, 0)) || 1;
-					angles[i] = cartesianToPolar({ x: u[0] / norm, y: u[1] / norm, z: u[2] / norm, w: u[3] / norm });
-				}
-				const p = utils.polarToCartesian(angles[i], config.baseRadius);
-				posAttr.setXYZ(i, p.x, p.y, p.z);
-				const t = (p.w + config.radiusMax) / (2 * config.radiusMax);
-				color.setHSL(0.7 * (1 - t), 1, 0.5); colorAttr.setXYZ(i, color.r, color.g, color.b);
-			}
-			posAttr.needsUpdate = true; colorAttr.needsUpdate = true;
+			//hypersphericalUniverse.hyperSphere.classSettings.settings.options.trace.onChange();//Построить трек
 		}
 
-		function updateDisplay() {
-			document.getElementById('stepCounter').innerText = currentStep;
-			document.getElementById('radVal').innerText = radiusPrev.toFixed(2);
-			document.getElementById('timeResult').innerText = `Итог: ${((performance.now() - start) / 1000).toFixed(3)} сек.`;
-		}
+		setTimeout(() => { hypersphericalUniverse.hyperSphere.classSettings.settings.options.player.play3DObject(); }, 0);
 
-		let socket, start;
-		const runAuto = async () => {
-			document.querySelectorAll('button').forEach(b => b.disabled = true);
-			start = performance.now();
-			if (socket && socket.readyState === WebSocket.OPEN) {
-				socket.close(1000,//статус нормальное закрытие
-					"Reconnecting for new computation...");
-			}
-			const serverAddress = 'ws://localhost:5000/ws?type=main';
-			socket = new WebSocket(serverAddress);
-			socket.binaryType = 'arraybuffer';
-
-			const stateText = document.getElementById('stateText');
-
-			// 1. Обработка ошибок (неверный адрес, отказ в соединении)
-			socket.onerror = (error) => {
-				stateText.innerText = error.target.url + " ОШИБКА: Сервер недоступен или адрес указан неверно.";
-				stateText.style.color = "#ff4444";
-				console.error("WebSocket Error:", error);
-			};
-
-			// 2. Обработка закрытия соединения (сервер отключился в процессе)
-			socket.onclose = (event) => {
-				if (event.wasClean) {
-					stateText.innerText = event.reason ? event.reason : "The connection was closed successfully.";
-					if (event.code === 4001) stateText.style.color = "#ff4444";  // Эта страница уже открыта
-				} else {
-					function rgbToHex(rgbString) {
-						// Находим все числа в строке с помощью регулярного выражения
-						const rgb = rgbString.match(/\d+/g).map(Number);
-
-						// Переводим каждое число в HEX и дополняем нулями слева, если нужно
-						return "#" + rgb.map(x => x.toString(16).padStart(2, '0')).join('');
-					}
-					if (rgbToHex(stateText.style.color) != "#ff4444") {//Не маскировать сообщение об ошибке
-						let error = '';
-						if (event.code != 1006) {
-							const rfcLink = "https://datatracker.ietf.org/doc/html/rfc6455#section-7.4.1";
-							const mozillaLink = 'https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/code'
-							const errorDetail = event.reason ? `Reason: ${event.reason}` : `Error Code: ${event.code}`;
-							error = ` ${errorDetail}. See RFC: ${rfcLink}, mozilla: ${mozillaLink}`;
-						}
-						const sMessage = `The connection was closed.` + error
-						//                        console.error(sMessage);
-
-						//                        console.log(`Причина: ${event.reason}`); // Текстовое описание от сервера
-						stateText.innerText = sMessage;//"СВЯЗЬ ПРЕРВАНА (Сервер упал или ошибка сети).";
-						stateText.style.color = "#00ffcc";
-					}
-				}
-				console.log(`Код закрытия: ${event.code}, причина: ${event.reason}`);
-			};
-			/*если оставить этот код, то истина причина ошибки будет забиваться сообщением  "Превышено время ожидания сервера."
-			const connectionTimeout = setTimeout(() => {
-				if (socket.readyState !== WebSocket.OPEN) {
-					stateText.innerText = "Превышено время ожидания сервера.";
-					socket.close(); // Принудительно закрываем попытку
-				}
-			}, 5000); // Ждем 5 секунд и сдаемся
-			*/
-			// 3. Успешное подключение
-			socket.onopen = () => {
-				stateText.innerText = "Связь установлена. Готов к работе.";
-				stateText.style.color = "#00ffcc";
-				socket.send(JSON.stringify(config));
-
-				const anglesItemSize = 4, initialAngles = new Float32Array(config.pointsPerStep * anglesItemSize);
-				for (let i = 0; i < config.pointsPerStep; i++) {
-					let index = i * anglesItemSize;
-					initialAngles[index++] = angles[i].latitude; initialAngles[index++] = angles[i].longitude; initialAngles[index++] = angles[i].altitude;
-				}
-				socket.send(initialAngles.buffer);
-			};
-			socket.onmessage = (event) => {
-				if (typeof event.data === 'string') {
-					const data = JSON.parse(event.data);
-
-					switch (data.type) {
-						case "STATUS":
-							const stateText = document.getElementById('stateText');
-							stateText.innerText = data.message;
-
-							// Используем 0 и 1 для управления цветом
-							stateText.style.color = (data.code === 1) ? "#00ffcc" : "#ff4444";
-							break;
-						case "PROGRESS":
-							currentStep = data.currentStep;
-							radiusPrev = data.radiusPrev;
-							updateDisplay();
-							if (socket && socket.readyState === WebSocket.OPEN)
-								socket.send(JSON.stringify({ type: "PROGRESS", currentStep: currentStep + 1 }));
-							break;
-						default: console.error('socket message: Invalid data.type: ' + data.type);
-					}
-				} else if (typeof event.data === 'object') {
-					//Vertices positions
-					const posData = new Float32Array(event.data);
-					for (let i = 0; i < count; i++) {
-						let index = i * 4;
-						const pointCur = { x: posData[index++], y: posData[index++], z: posData[index++], w: posData[index++], };
-						const itemAngles = utils.cartesianToPolar(pointCur);
-						const pointAngles = angles[i];
-						pointAngles.latitude = itemAngles.latitude; pointAngles.longitude = itemAngles.longitude; pointAngles.altitude = itemAngles.altitude;
-						//console.log('i = ' + i + ' angles: ' + JSON.stringify(pointAngles))
-						const s = Math.floor(i / config.pointsPerStep);
-						const r = config.baseRadius + s * radiusStep;
-						if (LOG) console.log('Step:' + (parseInt(i / config.pointsPerStep)) + ' Point:' + i + '. x=' + pointCur.x + ' y=' + pointCur.y + ' z=' + pointCur.z + ' w=' + pointCur.w + ',alt=' + pointAngles.altitude + ' lat=' + pointAngles.latitude + ' lon=' + pointAngles.longitude);
-						setAttributes(pointAngles, r, i);
-					}
-					posAttr.needsUpdate = true; colorAttr.needsUpdate = true;
-					document.getElementById('timeResult').innerText = `Итог : ${((performance.now() - start) / 1000).toFixed(3)} сек.`;
-					socket.close();
-				} else console.error('socket message: Invalid event.data type: ' + (typeof event.data));
-			};
-			const end = performance.now();
-			document.getElementById('timeResult').innerText = `Итог (${((end - start) / 1000).toFixed(3)} сек.`;
-			document.querySelectorAll('button').forEach(b => b.disabled = false);
-		};
-		const dampingGraph = async () => {
-//			runAuto();
-
-			new HypersphericalUniverse({
-
-				compute: {
-					//isUseCPU: true,
-					config: config,
-				},
-				/*
-				intersection: {
-					
-					position: 1,
-					//color: 'red',
-					
-				},
-				*/
-				onSelectScene: (hyperSphere, timeId, t) => {
-
-					//				if (hyperSphere.middleVertices) return hyperSphere.middleVertices(timeId, t);
-					if (hyperSphere.distanceOfVertices) return hyperSphere.distanceOfVertices(timeId, t);
-
-				},
-
-				//Have effect only if 3DUniverse cookie is empty
-				edges: {
-
-					project: false,//Doesn't project edges onto canvas
-					creationMethod: HypersphericalUniverse.edgesCreationMethod.Random,
-
-				},
-				edges: false,
-				//boTraces: true,
-				//r: 0.1,
-				/*
-				rRange: {
-					
-					min: -10,
-					max: 25
-				
-				},
-				*/
-				debug: {
-
-					probabilityDensity: false,
-					middleVertice: false,
-					log: false,
-					edges: false,
-					random: () => { return 0.5 },//replacing random vertices with strictly defined vertices.
-
-				},
-				//debug: false,
-				settings: {
-
-					object: {
-
-						//name: 'edges',
-						//color: 'red',
-						//color: 0xffffff,
-						geometry: {
-
-							//angles: angles,
-							angles: { count: 500, },
-							//angles: { count: 500000, },//недостаточно памяти при количестве шагов плеера 1000
-							//angles: { count: 124875, },//выделяется максимально возможное количество памяти при шагов плеера 134. ВНИМАНИЕ!!! Использовать с осторожностью. Вебстраница сильно зависает.
-
-							//Для тестирования GPU при условии, что adapter.requestDevice() вызывается без аргуметов.
-							//В этом случае базовый лимит WebGPU по умолчанию для всех устройств в мире равен 268435456 (256 MB).
-							//Выделяется максимально возможное количество памяти при шагов плеера равном 250.
-							//В настояшее время я выделяю памяти больше базового лимита. Смотри async function initWebGPU(idx) в D:\My documents\MyProjects\webgl\three.js\GitHub\universe\main\hyperSphere\webGPUHUniverse.html
-							//angles: { count: 67109, },//выделяется максимально возможное количество памяти при шагов плеера 1001. ВНИМАНИЕ!!! Использовать с осторожностью. Вебстраница сильно зависает.
-
-							//angles: angles,
-							/*
-							colors: [
-								1, 0, 0,//red
-								0, 1, 0,//green
-								0, 0, 1,//blue
-								//1, 1, 1,//white
-							],
-							*/
-							//opacity: [1, 0.2],
-							indices: {
-
-								edges: { count: 6, },
-								/*
-								//Tesseract
-								edges: [
-									//cube 1
-									[0,1], [1,2], [2,3], [3,0],
-									[4,5], [5,6], [6,7], [7,4],
-									[0,5], [1,6], [2,7], [3,4],
-									//cube 2
-									[ 8,9 ], [ 9,10], [10,11], [11,8 ],
-									[12,13], [13,14], [14,15], [15,12],
-									[ 8,13], [ 9,14], [10,15], [11,12],
-									//cube 1 to //cube 2
-									[ 0,8], [ 1,9], [2,10], [3,11],
-									[ 4,12], [ 5,13], [6,14], [7,15],
-								],
-								*/
-
-							}
-
-						}
-
-					}
-
-				},
-
-			}, {
-
-				//axesHelper: false,
-				playerOptions: {
-
-					//marks: 100,
-					//marks: 750,//при количестве вершин равном 124875 GPU зависает и перезапускается с предупреждением: A valid external Instance reference no longer exists.
-					//marks: 1000,//недостаточно памяти при количестве вершин равном 500000
-
-					//при количестве вершин равном 124875 получаю предупреждение:
-					//ID3D12Device:: GetDeviceRemovedReason failed with DXGI_ERROR_DEVICE_HUNG(0x887A0006)
-					//    - While handling unexpected error type Internal when allowed errors are(Validation|DeviceLost).
-					//		at CheckHRESULTImpl(..\..\third_party\dawn\src\dawn\native\d3d\D3DError.cpp: 121)
-					//
-					//Backend messages:
-					//* Device removed reason: DXGI_ERROR_DEVICE_HUNG(0x887A0006).
-					//
-					//В этом случае надо добавить TdrDelay в реестр Windows
-					//marks: 250,
-
-					//Для тестирования GPU при условии, что adapter.requestDevice() вызывается без аргуметов.
-					//В этом случае базовый лимит WebGPU по умолчанию для всех устройств в мире равен 268435456 (256 MB).
-					//Выделяется максимально возможное количество памяти при количестве вершин равном 124875.
-					//В настояшее время я выделяю памяти больше базового лимита. Смотри async function initWebGPU(idx) в D:\My documents\MyProjects\webgl\three.js\GitHub\universe\main\hyperSphere\webGPUHUniverse.html
-					//marks: 134,
-
-					//min: 1,
-					//max: 1,
-					//interval: 30,
-					/*
-					intervalOptions: {
-						
-						//min: 0,
-						max: 10,//Infinity,
-						
-					},
-					*/
-
-				}
-
-			});
-		}
-
-//		document.getElementById('stepBtn').onclick = () => performStepCPU();
-		document.getElementById('startDampingGraph').onclick = () => dampingGraph();
-		document.getElementById('gpuBtn').onclick = () => runAuto();
-		const totalSteps = config.totalSteps, pointsPerStep = config.pointsPerStep; 
-		document.getElementById('analysisBtn').onclick = () => analysis({
-			totalSteps,
-			pointsPerStep,
-			angles,
-
-			//totalEnergy: Общая энергия системы (E). Если totalEnergy растет от шага к шагу: Ошибка в знаках сил (точки притягиваются вместо отталкивания) либо слишком большой шаг интегрирования (dt). Энергия totalEnergy уходит в бесконечность или NaN: Ошибка в коде вычислений, при которой две точки заняли абсолютно одинаковые координаты (деление на ноль). Проверьте генератор случайных чисел или начальную инициализацию.
-			//meanD: Среднее расстояние до ближайшего соседа. Должно постепенно расти, пока не стабилизируется.
-			//variance: Дисперсия(средний квадрат отклонения).Мера того, насколько сильно расстояния до соседей у разных точек "разбросаны" относительно вычисленного среднего значения meanD.
-			//stdDev: Среднеквадратичное отклонение (СКО): С каждым шагом алгоритма значение stdDev должно стремиться к нулю.
-			//deviationPercent: Коэффициент вариации (дисбаланс). Коэффициент вариации (deviationPercent) высокий (например, > 15-20%): Точки распределены хаотично, решетка не сформировалась. Скорее всего, силам отталкивания не хватает итераций, либо коэффициент затухания скорости (DAMPING) гасит движение слишком рано. deviationPercent стремится к 0% (например, < 2-5%): Алгоритм работает отлично, структура симметрична, точки распределились максимально равномерно.
-			displayProperty: 'totalEnergy',
-
-		});
-		function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
-		initPoints();
-		animate();
 	</script>
 </body>
 </html>

@@ -48,7 +48,7 @@ class Universe
 	 * @param {object} [myThreeOptions={}] See <a href="../../../commonNodeJS/master/myThree/jsdoc/module-MyThree-MyThree.html" target="_blank">MyThree options</a> parameter.
 	 */
 	constructor(classSettings = {}, myThreeOptions = {}) {
-
+		
 		utils = classSettings.utils;
 		const _this = this;
 		//myThreeOptions.playerOptions ||= {};Not compatible with buid of hyperSphericalUniverse.module.min.js
@@ -113,6 +113,8 @@ class Universe
 			classSettings.settings = classSettings.settings || {};
 			classSettings.settings.object = classSettings.settings.object || {};
 			classSettings.settings.object.name = classSettings.settings.object.name || this.name(options.getLanguageCode);
+
+			classSettings.settings.object.type = 'Universe';
 
 			if (classSettings.settings.object.color === undefined) classSettings.settings.object.color = (timeId) => { return options.player.getTime(timeId); }
 
@@ -847,6 +849,7 @@ class Universe
 
 						cTimes = fPoints.add({ Times: lang.notSelected }, 'Times', { [lang.notSelected]: -1 });
 						dat.controllerNameAndTitle(cTimes, lang.time, lang.timeTitle);
+						classSettings.settings.options.dat.gui.cTimes = cTimes;
 
 					}
 
