@@ -41,8 +41,13 @@
 		const iterationConfig = {
 			steps: 5,//Количество итераций, в ходе которых будет вычисляться гипервселенная с разными настройками
 			DAMPING: { min: 0, max: 1 },
-			selectedTimeId: 1,
-			selectedPointId: 2,
+
+			//Этои идинтификатор указывает положение выбранного времени в органе управления cTimes и на 1 больше, чем текущее timeId проигрывателя
+			selectedTimeId: 10,//min = 1, max = HUniverseParams.myThreeOptions.playerOptions.marks.
+			//ВНИМАНИЕ! Если в этом месте HUniverseParams.myThreeOptions.playerOptions.marks еще не определено, то его зачение по умолчпнию можно узнать после выполнения строки const hypersphericalUniverse = new HypersphericalUniverse
+			
+			//Этои идинтификатор указывает положение выбранной вершины в органе управления cPoints и на 1 больше, чем текущие углы вершины в HUniverseParams.classSettings.settings.object.geometry.angles
+			selectedPointId: 2,//min = 1, max = HUniverseParams.classSettings.settings.object.geometry.angles.length
 		}
 		const steps = iterationConfig.steps;
 		let iterationId = 0;//Индекс текущей итерации
