@@ -36,9 +36,31 @@
 		
 		import * as HUniverseParams from './HUniverseParams.js'
 		import ND from '../../../../commonNodeJS/master/nD/nD.js';
+		import Position from '../../../../commonNodeJS/master/HyperSphere/position.js'
 
+		const iterationConfig = {
+			steps: 5,//Количество итераций, в ходе которых будет вычисляться гипервселенная с разными настройками
+			DAMPING: { min: 0, max: 1 },
+			selectedTimeId: 1,
+			selectedPointId: 2,
+		}
+		const steps = iterationConfig.steps;
+		let iterationId = 0;//Индекс текущей итерации
+		const minDamping = iterationConfig.DAMPING.min;
+		const maxDamping = iterationConfig.DAMPING.max;
+		// Расчет коэффициентов a и b
+		const a = (maxDamping - minDamping) / steps;
+		const b = minDamping;
+		HUniverseParams.classSettings.compute.config.DAMPING = a * iterationId + b;
+		
+		const scalesZ = HUniverseParams.myThreeOptions.scales.z;
+		scalesZ.min *= steps; scalesZ.max *= steps; scalesZ.name = 'DAMPING';
+		HUniverseParams.myThreeOptions.scene.scale.z /= steps;
+		
 		const hypersphericalUniverse = new HypersphericalUniverse(HUniverseParams.classSettings, HUniverseParams.myThreeOptions);
 		hypersphericalUniverse.hyperSphere.classSettings.settings.options.onDataReady = () => {
+//console.log('Under constraction')
+//return;
 			const gui = hypersphericalUniverse.hyperSphere.classSettings.settings.options.dat.gui, cMeshs = gui.cMeshs;
 			for (let i = 0; i < cMeshs.__select.length; i++ ) {
 				const option = cMeshs.__select[i];
@@ -50,19 +72,19 @@
 
 						setTimeout(() => {
 							const cTimes = gui.cTimes;
-							const selectedTimeId = 1;
+							const selectedTimeId = iterationConfig.selectedTimeId;
 							cTimes.__select[selectedTimeId].selected = true;
 							cTimes.__onChange(selectedTimeId);
 							
 							setTimeout(() => {
 								const cPoints = gui.cPoints;
-								const selectedPointId = 1;
+								const selectedPointId = iterationConfig.selectedPointId;
 								if (selectedPointId < 1) console.error('onDataReady: Invalid selectedPointId = ' + selectedPointId);
 								else {
 									cPoints.__select[selectedPointId].selected = true;
-									const timeId = selectedPointId - 1;
-									option.mesh.userData.myObject.guiPoints.timeId = timeId;
-									cPoints.__onChange(timeId);
+//									const timeId = selectedPointId - 1;
+									option.mesh.userData.myObject.guiPoints.timeId = selectedTimeId - 1;
+									cPoints.__onChange(selectedPointId - 1);
 									gui.cTrace.setValue(true);
 									class Trace extends ND {
 
@@ -73,49 +95,147 @@
 												tracesIndex = traces.geometry.index,
 												tracesIndexArray = tracesIndex.array,
 												THREE = window.__myThree__.three.THREE;
-											for (let i = 0; i < tracesIndex.count; i++){
-												const linePositionStart = new THREE.Vector4().fromBufferAttribute(tracesPosition, tracesIndexArray[i]);
-												i++;
-												const linePositionEnd = new THREE.Vector4().fromBufferAttribute(tracesPosition, tracesIndexArray[i]);
-												console.log(linePositionStart)
+											const isEven = (num) => num % 2 === 0;
+											if (!isEven(tracesIndex.count)) console.error('class Trace: tracesIndex.count is not even');
+/*
+											settings.bufferGeometry ||= new THREE.BufferGeometry();
+											settings.bufferGeometry.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(
+												(
+													(tracesIndex.count / 2)
+													+ 1//Добавить одну вершину, индекс которой находтся в конце tracesIndex
+												)
+												* tracesPosition.itemSize), tracesPosition.itemSize));
+											const position = settings.bufferGeometry.attributes.position;
+											for (let i = 0; i <= tracesIndex.count; i+=2){
+												const vector = new THREE.Vector4().fromBufferAttribute(tracesPosition, 
+																									   tracesIndexArray[i] === undefined ?
+																										   tracesIndexArray[i - 1] ://добавить последнюю вершину
+																										   tracesIndexArray[i]);
+												
+												//выбрать один из 3 смпособов записи из мусещкы в массив:
+												//position.setXYZW(i / 2, vector.x, vector.y, vector.z, vector.w);
+												position.set(vector.toArray(), i * 2);
+												
+												console.log(vector)
 											}
-											super(_this.hyperSphere.dimension, {
+*/											
+											const length = (tracesIndex.count / 2)
+														+ 1,//Добавить одну вершину, индекс которой находтся в конце tracesIndex
+												getVector = (i) => {
+													return Position(new THREE.Vector4().fromBufferAttribute(tracesPosition, 
+													   tracesIndexArray[i] === undefined ?
+														   tracesIndexArray[i - 1] ://добавить последнюю вершину
+														   tracesIndexArray[i]).toArray());
+											   }
+											const indices = [];
+											for (let i = 0; i < length - 1; i++) indices.push([i, i + 1]);
+											const position = new Proxy([], {
+											  get(target, name) {
+												const positionId = parseInt(name);
+												if (!isNaN(positionId)) return getVector(positionId * 2);
+												switch (name) {
+													case 'isPositionProxy': return true;
+													case 'isProxy': return true;
+													case 'target': return false;
+													case 'boPositionError': return target.boPositionError;
+													case 'length': return length;
+/*														
+													case 'forEach': return (item) => {
+														//сюда попадает ,когда добавляются ребра
+														for (let i = 0; i <= length; i++) {
+															item(getVector(i), i);
+//															item(getVector(i + 1), i + 1);
+														}
+													}
+*/													
+												}
+												console.error('class Trace: Invalid position name: ' + name);
+											    return;
+											  }
+											});
+											const colors = new Proxy([], {
+											  get(target, name) {
+												  
+												//Нужно сформировать массив colors. Цвет каждой вершины состоит из 3 элементов массива colors. Эти 3 элемента равны RGB цвета вершины.
+												//colorId указывает на одну из составляющих RGB цвета вершины
+												//
+												//номер вершины verticeId
+												//номер компоненты цвета rgbId = 0 красный или rgbId = 1 зеленый или rgbId = 2 синий
+												//colorId = verticeId * 3 + rgbId.
+												//Если verticeId = 2 и rgbId = 1, то colorId = 2 * 3 + 1 = 7
+												const colorId = parseInt(name); 
+												  
+												if (!isNaN(colorId)) {
 
-												options: settings.options,
-												bufferAttributes: settings.bufferGeometry.attributes,
-												scene: scene,
-												options: settings.options,
+													//разбиваем colorId на две компонеты: 
+													const verticeId = parseInt(colorId / 3);
+													const rgbId = colorId - verticeId * 3;
+													
+													const color = traces.geometry.attributes.color;
+													const rgb = new THREE.Vector3().fromBufferAttribute(color, 
+													   tracesIndexArray[verticeId * 2]).toArray();
+													return rgb[rgbId];
+/*													
+													return new THREE.Vector3().fromBufferAttribute(traces.geometry.attributes.color, 
+													   tracesIndexArray[colorId * 2]).toArray();
+*/													   
+												}
+												switch (name) {
+/*														
+													case 'isPositionProxy': return true;
+													case 'isProxy': return true;
+													case 'target': return false;
+													case 'boPositionError': return target.boPositionError;
+													case 'length': return length;
+*/													
+												}
+												console.error('class Trace: Invalid color name: ' + name);
+											    return;
+											  }
+											});
+											const classSettings = hypersphericalUniverse.hyperSphere.classSettings;
+											super(4, {
+
+												options: classSettings.settings.options,
+												//bufferAttributes: settings.bufferGeometry.attributes,
+												scene: classSettings.projectParams.scene,
 												isRaycaster: false,
 												object: {
-
-													name: 'Traces',
+//													position: new window.__myThree__.three.THREE.Vector3(0, 0, 5),//{ x: 0, y: 0, z: 5 },
+													name: 'Trace. DAMPING=' + classSettings.compute.config.DAMPING,
 													geometry: {
-
-														position: settings.object.geometry.position,
+														position: position,
 														//indices: [[ [0,1], [1,2], [2,3], [3,0], ]],//Debug. Edges
-														indices: [lines],
+														indices: [indices],
 														opacity: 1,//задать этот параметр, чтобы можно было делать треки прозрачными
-
+														/*
+														colors: [
+															1, 0, 0,//red
+															0, 1, 0,//green
+															0, 0, 1,//blue
+															//1, 1, 1,//white
+														],
+														*/
+														colors: colors,
 													}
 												},
 												overriddenProperties: {
 													setTracesIndices: (bufferGeometry) => {
-
+/*														
 														bufferGeometry.userData = { setDrawRange: (timeId = classSettings.settings.options.player.getTimeId()) => { bufferGeometry.setDrawRange(0, timeIndexCount * timeId); } }
 														bufferGeometry.userData.setDrawRange();
-
+*/														
 													}
 												},
-
 											});
-
 										}
-
 									}
 									for (let i = 0; i < cMeshs.__select.length; i++ ) {
 										const option = cMeshs.__select[i];
 										if(option.mesh && option.mesh.name === 'Traces') {
-											const traces = new Trace(option.mesh);
+											const trace = new Trace(option.mesh);
+											const step = (scalesZ.max - scalesZ.min) / steps;
+											trace.object3D.position.z = scalesZ.min + step * iterationId + step / 2;
 										}
 									}
 								}

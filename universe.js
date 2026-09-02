@@ -609,7 +609,7 @@ class Universe
 												options: settings.options,
 												bufferAttributes: settings.bufferGeometry.attributes,
 												scene: scene,
-												options: settings.options,
+//												options: settings.options,
 												isRaycaster: false,
 												object: {
 

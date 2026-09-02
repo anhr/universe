@@ -118,7 +118,7 @@ const classSettings = {
 
 				//Tesseract https://en.wikipedia.org/wiki/Tesseract
 				//Please set indices.edges for tesseract
-				angles2: [
+				angles: [
 					//cube 1
 					[Math.PI / 2, Math.PI * 1 / 4, Math.PI * 1 / 4],
 					[Math.PI / 2, Math.PI * 1 / 4, Math.PI * 3 / 4],
@@ -140,7 +140,7 @@ const classSettings = {
 				],
 
 					//test for angles range
-					angles2: [
+					angles: [
 						//vertice 0
 						[
 							0,//Altitude
@@ -282,6 +282,8 @@ const classSettings = {
 }
 const myThreeOptions = {
 	//axesHelper: false,
+	scales: { z: { min: -1, max: 1 } },
+	scene: { scale: { x: 1, y: 1, z: 1 }},
 	playerOptions: {
 
 		//marks: 100,
