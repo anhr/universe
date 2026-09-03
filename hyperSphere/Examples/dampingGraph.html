@@ -63,6 +63,56 @@
 		HUniverseParams.myThreeOptions.scene.scale.z /= steps;
 		
 		const hypersphericalUniverse = new HypersphericalUniverse(HUniverseParams.classSettings, HUniverseParams.myThreeOptions);
+		const iterationProgressBar = () =>{
+			const elParent = HUniverseParams.classSettings.settings.options.renderer.domElement.parentElement;
+			let elcontainer;
+			const containerName = 'ProgressContainer';
+			for (let i = 0; i < elParent.children.length; i++) {
+	
+				const child = elParent.children[i];
+				if (child.name && (child.name === containerName)) {
+	
+					elcontainer = child;
+					break;
+	
+				}
+	
+			}
+			if (!elcontainer) {
+	
+				elcontainer = document.createElement('table');
+				elcontainer.name = containerName;
+				elcontainer.style.position = 'absolute';
+				elcontainer.style.top = 0;
+				elcontainer.style.left = 0;
+				elParent.appendChild(elcontainer);
+	
+			}
+			const elProgress = document.createElement('div');
+			
+			const elTitle = document.createElement('div');
+			elTitle.innerHTML = 'Iteration<div id="socket-status">'
+				+ '<strong>Step:</strong> <span id="stepCounter">' + iterationId + '</span> / <span>' + (steps - 1) + '</span><br>'
+				+ '<strong>Elapsed Time:</strong> <span id="timeResult">---</span> sec.<br>'
+			+ '</div>';
+			elTitle.style.color = 'black';
+			elProgress.appendChild(elTitle);
+			
+			const cProgress = document.createElement('input');
+			cProgress.min = 0;
+			cProgress.max = steps;
+			cProgress.value = 0;
+			cProgress.type = "range";
+			cProgress.disabled = true;
+			elProgress.appendChild(cProgress);
+			elProgress.style.backgroundColor = 'white';
+			elProgress.style.margin = '2px';
+			elProgress.style.padding = '2px';
+			const elRow = document.createElement('tr');
+			elRow.appendChild(elProgress);
+			elcontainer.appendChild(elRow);
+		}
+		iterationProgressBar();
 		hypersphericalUniverse.hyperSphere.classSettings.settings.options.onDataReady = () => {
 //console.log('Under constraction')
 //return;
@@ -185,15 +235,15 @@
 													   tracesIndexArray[colorId * 2]).toArray();
 */													   
 												}
-												switch (name) {
 /*														
+												switch (name) {
 													case 'isPositionProxy': return true;
 													case 'isProxy': return true;
 													case 'target': return false;
 													case 'boPositionError': return target.boPositionError;
 													case 'length': return length;
-*/													
 												}
+*/													
 												console.error('class Trace: Invalid color name: ' + name);
 											    return;
 											  }
