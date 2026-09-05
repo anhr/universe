@@ -50,69 +50,84 @@
 			selectedPointId: 110,//min = 1, max = HUniverseParams.classSettings.settings.object.geometry.angles.length
 		}
 		const steps = iterationConfig.steps;
-		let iterationId = 0;//Индекс текущей итерации
-		const minDamping = iterationConfig.DAMPING.min;
-		const maxDamping = iterationConfig.DAMPING.max;
-		// Расчет коэффициентов a и b
-		const a = (maxDamping - minDamping) / steps;
-		const b = minDamping;
-		HUniverseParams.classSettings.compute.config.DAMPING = a * iterationId + b;
+		let currentStep = 0;//Индекс текущей итерации
+		const damping = () => {
+			const minDamping = iterationConfig.DAMPING.min;
+			const maxDamping = iterationConfig.DAMPING.max;
+			// Расчет коэффициентов a и b
+			const a = (maxDamping - minDamping) / steps;
+			const b = minDamping;
+			HUniverseParams.classSettings.compute.config.DAMPING = a * currentStep + b;
+		}
+		damping();
 		
 		const scalesZ = HUniverseParams.myThreeOptions.scales.z;
 		scalesZ.min *= steps; scalesZ.max *= steps; scalesZ.name = 'DAMPING';
 		HUniverseParams.myThreeOptions.scene.scale.z /= steps;
 		
 		const hypersphericalUniverse = new HypersphericalUniverse(HUniverseParams.classSettings, HUniverseParams.myThreeOptions);
-		const iterationProgressBar = () =>{
-			const elParent = HUniverseParams.classSettings.settings.options.renderer.domElement.parentElement;
-			let elcontainer;
-			const containerName = 'ProgressContainer';
-			for (let i = 0; i < elParent.children.length; i++) {
+		class IterationProgressBar {
+			constructor() {
+				const elParent = HUniverseParams.classSettings.settings.options.renderer.domElement.parentElement;
+				let elcontainer;
+				const containerName = 'ProgressContainer';
+				for (let i = 0; i < elParent.children.length; i++) {
 	
-				const child = elParent.children[i];
-				if (child.name && (child.name === containerName)) {
+					const child = elParent.children[i];
+					if (child.name && (child.name === containerName)) {
 	
-					elcontainer = child;
-					break;
+						elcontainer = child;
+						break;
+	
+					}
 	
 				}
+				if (!elcontainer) {
 	
-			}
-			if (!elcontainer) {
+					elcontainer = document.createElement('table');
+					elcontainer.name = containerName;
+					elcontainer.style.position = 'absolute';
+					elcontainer.style.top = 0;
+					elcontainer.style.left = 0;
+					elParent.appendChild(elcontainer);
 	
-				elcontainer = document.createElement('table');
-				elcontainer.name = containerName;
-				elcontainer.style.position = 'absolute';
-				elcontainer.style.top = 0;
-				elcontainer.style.left = 0;
-				elParent.appendChild(elcontainer);
-	
-			}
-			const elProgress = document.createElement('div');
+				}
+				const elProgress = document.createElement('div');
 			
-			const elTitle = document.createElement('div');
-			elTitle.innerHTML = 'Iteration<div id="socket-status">'
-				+ '<strong>Step:</strong> <span id="stepCounter">' + iterationId + '</span> / <span>' + (steps - 1) + '</span><br>'
-				+ '<strong>Elapsed Time:</strong> <span id="timeResult">---</span> sec.<br>'
-			+ '</div>';
-			elTitle.style.color = 'black';
-			elProgress.appendChild(elTitle);
+				const elTitle = document.createElement('div');
+				elTitle.innerHTML = 'Iteration<div id="socket-status">'
+					+ '<strong>Step:</strong> <span id="stepCounter">' + currentStep + '</span> / <span>' + (steps - 1) + '</span><br>'
+					+ '<strong>Elapsed Time:</strong> <span id="timeResult">---</span> sec.<br>'
+				+ '</div>';
+				elTitle.style.color = 'black';
+				elProgress.appendChild(elTitle);
+
+				//info
+				const stepCounter = elTitle.querySelector("#stepCounter");
+				const timeResult = elTitle.querySelector("#timeResult");
+	            const start = performance.now();
 			
-			const cProgress = document.createElement('input');
-			cProgress.min = 0;
-			cProgress.max = steps;
-			cProgress.value = 0;
-			cProgress.type = "range";
-			cProgress.disabled = true;
-			elProgress.appendChild(cProgress);
-			elProgress.style.backgroundColor = 'white';
-			elProgress.style.margin = '2px';
-			elProgress.style.padding = '2px';
-			const elRow = document.createElement('tr');
-			elRow.appendChild(elProgress);
-			elcontainer.appendChild(elRow);
+				const cProgress = document.createElement('input');
+				cProgress.min = 0;
+				cProgress.max = steps;
+				cProgress.value = 0;
+				cProgress.type = "range";
+				cProgress.disabled = true;
+				elProgress.appendChild(cProgress);
+				elProgress.style.backgroundColor = 'white';
+				elProgress.style.margin = '2px';
+				elProgress.style.padding = '2px';
+				const elRow = document.createElement('tr');
+				elRow.appendChild(elProgress);
+				elcontainer.appendChild(elRow);
+				this.updateDisplay = () => {
+		            stepCounter.innerText = currentStep;
+		            timeResult.innerText = `${((performance.now() - start) / 1000).toFixed(3)}`;
+					cProgress.value = currentStep;
+		        }				
+			}
 		}
-		iterationProgressBar();
+		const iterationProgressBar = new IterationProgressBar();
 		hypersphericalUniverse.hyperSphere.classSettings.settings.options.onDataReady = () => {
 //console.log('Under constraction')
 //return;
@@ -290,7 +305,14 @@
 										if(option.mesh && option.mesh.name === 'Traces') {
 											const trace = new Trace(option.mesh);
 											const step = (scalesZ.max - scalesZ.min) / steps;
-											trace.object3D.position.z = scalesZ.min + step * iterationId + step / 2;
+											trace.object3D.position.z = scalesZ.min + step * currentStep + step / 2;
+											currentStep++;
+											iterationProgressBar.updateDisplay();
+											if(currentStep < steps) {
+												damping();
+												HUniverseParams.classSettings.distanceOfVertices.webGPU.resetSocket();
+												play();
+											}
 										}
 									}
 								}
@@ -304,7 +326,11 @@
 			//hypersphericalUniverse.hyperSphere.classSettings.settings.options.trace.onChange();//Построить трек
 		}
 
-		setTimeout(() => { hypersphericalUniverse.hyperSphere.classSettings.settings.options.player.play3DObject(); }, 0);
+		const play = () => { setTimeout(() => {
+			hypersphericalUniverse.hyperSphere.classSettings.settings.object.geometry.times.length = 1;
+			hypersphericalUniverse.hyperSphere.classSettings.settings.options.player.play3DObject(0); }, 0);
+		}
+		play();
 
 	</script>
 </body>

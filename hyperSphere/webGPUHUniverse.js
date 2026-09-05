@@ -33,6 +33,12 @@ class WebGPUHUniverse {
 		const serverAddress = 'ws://localhost:5000/ws?type=main';
 		let socket;
 		this.isDataReady//true: вычисление точек на GPU успешно завершено.
+		this.resetSocket = () => {
+			if(socket) {
+				if(socket.readyState != WebSocket.CLOSED) console.error(sWebGPU + ' reset socket: Invalid socket state = ' + socket.readyState);
+				socket = null;
+			}
+		}
 		this.compute = (computeCPU, config, settings, hyperSphere) => {
 			this.isDataReady = false;
 			if (!socket) {
@@ -148,7 +154,7 @@ class WebGPUHUniverse {
 				
 				socket = new WebSocket(serverAddress);
 				socket.binaryType = 'arraybuffer';
-
+				
 				// 1. Обработка ошибок (неверный адрес, отказ в соединении)
 				socket.onerror = (error) => {
 					setStatus('ERROR: Server unreachable or incorrect address. <a href="https://github.com/anhr/universe/blob/main/hyperSphere/HUniverseEngine.md" target="_blank" style="color: blue;">Help</a>.', 0);
