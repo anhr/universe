@@ -31,7 +31,9 @@ class WebGPUHUniverse {
 	constructor() {
 
 		const serverAddress = 'ws://localhost:5000/ws?type=main';
-		let socket;
+		let socket,
+			elRow,//окно статуса выполнения вычислений на GPU
+			updateDisplay, setStatus;
 		this.isDataReady//true: вычисление точек на GPU успешно завершено.
 		this.resetSocket = () => {
 			if(socket) {
@@ -42,115 +44,117 @@ class WebGPUHUniverse {
 		this.compute = (computeCPU, config, settings, hyperSphere) => {
 			this.isDataReady = false;
 			if (!socket) {
-
-				//progress window
-				let cProgress, elProgress, elTitle, elParent = settings.options.renderer.domElement.parentElement;
-				const setStatus = (message, code = 1) => {
-					let color = "red", display = '';
-					//See D:\My documents\MyProjects\webgl\three.js\GitHub\universe\main\hyperSphere\UniverseSocketServer\Program.cs
-					switch(code) {
-						case 0://error
-							socket.close();
-							break;
-					    case 1://Ready to work.
-							color = "black";
-							display = 'none';
-							break;
-					    case 2://Waiting for Hypersphere Universe Engine...
-							message += ' Please open <a href="../webGPUHUniverse.html" target="_blank" style="color: blue;">Hypersphere Universe Engine</a> page'
-							break;
-						default: console.error(sWebGPU + '.compute: Invalud socket status code = ' + code);
+				if (!elRow) {
+					setStatus = (message, code = 1) => {
+						let color = "red", display = '';
+						//See D:\My documents\MyProjects\webgl\three.js\GitHub\universe\main\hyperSphere\UniverseSocketServer\Program.cs
+						switch (code) {
+							case 0://error
+								socket.close();
+								break;
+							case 1://Ready to work.
+								color = "black";
+								display = 'none';
+								break;
+							case 2://Waiting for Hypersphere Universe Engine...
+								message += ' Please open <a href="../webGPUHUniverse.html" target="_blank" style="color: blue;">Hypersphere Universe Engine</a> page'
+								break;
+							default: console.error(sWebGPU + '.compute: Invalud socket status code = ' + code);
+						}
+						stateText.innerHTML = message;
+						stateText.style.color = color;
+						btnCPU.style.display = display;
+						btnClose.style.display = display;
 					}
-					stateText.innerHTML = message;
-					stateText.style.color = color;
-					btnCPU.style.display = display;
-					btnClose.style.display = display;
-				}
-				
-				elProgress = document.createElement('div');
-				cProgress = document.createElement('input'),
-				elProgress.style.backgroundColor = 'white';
-				elProgress.style.margin = '2px';
-				elProgress.style.padding = '2px';
-				
-				elTitle = document.createElement('div');
-				elTitle.innerHTML = 'GPU<div id="socket-status">'
+					
+					//progress window
+					let cProgress, elProgress, elTitle, elParent = settings.options.renderer.domElement.parentElement;
+					elProgress = document.createElement('div');
+					cProgress = document.createElement('input'),
+						elProgress.style.backgroundColor = 'white';
+					elProgress.style.margin = '2px';
+					elProgress.style.padding = '2px';
+
+					elTitle = document.createElement('div');
+					elTitle.innerHTML = 'GPU<div id="socket-status">'
 						+ '<strong>Server Address:</strong> <span>' + serverAddress + '</span><br>'
 						+ '<strong>Socket Status:</strong> <span id="stateText">Waiting for connection to server...</span><br>'
 						+ '<strong>Step:</strong> <span id="stepCounter">0</span> / <span>' + config.totalSteps + '</span> | R: <span id="radVal">' + config.baseRadius + '</span><br>'
 						+ '<strong>Elapsed Time:</strong> <span id="timeResult">---</span> sec.<br>'
 						+ '<button type="button" id="btnCPU" title="Use CPU for computation" style="display: none;">CPU</button>'
 						+ '<button type="button" id="btnClose" title="Close this window" style="display: none;">Close</button>'
-					+ '</div>';
-				
-				const btnCPU = elTitle.querySelector("#btnCPU");
-				btnCPU.onclick =  () => {
-					elcontainer.remove();
-					if (socket.readyState === WebSocket.OPEN) socket.close();
-					settings.options.isComputeCPU = true;
-					computeCPU();
-				}
+						+ '</div>';
 
-				const btnClose = elTitle.querySelector("#btnClose");
-				btnClose.onclick = () => {
-					elcontainer.remove();
-					if (socket.readyState === WebSocket.OPEN) socket.close();
-				}
-
-				//info
-				const stepCounter = elTitle.querySelector("#stepCounter");
-				const radVal = elTitle.querySelector("#radVal");
-				const timeResult = elTitle.querySelector("#timeResult");
-	            const start = performance.now();
-				
-				elTitle.style.color = 'black';
-				elProgress.appendChild(elTitle);
-
-				if (settings.min === undefined) settings.min = 0;
-				cProgress.min = 0;
-				cProgress.max = config.totalSteps - 1;
-				cProgress.value = 0;
-				cProgress.type = "range";
-				cProgress.disabled = true;
-				elProgress.appendChild(cProgress);
-		
-				let elcontainer;
-				const containerName = 'ProgressContainer';
-				for (let i = 0; i < elParent.children.length; i++) {
-		
-					const child = elParent.children[i];
-					if (child.name && (child.name === containerName)) {
-		
-						elcontainer = child;
-						break;
-		
+					const btnCPU = elTitle.querySelector("#btnCPU");
+					btnCPU.onclick = () => {
+						elcontainer.remove();
+						if (socket.readyState === WebSocket.OPEN) socket.close();
+						settings.options.isComputeCPU = true;
+						computeCPU();
 					}
-		
-				}
-				if (!elcontainer) {
-		
-					elcontainer = document.createElement('table');
-					elcontainer.name = containerName;
-					elcontainer.style.position = 'absolute';
-					elcontainer.style.top = 0;
-					elcontainer.style.left = 0;
-					elParent.appendChild(elcontainer);
-		
-				}
-				const elRow = document.createElement('tr');
-				elRow.appendChild(elProgress);
-				elcontainer.appendChild(elRow);
 
-				//Progress window end
+					const btnClose = elTitle.querySelector("#btnClose");
+					btnClose.onclick = () => {
+						elcontainer.remove();
+						if (socket.readyState === WebSocket.OPEN) socket.close();
+					}
+
+					//info
+					const stepCounter = elTitle.querySelector("#stepCounter");
+					const radVal = elTitle.querySelector("#radVal");
+					const timeResult = elTitle.querySelector("#timeResult");
+					const start = performance.now();
+
+					elTitle.style.color = 'black';
+					elProgress.appendChild(elTitle);
+
+					if (settings.min === undefined) settings.min = 0;
+					cProgress.min = 0;
+					cProgress.max = config.totalSteps - 1;
+					cProgress.value = 0;
+					cProgress.type = "range";
+					cProgress.disabled = true;
+					elProgress.appendChild(cProgress);
+
+					let elcontainer;
+					const containerName = 'ProgressContainer';
+					for (let i = 0; i < elParent.children.length; i++) {
+
+						const child = elParent.children[i];
+						if (child.name && (child.name === containerName)) {
+
+							elcontainer = child;
+							break;
+
+						}
+
+					}
+					if (!elcontainer) {
+
+						elcontainer = document.createElement('table');
+						elcontainer.name = containerName;
+						elcontainer.style.position = 'absolute';
+						elcontainer.style.top = 0;
+						elcontainer.style.left = 0;
+						elParent.appendChild(elcontainer);
+
+					}
+					elRow = document.createElement('tr');
+					elRow.appendChild(elProgress);
+					elcontainer.appendChild(elRow);
+
+					//Progress window end
+
+					updateDisplay = () => {
+						stepCounter.innerText = currentStep;
+						radVal.innerText = radiusPrev.toFixed(2);
+						timeResult.innerText = `${((performance.now() - start) / 1000).toFixed(3)}`;
+						cProgress.value = currentStep;
+					}
+				}
 				
 		        let currentStep = 1;
 		        let radiusPrev = config.baseRadius;
-		        const updateDisplay = () => {
-		            stepCounter.innerText = currentStep;
-		            radVal.innerText = radiusPrev.toFixed(2);
-		            timeResult.innerText = `${((performance.now() - start) / 1000).toFixed(3)}`;
-					cProgress.value = currentStep;
-		        }
 				
 				socket = new WebSocket(serverAddress);
 				socket.binaryType = 'arraybuffer';

@@ -311,6 +311,8 @@
 											if(currentStep < steps) {
 												damping();
 												HUniverseParams.classSettings.distanceOfVertices.webGPU.resetSocket();
+												HUniverseParams.classSettings.settings.guiPoints.appendTimesChild = undefined;
+												HUniverseParams.classSettings.settings.guiPoints.timeId = undefined;
 												play();
 											}
 										}
