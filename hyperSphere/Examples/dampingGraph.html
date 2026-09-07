@@ -98,7 +98,13 @@
 				elTitle.innerHTML = 'Iteration<div id="socket-status">'
 					+ '<strong>Step:</strong> <span id="stepCounter">' + iterationId + '</span> / <span>' + (steps - 1) + '</span><br>'
 					+ '<strong>Elapsed Time:</strong> <span id="timeResult">---</span> sec.<br>'
+//					+ '<button type="button" id="btnCloseIteration" title="Close this window" style="display: block;">Close</button>'
 				+ '</div>';
+/*оба диалоговых окна закрываются кнопкой Close в окне GPU				
+				const btnClose = elTitle.querySelector("#btnCloseIteration");
+				btnClose.onclick = () => { elcontainer.remove(); }
+*/				
+				
 				elTitle.style.color = 'black';
 				elProgress.appendChild(elTitle);
 
