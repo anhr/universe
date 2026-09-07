@@ -33,13 +33,15 @@ class WebGPUHUniverse {
 		const serverAddress = 'ws://localhost:5000/ws?type=main';
 		let socket,
 			elRow,//окно статуса выполнения вычислений на GPU
-			updateDisplay, setStatus;
+			updateDisplay, setStatus, start, currentStep;
 		this.isDataReady//true: вычисление точек на GPU успешно завершено.
 		this.resetSocket = () => {
 			if(socket) {
 				if(socket.readyState != WebSocket.CLOSED) console.error(sWebGPU + ' reset socket: Invalid socket state = ' + socket.readyState);
 				socket = null;
 			}
+			start = performance.now();
+			currentStep = 1;
 		}
 		this.compute = (computeCPU, config, settings, hyperSphere) => {
 			this.isDataReady = false;
@@ -103,7 +105,7 @@ class WebGPUHUniverse {
 					const stepCounter = elTitle.querySelector("#stepCounter");
 					const radVal = elTitle.querySelector("#radVal");
 					const timeResult = elTitle.querySelector("#timeResult");
-					const start = performance.now();
+					start = performance.now();
 
 					elTitle.style.color = 'black';
 					elProgress.appendChild(elTitle);
@@ -153,7 +155,7 @@ class WebGPUHUniverse {
 					}
 				}
 				
-		        let currentStep = 1;
+		        currentStep = 1;
 		        let radiusPrev = config.baseRadius;
 				
 				socket = new WebSocket(serverAddress);
