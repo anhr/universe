@@ -275,10 +275,10 @@
 												options: classSettings.settings.options,
 												//bufferAttributes: settings.bufferGeometry.attributes,
 												scene: classSettings.projectParams.scene,
-												isRaycaster: false,
+												isRaycaster: true,
 												object: {
 //													position: new window.__myThree__.three.THREE.Vector3(0, 0, 5),//{ x: 0, y: 0, z: 5 },
-													name: 'Trace. DAMPING=' + classSettings.compute.config.DAMPING,
+													name: 'DAMPING=' + classSettings.compute.config.DAMPING,
 													geometry: {
 														position: position,
 														//indices: [[ [0,1], [1,2], [2,3], [3,0], ]],//Debug. Edges
@@ -312,13 +312,15 @@
 											const trace = new Trace(option.mesh);
 											const step = (scalesZ.max - scalesZ.min) / steps;
 											trace.object3D.position.z = scalesZ.min + step * iterationId + step / 2;
-											iterationId++;
-											if(iterationId < steps) {
+											const settings = HUniverseParams.classSettings.settings;
+											settings.onUniverseReady = () => {
+												iterationId++;
+												if(iterationId >= steps) return;
 												iterationProgressBar.updateDisplay();
 												damping();
 												HUniverseParams.classSettings.distanceOfVertices.webGPU.resetSocket();
-												HUniverseParams.classSettings.settings.guiPoints.appendTimesChild = undefined;
-												HUniverseParams.classSettings.settings.guiPoints.timeId = undefined;
+												settings.guiPoints.appendTimesChild = undefined;
+												settings.guiPoints.timeId = undefined;
 												play();
 											}
 										}
