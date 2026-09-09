@@ -139,6 +139,17 @@
 			if ((iterationConfig.selectedPointId < 1) || (iterationConfig.selectedPointId > anglesLength)) console.error('Invalid iterationConfig.selectedPointId = ' + iterationConfig.selectedPointId);
 			if ((iterationConfig.selectedTimeId < 1) || (iterationConfig.selectedTimeId > HUniverseParams.myThreeOptions.playerOptions.marks)) console.error('Invalid iterationConfig.selectedTimeId = ' + iterationConfig.selectedTimeId);
 		}
+		const settings = HUniverseParams.classSettings.settings
+		settings.onUniverseReady = () => {
+			iterationId++;
+			if(iterationId >= steps) return;
+			iterationProgressBar.updateDisplay();
+			damping();
+			HUniverseParams.classSettings.distanceOfVertices.webGPU.resetSocket();
+			settings.guiPoints.appendTimesChild = undefined;
+			settings.guiPoints.timeId = undefined;
+			play();
+		}
 		const iterationProgressBar = new IterationProgressBar();
 		hypersphericalUniverse.hyperSphere.classSettings.settings.options.onDataReady = () => {
 //console.log('Under constraction')
@@ -317,8 +328,9 @@
 										if(option.mesh && option.mesh.name === 'Traces') {
 											const trace = new Trace(option.mesh);
 											const step = (scalesZ.max - scalesZ.min) / steps;
-											trace.object3D.position.z = scalesZ.min + step * iterationId + step / 2;
+											trace.object3D.position.z = scalesZ.min + step * (iterationId - 1) + step / 2;
 											const settings = HUniverseParams.classSettings.settings;
+/*											
 											settings.onUniverseReady = () => {
 												iterationId++;
 												if(iterationId >= steps) return;
@@ -329,6 +341,7 @@
 												settings.guiPoints.timeId = undefined;
 												play();
 											}
+*/											
 										}
 									}
 								}
