@@ -133,6 +133,12 @@
 		        }				
 			}
 		}
+		{
+			const angles = HUniverseParams.classSettings.settings.object.geometry.angles,
+				anglesLength = angles.length === undefined ? angles.count : angles.length;
+			if ((iterationConfig.selectedPointId < 1) || (iterationConfig.selectedPointId > anglesLength)) console.error('Invalid iterationConfig.selectedPointId = ' + iterationConfig.selectedPointId);
+			if ((iterationConfig.selectedTimeId < 1) || (iterationConfig.selectedTimeId > HUniverseParams.myThreeOptions.playerOptions.marks)) console.error('Invalid iterationConfig.selectedTimeId = ' + iterationConfig.selectedTimeId);
+		}
 		const iterationProgressBar = new IterationProgressBar();
 		hypersphericalUniverse.hyperSphere.classSettings.settings.options.onDataReady = () => {
 //console.log('Under constraction')
