@@ -631,6 +631,7 @@ class Universe
 												} },
 									
 											});
+											if (classSettings.settings.onUniverseReady) classSettings.settings.onUniverseReady();
 											
 										}
 										

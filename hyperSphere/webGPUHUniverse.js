@@ -260,7 +260,7 @@ class WebGPUHUniverse {
 						const progressTitle = 'Load vertices<br>Vertice %s / ' + count, progressBar = new ProgressBar(settings.options.renderer.domElement.parentElement, () => {
 							if (i >= count) {
 								progressBar.remove();
-								if (settings.onUniverseReady) settings.onUniverseReady();
+//								if (settings.onUniverseReady) settings.onUniverseReady();
 								return;
 							}
 							const attributeColor = settings.bufferGeometry.attributes.color;
