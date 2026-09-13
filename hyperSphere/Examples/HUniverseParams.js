@@ -21,6 +21,8 @@ import HypersphericalUniverse from '../hyperSphericalUniverse.js';
 //import HypersphericalUniverse from 'https://raw.githack.com/anhr/universe/main/hyperSphere/build/hyperSphericalUniverse.module.min.js';
 //if ( HypersphericalUniverse.default ) HypersphericalUniverse = HypersphericalUniverse.default;
 
+import * as utils from '../../../../commonNodeJS/master/HyperSphere/utilsHSphere.js'
+
 const classSettings = {
 	compute: {
 		//isUseCPU: true,
@@ -320,5 +322,25 @@ const myThreeOptions = {
 		*/
 
 	}
+}
+const THREE = window.__myThree__.three.THREE;
+const verticesCount = 5,
+	timesCount = myThreeOptions.playerOptions.marks === undefined ? 10 : myThreeOptions.playerOptions.marks,
+	positionLengt = verticesCount * timesCount,
+	itemSize = 4;
+const bufferGeometry = 
+	//undefined;
+	new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(positionLengt * itemSize).fill(1, 0, itemSize * verticesCount), itemSize));
+/*
+classSettings.settings.bufferGeometry = bufferGeometry;
+if (classSettings.settings.bufferGeometry && classSettings.settings.bufferGeometry.attributes.position)
+	delete classSettings.settings.object.geometry.angles;
+*/
+if (bufferGeometry) {
+	const geometry = classSettings.settings.object.geometry;
+	delete geometry.angles;
+	geometry.angles = [];
+	for (let verticeId = 0; verticeId < verticesCount; verticeId++)
+		geometry.angles.push(utils.cartesianToPolar(new THREE.Vector4().fromBufferAttribute(bufferGeometry.attributes.position, verticeId), true));
 }
 export { classSettings, myThreeOptions };
