@@ -118,6 +118,7 @@ const classSettings = {
 			//color: 0xffffff,
 			geometry: {
 
+				positionsFileName: 'positions.bin',
 				//Tesseract https://en.wikipedia.org/wiki/Tesseract
 				//Please set indices.edges for tesseract
 				angles: [
@@ -237,7 +238,7 @@ const classSettings = {
 						[Math.PI / 4, Math.PI / 22, -Math.PI / 2],//3
 						[Math.PI / 5, Math.PI / 23, Math.PI],//4
 					],
-						angles: { count: 5000, },
+						//angles: { count: 5000, },
 						//angles: { count: 500000, },//недостаточно памяти при количестве шагов плеера 1000
 						//angles: { count: 124875, },//выделяется максимально возможное количество памяти при шагов плеера 134. ВНИМАНИЕ!!! Использовать с осторожностью. Вебстраница сильно зависает.
 
@@ -329,8 +330,8 @@ const verticesCount = 5,
 	positionLengt = verticesCount * timesCount,
 	itemSize = 4;
 const bufferGeometry = 
-	//undefined;
-	new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(positionLengt * itemSize).fill(1, 0, itemSize * verticesCount), itemSize));
+	undefined;
+	//new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(positionLengt * itemSize).fill(1, 0, itemSize * verticesCount), itemSize));
 /*
 classSettings.settings.bufferGeometry = bufferGeometry;
 if (classSettings.settings.bufferGeometry && classSettings.settings.bufferGeometry.attributes.position)
