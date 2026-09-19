@@ -39,7 +39,7 @@
 		import Position from '../../../../commonNodeJS/master/HyperSphere/position.js'
 
 		const iterationConfig = {
-			steps: 5,//Количество итераций, в ходе которых будет вычисляться гипервселенная с разными настройками
+			steps: 50,//Количество итераций, в ходе которых будет вычисляться гипервселенная с разными настройками
 			DAMPING: { min: 0, max: 1 },
 
 			//Этои идинтификатор указывает положение выбранного времени в органе управления cTimes и на 1 больше, чем текущее timeId проигрывателя
@@ -64,7 +64,8 @@
 		const scalesZ = HUniverseParams.myThreeOptions.scales.z;
 		scalesZ.min *= steps; scalesZ.max *= steps; scalesZ.name = 'DAMPING';
 		HUniverseParams.myThreeOptions.scene.scale.z /= steps;
-		
+
+		await HUniverseParams.loadPositions();
 		const hypersphericalUniverse = new HypersphericalUniverse(HUniverseParams.classSettings, HUniverseParams.myThreeOptions);
 		class IterationProgressBar {
 			constructor() {

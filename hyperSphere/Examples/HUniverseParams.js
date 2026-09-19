@@ -239,7 +239,7 @@ const classSettings = {
 						[Math.PI / 4, Math.PI / 22, -Math.PI / 2],//3
 						[Math.PI / 5, Math.PI / 23, Math.PI],//4
 					],
-						//angles: { count: 5000, },
+						angles: { count: 500, },
 						//angles: { count: 500000, },//недостаточно памяти при количестве шагов плеера 1000
 						//angles: { count: 124875, },//выделяется максимально возможное количество памяти при шагов плеера 134. ВНИМАНИЕ!!! Использовать с осторожностью. Вебстраница сильно зависает.
 
@@ -290,7 +290,7 @@ const myThreeOptions = {
 	scene: { scale: { x: 1, y: 1, z: 1 }},
 	playerOptions: {
 
-		//marks: 100,
+		marks: 100,
 		//marks: 750,//при количестве вершин равном 124875 GPU зависает и перезапускается с предупреждением: A valid external Instance reference no longer exists.
 		//marks: 1000,//недостаточно памяти при количестве вершин равном 500000
 
@@ -325,8 +325,9 @@ const myThreeOptions = {
 
 	}
 }
-const geometry = classSettings.settings.object.geometry;
-if (geometry.positionsFileName) {
+const loadPositions = async () => {
+	const geometry = classSettings.settings.object.geometry;
+	if (!geometry.positionsFileName) return;
 	const THREE = window.__myThree__.three.THREE;
 	try {
 		// Получаем массив координат из файла
@@ -356,14 +357,15 @@ if (geometry.positionsFileName) {
 
 	} catch (error) {
 		let errorMessage = 'Failed to load: ' + error, sHelp = '';
-		switch(error.code){
+		switch (error.code) {
 			case 404: sHelp =
-	`<!-- white-space: nowrap запрещает перенос строк, заставляя окно растягиваться -->
-    <ul style="padding-left: 20px; line-height: 1.6; white-space: nowrap;">
-      <li>Rename file in <b>classSettings.settings.object.geometry.positionsFileName</b>.</li>
-      <li>Select <b>"`+ error.baseUrl + `"</b> folder.<br>Go to <b>Settings/Hypersphere/Save</b> in the right top corner of the canvas for it.</li>
-    </ul>`;
+				`<!-- white-space: nowrap запрещает перенос строк, заставляя окно растягиваться -->
+<ul style="padding-left: 20px; line-height: 1.6; white-space: nowrap;">
+    <li>Rename file name in <b>classSettings.settings.object.geometry.positionsFileName</b>.</li>
+    <li>Select <b>"`+ error.baseUrl + `"</b> folder.<br>Go to <b>Settings/Hypersphere/Save</b> in the right top corner of the canvas for it.</li>
+</ul>`;
 		}
+/*
 		function showAutoWidthModal() {
 			const dialog = document.createElement('dialog');
 
@@ -378,13 +380,13 @@ if (geometry.positionsFileName) {
 			dialog.style.maxWidth = '90vw'; // Защита от выхода за границы экрана (90% ширины экрана)
 
 			dialog.innerHTML = `
-    <h3 style="margin-top: 0; color: #333;">` + errorMessage + `</h3>
-    `+ sHelp + `
+<h3 style="margin-top: 0; color: #333;">` + errorMessage + `</h3>
+`+ sHelp + `
     
-    <div style="text-align: right; margin-top: 15px;">
-      <button id="closeModalBtn" style="padding: 6px 12px; cursor: pointer;">Close</button>
-    </div>
-  `;
+<div style="text-align: right; margin-top: 15px;">
+    <button id="closeModalBtn" style="padding: 6px 12px; cursor: pointer;">Close</button>
+</div>
+`;
 
 			document.body.appendChild(dialog);
 
@@ -398,12 +400,52 @@ if (geometry.positionsFileName) {
 
 		// Запуск функции
 		showAutoWidthModal();
+*/
+		// Возвращаем Promise, чтобы await приостанавливал выполнение loadPositions
+		function showAutoWidthModal() {
+			return new Promise((resolve) => {
+				const dialog = document.createElement('dialog');
+
+				// Базовые стили для аккуратного вида
+				dialog.style.padding = '20px';
+				dialog.style.borderRadius = '8px';
+				dialog.style.border = '1px solid #ccc';
+				dialog.style.boxShadow = '0 4px 20px rgba(0,0,0,0.15)';
+
+				// ВАЖНО: убираем ограничение maxWidth и ставим width: max-content
+				dialog.style.width = 'max-content';
+				dialog.style.maxWidth = '90vw'; // Защита от выхода за границы экрана (90% ширины экрана)
+
+				dialog.innerHTML = `
+<h3 style="margin-top: 0; color: #333;">` + errorMessage + `</h3>
+`+ sHelp + `
+    
+<div style="text-align: right; margin-top: 15px;">
+    <button id="closeModalBtn" style="padding: 6px 12px; cursor: pointer;">Close</button>
+</div>
+`;
+
+				document.body.appendChild(dialog);
+
+				dialog.querySelector('#closeModalBtn').addEventListener('click', () => {
+					dialog.close();
+					dialog.remove();
+					resolve(); // <-- РАЗРЕШАЕМ Promise ТОЛЬКО ПРИ НАЖАТИИ КНОПКИ
+				});
+
+				dialog.showModal();
+			});
+		}
+
+		// Ждем, пока пользователь нажмет "CLOSE"
+		await showAutoWidthModal();
 	}
-/*	
-	const verticesCount = 5,
-		timesCount = myThreeOptions.playerOptions.marks === undefined ? 10 : myThreeOptions.playerOptions.marks,
-		positionLengt = verticesCount * timesCount,
-		itemSize = 4;
-*/		
+	/*	
+		const verticesCount = 5,
+			timesCount = myThreeOptions.playerOptions.marks === undefined ? 10 : myThreeOptions.playerOptions.marks,
+			positionLengt = verticesCount * timesCount,
+			itemSize = 4;
+	*/
+
 }
-export { classSettings, myThreeOptions };
+export { classSettings, myThreeOptions, loadPositions };
