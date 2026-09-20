@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+</head>
+<body>
+    444
+    <script type="module">
+		const R = 0.1;
+		const ETA = 1e-5; // Шаг спуска
+		const REPULSION_STRENGTH = 0.3; // Сила отталкивания
+
+		const pointsPolar = [
+			[1.1129985826111568, -0.632505345630809, 1.9365635037696387],
+			[2.507896901828599, -0.2397907735261665, -1.8694027716053692],
+			[0.5637302656397968, -1.2959213159232201, -1.3155994406557945],
+			[1.1999634672996229, 0.5388326447188353, 2.064484572068206],
+			[2.664280909988919, 0.35724698446724523, 1.474918001829255]
+		];
+
+		// Полярные -> 4D Cartesian
+		function polarToCartesian([alt, lat, lon], r = R) {
+			const x = r * Math.sin(alt) * Math.cos(lat) * Math.cos(lon);
+			const y = r * Math.sin(alt) * Math.cos(lat) * Math.sin(lon);
+			const z = r * Math.sin(alt) * Math.sin(lat);
+			const w = r * Math.cos(alt);
+			return [x, y, z, w];
+		}
+
+		// 4D Cartesian -> Полярные
+		function cartesianToPolar([x, y, z, w], r = R) {
+			const alt = Math.acos(Math.max(-1, Math.min(1, w / r)));
+			const sinAlt = Math.sin(alt);
+
+			let lat = 0;
+			if (Math.abs(sinAlt) > 1e-12) {
+				lat = Math.asin(Math.max(-1, Math.min(1, z / (r * sinAlt))));
+			}
+
+			const lon = Math.atan2(y, x);
+			return [alt, lat, lon];
+		}
+
+		// Выполнение одной итерации метода Томсона для 4D
+		function thomsonStep4D(polarPoints, eta = ETA, r = R) {
+			let cartesian = polarPoints.map(p => polarToCartesian(p, r));
+			const N = cartesian.length;
+			const forces = Array.from({ length: N }, () => [0, 0, 0, 0]);
+
+			for (let i = 0; i < N; i++) {
+				for (let j = 0; j < N; j++) {
+					if (i === j) continue;
+
+					const dx = cartesian[i][0] - cartesian[j][0];
+					const dy = cartesian[i][1] - cartesian[j][1];
+					const dz = cartesian[i][2] - cartesian[j][2];
+					const dw = cartesian[i][3] - cartesian[j][3];
+
+					const distSq = dx * dx + dy * dy + dz * dz + dw * dw;
+					const dist = Math.sqrt(distSq);
+
+					// Замененный множитель силы отталкивания
+					const factor = REPULSION_STRENGTH / (distSq * dist);
+
+					forces[i][0] += dx * factor;
+					forces[i][1] += dy * factor;
+					forces[i][2] += dz * factor;
+					forces[i][3] += dw * factor;
+				}
+			}
+
+			const newCartesian = cartesian.map((pt, i) => {
+				const updated = [
+					pt[0] + eta * forces[i][0],
+					pt[1] + eta * forces[i][1],
+					pt[2] + eta * forces[i][2],
+					pt[3] + eta * forces[i][3]
+				];
+
+				const mag = Math.hypot(...updated);
+				return updated.map(val => (val / mag) * r);
+			});
+
+			return newCartesian.map(pt => cartesianToPolar(pt, r));
+		}
+
+		const nextPolarPoints = thomsonStep4D(pointsPolar);
+		console.log("Новые координаты точек (REPULSION_STRENGTH = 0.3):", nextPolarPoints);
+    </script>
+</body>
+</html>
