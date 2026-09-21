@@ -34,38 +34,70 @@ const classSettings = {
 
 			RANDOM_POINTS: 0,//Случайная точка не вычисляется. Вместо этого возвращается PSEUDO_RANDOM.
 
-				//Вычисляется случайное число.
-				//В GPU для получения случайного числа применяется хеширование(Hashing).Простой генератор псевдослучайных чисел(PCG).Permuted Congruential Generator(Перемешанный конгруэнтный генератор).
-				//Этот метод лучше всего вычисляет случайное число, но требует много времени на вычисления если не оптимизировать Google Chrome.
-				//Инструкция по оптимизации находится в Technical Guide: Enabling High-Performance GPU for Google Chrome https://github.com/anhr/universe/blob/main/hyperSphere/HUniverseEngine.md#technical-guide-enabling-high-performance-gpu-for-google-chrome Инструкцию по оттимизации смотри в D:\My documents\MyProjects\webgl\three.js\GitHub\universe\main\hyperSphere\webGPUHUniverse.js
-				//Значение по умолчанию
-				//RANDOM_POINTS: 1,
+			//Вычисляется случайное число.
+			//В GPU для получения случайного числа применяется хеширование(Hashing).Простой генератор псевдослучайных чисел(PCG).Permuted Congruential Generator(Перемешанный конгруэнтный генератор).
+			//Этот метод лучше всего вычисляет случайное число, но требует много времени на вычисления если не оптимизировать Google Chrome.
+			//Инструкция по оптимизации находится в Technical Guide: Enabling High-Performance GPU for Google Chrome https://github.com/anhr/universe/blob/main/hyperSphere/HUniverseEngine.md#technical-guide-enabling-high-performance-gpu-for-google-chrome Инструкцию по оттимизации смотри в D:\My documents\MyProjects\webgl\three.js\GitHub\universe\main\hyperSphere\webGPUHUniverse.js
+			//Значение по умолчанию
+			//RANDOM_POINTS: 1,
 
-				//PSEUDO_RANDOM: 1,//Have effect only if RANDOM_POINTS: 0. Available range from 0 to 1. Default 0.5
+			//PSEUDO_RANDOM: 1,//Have effect only if RANDOM_POINTS: 0. Available range from 0 to 1. Default 0.5
 
-				//Damping is a velocity reduction factor applied at each iteration step.
-				//It simulates friction or energy dissipation in the system.
-				//Without damping, particles would oscillate indefinitely around equilibrium positions, never stabilizing.
-				//Valid DAMPING value range:
-				//  0 - Heavy damping, quick stopping. Fast stabilization, no oscillations
-				//  1 - No damping. Not recommended for production
-				//Default 0.95.
-				//See https://chat.deepseek.com/share/azo3y7zgc6hov7mlfp for details.
-				DAMPING: 1,
+			//ВНИМАНИЕ!!! Этот параметр устарел. используйте ETA_0
+			//Damping is a velocity reduction factor applied at each iteration step.
+			//It simulates friction or energy dissipation in the system.
+			//Without damping, particles would oscillate indefinitely around equilibrium positions, never stabilizing.
+			//Valid DAMPING value range:
+			//  0 - Heavy damping, quick stopping. Fast stabilization, no oscillations
+			//  1 - No damping. Not recommended for production
+			//Default 0.95.
+			//See https://chat.deepseek.com/share/azo3y7zgc6hov7mlfp for details.
+			DAMPING: 1,
 
-				//Сила отталкивания. Чем меньше значение, тем слабее силы отталкивания между точками, и тем медленнее они двигаются
-				REPULSION_STRENGTH: 0.3,//10,//По умолчанию не определено и зависит от количества вершин REPULSION_STRENGTH = config.a / classSettings.settings.object.geometry.angles.length.
-					//a: 50,//имеет эффект только если не определен REPULSION_STRENGTH. Default 50
+			/**
+			 * ETA (Estimated Time Advance / Step Ratio) — нормализованный безразмерный 
+			 * коэффициент шага интегрирования по времени (Learning Rate).
+			 * 
+			 * ФИЗИЧЕСКИЙ СМЫЛ И ВЯЗКОСТЬ:
+			 * Модель описывает движение зарядов в режиме сильного трения (Overdamped Dynamics / 
+			 * аристотелева механика v = μ * F), где инерция пренебрежимо мала.
+			 * 
+			 * ETA_0 обратно пропорционален вязкости среды γ (ETA_0 ~ 1/γ):
+			 * - Меньше ETA_0 -> выше вязкость среды (медленное, но очень устойчивое движение).
+			 * - Больше ETA_0 -> ниже вязкость среды (быстрый спуск, но риск осцилляций).
+			 *
+			 * ДИАПАЗОНЫ И ЭНЕРГИЯ:
+			 * - Допустимый диапазон ETA_0: (0.0, 0.05] (для метода Euler).
+			 *   • ETA_0 -> 0 : Среда бесконечно вязкая, движение замирает.
+			 *   • ETA_0 > 0.05 : Трение недостаточно, возникают численные осцилляции 
+			 *                    и неустойчивость (расходимость).
+			 * - Потеря энергии: В этой численной модели ВСЯ потенциальная энергия Кулоновского 
+			 *   отталкивания полностью диссипирует (переходит в "тепло" / вязкое трение).
+			 * - Численная задержка ("без тепла"): Энергия не диссипирует только при ETA_0 = 0, 
+			 *   но тогда система статична. При попытке добавить инерцию (m * a = F - γ*v) 
+			 *   без вязкого затухания точки начнут бесконечно колебаться вокруг 
+			 *   минимума энергии, как пружинный маятник.
+			 *
+			 * МАСШТАБИРОВАНИЕ ОТ РАДИУСА РАДИУСА S^3:
+			 * Чтобы сохранить характерное относительное смещение при изменении R:
+			 * F ~ 1/R^2 (силы вырастают при уменьшении радиуса)
+			 * ETA(R) = ETA_0 * R^3
+			 */
+			ETA_0: 0.01,
+
+			//Сила отталкивания. Чем меньше значение, тем слабее силы отталкивания между точками, и тем медленнее они двигаются
+			REPULSION_STRENGTH: 1,//10,//По умолчанию не определено и зависит от количества вершин REPULSION_STRENGTH = config.a / classSettings.settings.object.geometry.angles.length.
+				//a: 50,//имеет эффект только если не определен REPULSION_STRENGTH. Default 50
 
 
-					//Hyperbola parametr. See RandomVertice.calculateHyperbola
-					//p: 0 Прямая линия: y = x (через точки (0,0) и (π,π)).
-					//p: 1 Два отрезка: вертикальный и горизонтальный
-					//0 < p < 1 Гипербола. График гиперболы млжно посмотреть на http://localhost/anhr/commonNodeJS/master/HyperSphere/Examples/hyperbola.html
-					p: 1,//0.99,//Default 0
+				//Hyperbola parametr. See RandomVertice.calculateHyperbola
+				//p: 0 Прямая линия: y = x (через точки (0,0) и (π,π)).
+				//p: 1 Два отрезка: вертикальный и горизонтальный
+				//0 < p < 1 Гипербола. График гиперболы млжно посмотреть на http://localhost/anhr/commonNodeJS/master/HyperSphere/Examples/hyperbola.html
+				p: 1,//0.99,//Default 0
 
-					//LOG: true,//log to console all calculated vertices. Default undefined. Внимание!!! отнимает много времени во время итерации
-				},
+				//LOG: true,//log to console all calculated vertices. Default undefined. Внимание!!! отнимает много времени во время итерации
+			},
 	},
 	/*
 	intersection: {
@@ -119,7 +151,7 @@ const classSettings = {
 			//color: 0xffffff,
 			geometry: {
 
-				positionsFileName: 'positions.bin',
+				positionsFileName: 'positions500.bin',
 				//Tesseract https://en.wikipedia.org/wiki/Tesseract
 				//Please set indices.edges for tesseract
 				angles: [
@@ -290,7 +322,7 @@ const myThreeOptions = {
 	scene: { scale: { x: 1, y: 1, z: 1 }},
 	playerOptions: {
 
-		marks: 1000,
+		//marks: 100,
 		//marks: 750,//при количестве вершин равном 124875 GPU зависает и перезапускается с предупреждением: A valid external Instance reference no longer exists.
 		//marks: 1000,//недостаточно памяти при количестве вершин равном 500000
 

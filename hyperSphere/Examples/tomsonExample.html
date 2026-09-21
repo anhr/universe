@@ -9,8 +9,11 @@
     444
     <script type="module">
 		const R = 0.1;
-		const ETA = 1e-5; // Шаг спуска
-		const REPULSION_STRENGTH = 0.3; // Сила отталкивания
+		const REPULSION_STRENGTH = 1;//0.3; // Сила отталкивания
+
+		// Безразмерный базовый шаг для единичной гиперсферы (R = 1)
+		// Обычно выбирается в диапазоне от 1e-3 до 1e-2 для стабильности
+		const ETA_0 = 0.01;
 
 		const pointsPolar = [
 			[1.1129985826111568, -0.632505345630809, 1.9365635037696387],
@@ -21,7 +24,7 @@
 		];
 
 		// Полярные -> 4D Cartesian
-		function polarToCartesian([alt, lat, lon], r = R) {
+		function polarToCartesian([alt, lat, lon], r) {
 			const x = r * Math.sin(alt) * Math.cos(lat) * Math.cos(lon);
 			const y = r * Math.sin(alt) * Math.cos(lat) * Math.sin(lon);
 			const z = r * Math.sin(alt) * Math.sin(lat);
@@ -30,7 +33,7 @@
 		}
 
 		// 4D Cartesian -> Полярные
-		function cartesianToPolar([x, y, z, w], r = R) {
+		function cartesianToPolar([x, y, z, w], r) {
 			const alt = Math.acos(Math.max(-1, Math.min(1, w / r)));
 			const sinAlt = Math.sin(alt);
 
@@ -44,11 +47,16 @@
 		}
 
 		// Выполнение одной итерации метода Томсона для 4D
-		function thomsonStep4D(polarPoints, eta = ETA, r = R) {
+		function thomsonStep4D(polarPoints, r = R, repulsion = REPULSION_STRENGTH, eta0 = ETA_0) {
+			// Вычисление динамического ETA в зависимости от R
+			const eta = eta0 * Math.pow(r, 3);
+
+			// 1. Перевод в Cartesian
 			let cartesian = polarPoints.map(p => polarToCartesian(p, r));
 			const N = cartesian.length;
 			const forces = Array.from({ length: N }, () => [0, 0, 0, 0]);
 
+			// 2. Расчет кулоновских сил отталкивания
 			for (let i = 0; i < N; i++) {
 				for (let j = 0; j < N; j++) {
 					if (i === j) continue;
@@ -61,8 +69,7 @@
 					const distSq = dx * dx + dy * dy + dz * dz + dw * dw;
 					const dist = Math.sqrt(distSq);
 
-					// Замененный множитель силы отталкивания
-					const factor = REPULSION_STRENGTH / (distSq * dist);
+					const factor = repulsion / (distSq * dist);
 
 					forces[i][0] += dx * factor;
 					forces[i][1] += dy * factor;
@@ -71,6 +78,7 @@
 				}
 			}
 
+			// 3. Смещение с учетом рассчитанного ETA и проекция обратно на S3
 			const newCartesian = cartesian.map((pt, i) => {
 				const updated = [
 					pt[0] + eta * forces[i][0],
@@ -83,11 +91,14 @@
 				return updated.map(val => (val / mag) * r);
 			});
 
+			// 4. Возврат в полярную систему
 			return newCartesian.map(pt => cartesianToPolar(pt, r));
 		}
 
-		const nextPolarPoints = thomsonStep4D(pointsPolar);
-		console.log("Новые координаты точек (REPULSION_STRENGTH = 0.3):", nextPolarPoints);
-    </script>
+		// Запуск 1 шага
+		const nextPolarPoints = thomsonStep4D(pointsPolar, R, REPULSION_STRENGTH, ETA_0);
+		console.log("Рассчитанный ETA:", ETA_0 * Math.pow(R, 3));
+		console.log("Новые полярные координаты:", nextPolarPoints);
+	</script>
 </body>
 </html>
