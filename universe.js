@@ -366,7 +366,9 @@ class Universe
 
 									switch (name) {
 
-										case 'ranges': return angles0[name];
+										case 'ranges':
+										case 'length':
+											return angles0[name];
 											
 									}
 									return angles[name];
