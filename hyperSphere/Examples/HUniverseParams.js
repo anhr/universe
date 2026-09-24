@@ -144,6 +144,7 @@ const classSettings = {
 	//debug: false,
 	settings: {
 
+		noGetMaxPairsFloat32Length: true,
 		object: {
 
 			//name: 'edges',
