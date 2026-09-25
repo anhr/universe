@@ -3,102 +3,105 @@
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="utf-8" />
-    <title></title>
+    <title>Tomson example</title>
 </head>
 <body>
-    444
     <script type="module">
+        //https://gemini.google.com/app/f6d58fd7a1e2e1bf
 		const R = 0.1;
-		const REPULSION_STRENGTH = 1;//0.3; // Сила отталкивания
-
-		// Безразмерный базовый шаг для единичной гиперсферы (R = 1)
-		// Обычно выбирается в диапазоне от 1e-3 до 1e-2 для стабильности
+		const REPULSION_STRENGTH = 0.3;
 		const ETA_0 = 0.01;
 
+		// Массив объектов полярных координат
 		const pointsPolar = [
-			[1.1129985826111568, -0.632505345630809, 1.9365635037696387],
-			[2.507896901828599, -0.2397907735261665, -1.8694027716053692],
-			[0.5637302656397968, -1.2959213159232201, -1.3155994406557945],
-			[1.1999634672996229, 0.5388326447188353, 2.064484572068206],
-			[2.664280909988919, 0.35724698446724523, 1.474918001829255]
+			{ altitude: 1.1129985826111568, latitude: -0.632505345630809, longitude: 1.9365635037696387 },
+			{ altitude: 2.507896901828599, latitude: -0.2397907735261665, longitude: -1.8694027716053692 },
+			{ altitude: 0.5637302656397968, latitude: -1.2959213159232201, longitude: -1.3155994406557945 },
+			{ altitude: 1.1999634672996229, latitude: 0.5388326447188353, longitude: 2.064484572068206 },
+			{ altitude: 2.664280909988919, latitude: 0.35724698446724523, longitude: 1.474918001829255 }
 		];
 
-		// Полярные -> 4D Cartesian
-		function polarToCartesian([alt, lat, lon], r) {
-			const x = r * Math.sin(alt) * Math.cos(lat) * Math.cos(lon);
-			const y = r * Math.sin(alt) * Math.cos(lat) * Math.sin(lon);
-			const z = r * Math.sin(alt) * Math.sin(lat);
-			const w = r * Math.cos(alt);
-			return [x, y, z, w];
+		// Полярные -> 4D Cartesian (возвращает объект {x, y, z, w})
+		function polarToCartesian(angles, r = R) {
+			const { altitude, latitude, longitude } = angles;
+			const x = r * Math.sin(altitude) * Math.cos(latitude) * Math.cos(longitude);
+			const y = r * Math.sin(altitude) * Math.cos(latitude) * Math.sin(longitude);
+			const z = r * Math.sin(altitude) * Math.sin(latitude);
+			const w = r * Math.cos(altitude);
+			return { x, y, z, w };
 		}
 
-		// 4D Cartesian -> Полярные
-		function cartesianToPolar([x, y, z, w], r) {
-			const alt = Math.acos(Math.max(-1, Math.min(1, w / r)));
-			const sinAlt = Math.sin(alt);
+		// 4D Cartesian -> Полярные (принимает объект {x, y, z, w}, возвращает объект {altitude, latitude, longitude})
+		function cartesianToPolar(cartesian, r = R) {
+			const { x, y, z, w } = cartesian;
+			const altitude = Math.acos(Math.max(-1, Math.min(1, w / r)));
+			const sinAlt = Math.sin(altitude);
 
-			let lat = 0;
+			let latitude = 0;
 			if (Math.abs(sinAlt) > 1e-12) {
-				lat = Math.asin(Math.max(-1, Math.min(1, z / (r * sinAlt))));
+				latitude = Math.asin(Math.max(-1, Math.min(1, z / (r * sinAlt))));
 			}
 
-			const lon = Math.atan2(y, x);
-			return [alt, lat, lon];
+			const longitude = Math.atan2(y, x);
+			return { altitude, latitude, longitude };
 		}
 
 		// Выполнение одной итерации метода Томсона для 4D
-		function thomsonStep4D(polarPoints, r = R, repulsion = REPULSION_STRENGTH, eta0 = ETA_0) {
-			// Вычисление динамического ETA в зависимости от R
-			const eta = eta0 * Math.pow(r, 3);
+		function thomsonStep4D(polarPoints, r = R) {
+			const eta = ETA_0 * Math.pow(r, 3);
 
-			// 1. Перевод в Cartesian
-			let cartesian = polarPoints.map(p => polarToCartesian(p, r));
+			// 1. Перевод в Cartesian объекты
+			const cartesian = polarPoints.map(p => polarToCartesian(p, r));
 			const N = cartesian.length;
-			const forces = Array.from({ length: N }, () => [0, 0, 0, 0]);
+			const forces = Array.from({ length: N }, () => ({ x: 0, y: 0, z: 0, w: 0 }));
 
 			// 2. Расчет кулоновских сил отталкивания
 			for (let i = 0; i < N; i++) {
 				for (let j = 0; j < N; j++) {
 					if (i === j) continue;
 
-					const dx = cartesian[i][0] - cartesian[j][0];
-					const dy = cartesian[i][1] - cartesian[j][1];
-					const dz = cartesian[i][2] - cartesian[j][2];
-					const dw = cartesian[i][3] - cartesian[j][3];
+					const dx = cartesian[i].x - cartesian[j].x;
+					const dy = cartesian[i].y - cartesian[j].y;
+					const dz = cartesian[i].z - cartesian[j].z;
+					const dw = cartesian[i].w - cartesian[j].w;
 
 					const distSq = dx * dx + dy * dy + dz * dz + dw * dw;
 					const dist = Math.sqrt(distSq);
 
-					const factor = repulsion / (distSq * dist);
+					const factor = REPULSION_STRENGTH / (distSq * dist);
 
-					forces[i][0] += dx * factor;
-					forces[i][1] += dy * factor;
-					forces[i][2] += dz * factor;
-					forces[i][3] += dw * factor;
+					forces[i].x += dx * factor;
+					forces[i].y += dy * factor;
+					forces[i].z += dz * factor;
+					forces[i].w += dw * factor;
 				}
 			}
 
-			// 3. Смещение с учетом рассчитанного ETA и проекция обратно на S3
+			// 3. Смещение и нормировка обратно на S3
 			const newCartesian = cartesian.map((pt, i) => {
-				const updated = [
-					pt[0] + eta * forces[i][0],
-					pt[1] + eta * forces[i][1],
-					pt[2] + eta * forces[i][2],
-					pt[3] + eta * forces[i][3]
-				];
+				const updated = {
+					x: pt.x + eta * forces[i].x,
+					y: pt.y + eta * forces[i].y,
+					z: pt.z + eta * forces[i].z,
+					w: pt.w + eta * forces[i].w
+				};
 
-				const mag = Math.hypot(...updated);
-				return updated.map(val => (val / mag) * r);
+				const mag = Math.hypot(updated.x, updated.y, updated.z, updated.w);
+				return {
+					x: (updated.x / mag) * r,
+					y: (updated.y / mag) * r,
+					z: (updated.z / mag) * r,
+					w: (updated.w / mag) * r
+				};
 			});
 
-			// 4. Возврат в полярную систему
+			// 4. Возврат в полярные координаты в виде объектов
 			return newCartesian.map(pt => cartesianToPolar(pt, r));
 		}
 
 		// Запуск 1 шага
-		const nextPolarPoints = thomsonStep4D(pointsPolar, R, REPULSION_STRENGTH, ETA_0);
-		console.log("Рассчитанный ETA:", ETA_0 * Math.pow(R, 3));
-		console.log("Новые полярные координаты:", nextPolarPoints);
+		const nextPolarPoints = thomsonStep4D(pointsPolar, R);
+		console.log("Новые полярные координаты точек:", nextPolarPoints);
 	</script>
 </body>
 </html>
