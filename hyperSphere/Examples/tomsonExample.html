@@ -9,10 +9,10 @@
     <script type="module">
         //https://gemini.google.com/app/f6d58fd7a1e2e1bf
 		const R = 0.1;
-		const REPULSION_STRENGTH = 0.3;
+		const REPULSION_STRENGTH = 1; // Изменено на 1
 		const ETA_0 = 0.01;
 
-		// Массив объектов полярных координат
+		// Массив объектов точек вместо массивов
 		const pointsPolar = [
 			{ altitude: 1.1129985826111568, latitude: -0.632505345630809, longitude: 1.9365635037696387 },
 			{ altitude: 2.507896901828599, latitude: -0.2397907735261665, longitude: -1.8694027716053692 },
@@ -21,19 +21,19 @@
 			{ altitude: 2.664280909988919, latitude: 0.35724698446724523, longitude: 1.474918001829255 }
 		];
 
-		// Полярные -> 4D Cartesian (возвращает объект {x, y, z, w})
+		// Принимает объект angles = { altitude, latitude, longitude } и возвращает объект { x, y, z, w }
 		function polarToCartesian(angles, r = R) {
 			const { altitude, latitude, longitude } = angles;
 			const x = r * Math.sin(altitude) * Math.cos(latitude) * Math.cos(longitude);
 			const y = r * Math.sin(altitude) * Math.cos(latitude) * Math.sin(longitude);
 			const z = r * Math.sin(altitude) * Math.sin(latitude);
 			const w = r * Math.cos(altitude);
+
 			return { x, y, z, w };
 		}
 
-		// 4D Cartesian -> Полярные (принимает объект {x, y, z, w}, возвращает объект {altitude, latitude, longitude})
-		function cartesianToPolar(cartesian, r = R) {
-			const { x, y, z, w } = cartesian;
+		// Принимает объект { x, y, z, w } и возвращает объект { altitude, latitude, longitude }
+		function cartesianToPolar({ x, y, z, w }, r = R) {
 			const altitude = Math.acos(Math.max(-1, Math.min(1, w / r)));
 			const sinAlt = Math.sin(altitude);
 
@@ -43,16 +43,20 @@
 			}
 
 			const longitude = Math.atan2(y, x);
+
 			return { altitude, latitude, longitude };
 		}
 
-		// Выполнение одной итерации метода Томсона для 4D
+		// Из подписи функции удалены аргументы repulsion и eta0
 		function thomsonStep4D(polarPoints, r = R) {
+			// Динамический расчет ETA от радиуса
 			const eta = ETA_0 * Math.pow(r, 3);
 
-			// 1. Перевод в Cartesian объекты
-			const cartesian = polarPoints.map(p => polarToCartesian(p, r));
+			// 1. Конвертация в Cartesian (получаем массив объектов {x, y, z, w})
+			let cartesian = polarPoints.map(p => polarToCartesian(p, r));
 			const N = cartesian.length;
+
+			// Вектор сил для каждой точки в 4D
 			const forces = Array.from({ length: N }, () => ({ x: 0, y: 0, z: 0, w: 0 }));
 
 			// 2. Расчет кулоновских сил отталкивания
@@ -65,19 +69,21 @@
 					const dz = cartesian[i].z - cartesian[j].z;
 					const dw = cartesian[i].w - cartesian[j].w;
 
-					const distSq = dx * dx + dy * dy + dz * dz + dw * dw;
-					const dist = Math.sqrt(distSq);
+					// Заменено distSq -> d2
+					const d2 = dx * dx + dy * dy + dz * dz + dw * dw;
+					const dist = Math.sqrt(d2);
 
-					const factor = REPULSION_STRENGTH / (distSq * dist);
+					// Заменено factor -> m
+					const m = REPULSION_STRENGTH / (d2 * dist);
 
-					forces[i].x += dx * factor;
-					forces[i].y += dy * factor;
-					forces[i].z += dz * factor;
-					forces[i].w += dw * factor;
+					forces[i].x += dx * m;
+					forces[i].y += dy * m;
+					forces[i].z += dz * m;
+					forces[i].w += dw * m;
 				}
 			}
 
-			// 3. Смещение и нормировка обратно на S3
+			// 3. Смещение точек и нормализация на гиперсферу S3 (R)
 			const newCartesian = cartesian.map((pt, i) => {
 				const updated = {
 					x: pt.x + eta * forces[i].x,
@@ -87,6 +93,7 @@
 				};
 
 				const mag = Math.hypot(updated.x, updated.y, updated.z, updated.w);
+
 				return {
 					x: (updated.x / mag) * r,
 					y: (updated.y / mag) * r,
@@ -95,11 +102,11 @@
 				};
 			});
 
-			// 4. Возврат в полярные координаты в виде объектов
+			// 4. Возврат в полярную систему (массив объектов { altitude, latitude, longitude })
 			return newCartesian.map(pt => cartesianToPolar(pt, r));
 		}
 
-		// Запуск 1 шага
+		// Выполнение 1 шага
 		const nextPolarPoints = thomsonStep4D(pointsPolar, R);
 		console.log("Новые полярные координаты точек:", nextPolarPoints);
 	</script>
