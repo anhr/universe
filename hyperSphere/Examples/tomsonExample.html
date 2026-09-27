@@ -8,11 +8,11 @@
 <body>
     <script type="module">
         //https://gemini.google.com/app/f6d58fd7a1e2e1bf
-		const R = 0.1;
 		const REPULSION_STRENGTH = 1;
 		const ETA_0 = 0.01;
+		const BETA = 0.85; // Коэффициент импульса (0.0 = без инерции, ~0.85 = сильная инерция)
 
-		const pointsPolar = [
+		let pointsPolar = [
 			{ altitude: 1.1129985826111568, latitude: -0.632505345630809, longitude: 1.9365635037696387 },
 			{ altitude: 2.507896901828599, latitude: -0.2397907735261665, longitude: -1.8694027716053692 },
 			{ altitude: 0.5637302656397968, latitude: -1.2959213159232201, longitude: -1.3155994406557945 },
@@ -20,94 +20,115 @@
 			{ altitude: 2.664280909988919, latitude: 0.35724698446724523, longitude: 1.474918001829255 }
 		];
 
-		function polarToCartesian(angles, r = R) {
+		function polarToCartesian(angles, r) {
 			const { altitude, latitude, longitude } = angles;
 			const x = r * Math.sin(altitude) * Math.cos(latitude) * Math.cos(longitude);
 			const y = r * Math.sin(altitude) * Math.cos(latitude) * Math.sin(longitude);
 			const z = r * Math.sin(altitude) * Math.sin(latitude);
 			const w = r * Math.cos(altitude);
-
 			return { x, y, z, w };
 		}
 
-		function cartesianToPolar({ x, y, z, w }, r = R) {
+		function cartesianToPolar({ x, y, z, w }, r) {
 			const altitude = Math.acos(Math.max(-1, Math.min(1, w / r)));
 			const sinAlt = Math.sin(altitude);
-
 			let latitude = 0;
 			if (Math.abs(sinAlt) > 1e-12) {
 				latitude = Math.asin(Math.max(-1, Math.min(1, z / (r * sinAlt))));
 			}
-
 			const longitude = Math.atan2(y, x);
-
 			return { altitude, latitude, longitude };
 		}
 
-		function thomsonStep4D(polarPoints, r = R) {
-			const eta = ETA_0 * Math.pow(r, 3);
+		// Запуск симуляции на N шагов с изменением R
+		function runThomsonMomentum(initialPolarPoints, totalSteps = 10) {
+			const N = initialPolarPoints.length;
 
-			let cartesian = polarPoints.map(p => polarToCartesian(p, r));
-			const N = cartesian.length;
+			// Инициализация векторов скоростей для каждой точки (вначале 0)
+			let velocities = Array.from({ length: N }, () => ({ x: 0, y: 0, z: 0, w: 0 }));
 
-			const forces = Array.from({ length: N }, () => ({ x: 0, y: 0, z: 0, w: 0 }));
+			// Начальный радиус
+			let currentR = 0.1;
+			let cartesian = initialPolarPoints.map(p => polarToCartesian(p, currentR));
 
-			// Оптимизированный цикл: перебор только уникальных пар (j = i + 1)
-			for (let i = 0; i < N - 1; i++) {
-				for (let j = i + 1; j < N; j++) {
-					const dx = cartesian[i].x - cartesian[j].x;
-					const dy = cartesian[i].y - cartesian[j].y;
-					const dz = cartesian[i].z - cartesian[j].z;
-					const dw = cartesian[i].w - cartesian[j].w;
+			console.log(`--- Старт симуляции (Шаг 0, R = ${currentR.toFixed(2)}) ---`);
 
-					const d2 = dx * dx + dy * dy + dz * dz + dw * dw;
-					const dist = Math.sqrt(d2);
+			for (let step = 1; step <= totalSteps; step++) {
+				// 1. Вычисляем новый радиус на текущем шаге (от 0.1 до 1.0)
+				const nextR = 0.1 + (1.0 - 0.1) * (step / totalSteps);
+				const rRatio = nextR / currentR; // Коэффициент масштабирования пространства
 
-					// m вычисляется 1 раз для каждой пары элементов
-					const m = REPULSION_STRENGTH / (d2 * dist);
+				// Масштабируем прошлую скорость под новый размер пространства
+				velocities = velocities.map(v => ({
+					x: v.x * rRatio,
+					y: v.y * rRatio,
+					z: v.z * rRatio,
+					w: v.w * rRatio
+				}));
 
-					const fx = dx * m;
-					const fy = dy * m;
-					const fz = dz * m;
-					const fw = dw * m;
+				// Динамический шаг ETA
+				const eta = ETA_0 * Math.pow(currentR, 3);
+				const forces = Array.from({ length: N }, () => ({ x: 0, y: 0, z: 0, w: 0 }));
 
-					// Применяем силу к точке i (отталкивание от j)
-					forces[i].x += fx;
-					forces[i].y += fy;
-					forces[i].z += fz;
-					forces[i].w += fw;
+				// 2. Расчет Кулоновских сил отталкивания
+				for (let i = 0; i < N - 1; i++) {
+					for (let j = i + 1; j < N; j++) {
+						const dx = cartesian[i].x - cartesian[j].x;
+						const dy = cartesian[i].y - cartesian[j].y;
+						const dz = cartesian[i].z - cartesian[j].z;
+						const dw = cartesian[i].w - cartesian[j].w;
 
-					// Применяем протипоположную силу к точке j (3-й закон Ньютона)
-					forces[j].x -= fx;
-					forces[j].y -= fy;
-					forces[j].z -= fz;
-					forces[j].w -= fw;
+						const d2 = dx * dx + dy * dy + dz * dz + dw * dw;
+						const dist = Math.sqrt(d2);
+						const m = REPULSION_STRENGTH / (d2 * dist);
+
+						const fx = dx * m;
+						const fy = dy * m;
+						const fz = dz * m;
+						const fw = dw * m;
+
+						forces[i].x += fx; forces[i].y += fy; forces[i].z += fz; forces[i].w += fw;
+						forces[j].x -= fx; forces[j].y -= fy; forces[j].z -= fz; forces[j].w -= fw;
+					}
 				}
+
+				// 3. Обновление скоростей (Momentum) и позиций
+				cartesian = cartesian.map((pt, i) => {
+					// v = BETA * v + eta * F
+					velocities[i].x = BETA * velocities[i].x + eta * forces[i].x;
+					velocities[i].y = BETA * velocities[i].y + eta * forces[i].y;
+					velocities[i].z = BETA * velocities[i].z + eta * forces[i].z;
+					velocities[i].w = BETA * velocities[i].w + eta * forces[i].w;
+
+					// updated = pos + v
+					const updated = {
+						x: pt.x + velocities[i].x,
+						y: pt.y + velocities[i].y,
+						z: pt.z + velocities[i].z,
+						w: pt.w + velocities[i].w
+					};
+
+					// Проекция на обновленную гиперсферу с радиусом nextR
+					const mag = Math.hypot(updated.x, updated.y, updated.z, updated.w);
+					return {
+						x: (updated.x / mag) * nextR,
+						y: (updated.y / mag) * nextR,
+						z: (updated.z / mag) * nextR,
+						w: (updated.w / mag) * nextR
+					};
+				});
+
+				currentR = nextR;
+				const currentPolar = cartesian.map(pt => cartesianToPolar(pt, currentR));
+
+				console.log(`\n=== Итерация ${step} / ${totalSteps} (R = ${currentR.toFixed(2)}) ===`);
+				console.log("Модуль скорости первой точки (v0):", Math.hypot(velocities[0].x, velocities[0].y, velocities[0].z, velocities[0].w).toExponential(4));
+				console.log("Новая полярная координата точки P1:", currentPolar[0]);
 			}
-
-			const newCartesian = cartesian.map((pt, i) => {
-				const updated = {
-					x: pt.x + eta * forces[i].x,
-					y: pt.y + eta * forces[i].y,
-					z: pt.z + eta * forces[i].z,
-					w: pt.w + eta * forces[i].w
-				};
-
-				const mag = Math.hypot(updated.x, updated.y, updated.z, updated.w);
-
-				return {
-					x: (updated.x / mag) * r,
-					y: (updated.y / mag) * r,
-					z: (updated.z / mag) * r,
-					w: (updated.w / mag) * r
-				};
-			});
-
-			return newCartesian.map(pt => cartesianToPolar(pt, r));
 		}
 
-		const nextPolarPoints = thomsonStep4D(pointsPolar, R);
-		console.log("Новые полярные координаты точек:", nextPolarPoints);
+		// Запуск 10 итераций
+		runThomsonMomentum(pointsPolar, 10);
 	</script>
 </body>
 </html>
