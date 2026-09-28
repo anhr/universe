@@ -85,8 +85,21 @@ const classSettings = {
 			 */
 			ETA_0: 0.01,
 
+			// коэффициент сохранения импульса (затухания инерции).
+			// Определяет, какая доля скорости с прошлого шага сохраняется на текущем.
+			//
+			// Минимальное значение: 0.0
+			// - Полное отсутствие инерции (классический градиентный спуск).
+			// Максимальное значение: < 1.0 (обычно до 0.99)
+			// - Чем ближе к 1.0, тем сильнее инерция и «тяжелее» точки.
+			// - BETA = 0.85–0.90: умеренно сильная инерция, ускоряет преодоление плато и помогает проходить локальные минимумы.
+			// - BETA >= 0.99: запредельная инерция, точки начинают бесконечно осциллировать и долго «раскачиваться».
+			// По умолчанию 0.85
+			//BETA: 0.99,
+
 			//Сила отталкивания. Чем меньше значение, тем слабее силы отталкивания между точками, и тем медленнее они двигаются
-			REPULSION_STRENGTH: 1,//10,//По умолчанию не определено и зависит от количества вершин REPULSION_STRENGTH = config.a / classSettings.settings.object.geometry.angles.length.
+//deprecated
+//REPULSION_STRENGTH: 1,//10,//По умолчанию не определено и зависит от количества вершин REPULSION_STRENGTH = config.a / classSettings.settings.object.geometry.angles.length.
 				//a: 50,//имеет эффект только если не определен REPULSION_STRENGTH. Default 50
 
 
@@ -152,7 +165,7 @@ const classSettings = {
 			//color: 0xffffff,
 			geometry: {
 
-				positionsFileName: 'positions500.bin',
+				positionsFileName: 'positions5.bin',
 				//Tesseract https://en.wikipedia.org/wiki/Tesseract
 				//Please set indices.edges for tesseract
 				angles: [
