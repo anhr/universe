@@ -101,7 +101,7 @@ class Universe
 		myThreeOptions.canvas.noButtonFullScreen = myThreeOptions.canvas.noButtonFullScreen != undefined ? myThreeOptions.canvas.noButtonFullScreen : true;
 
 		if (myThreeOptions.palette === undefined) myThreeOptions.palette = MyThree.ColorPicker.paletteIndexes.rainbow;
-		
+
 		new MyThree((scene, options) => {
 
 			let traces, traceVerticeId;
@@ -161,6 +161,7 @@ class Universe
 
 										const verticeId = parseInt(name);
 										if (!isNaN(verticeId)) {
+/*											
 											const positionData = this.hyperSphere.getPositionData(verticeId, timeId);
 											const position = classSettings.settings.bufferGeometry.attributes.position;
 											const index = positionData.positionId / position.itemSize;
@@ -174,6 +175,8 @@ class Universe
 													break;
 												default: console.error(sUniverse + ': get angles. Invalid position.itemSize = ' + position.itemSize);
 											}
+*/											
+											const verticePosition = classSettings.overriddenProperties.getVerticePosition(verticeId, timeId);
 											return new Proxy(utils.cartesianToPolar(verticePosition), {
 
 												get: (verticeAngles, name) => {
@@ -464,6 +467,18 @@ class Universe
 							
 								}
 								if (!overriddenProperties.angles) overriddenProperties.angles = (anglesId, timeId = 0) => { return settings.object.geometry.times[timeId][anglesId]; }
+								if (!overriddenProperties.getVerticePosition) overriddenProperties.getVerticePosition = (verticeId, timeId) => {
+									const positionData = this.hyperSphere.getPositionData(verticeId, timeId);
+									const position = classSettings.settings.bufferGeometry.attributes.position;
+									const index = positionData.positionId / position.itemSize;
+									switch (position.itemSize) {
+										case 4:
+											return new THREE.Vector4().fromBufferAttribute(position, index);
+										case 3:
+											return new THREE.Vector3().fromBufferAttribute(position, index);
+										default: console.error(sUniverse + ': get angles. Invalid position.itemSize = ' + position.itemSize);
+									}
+								}
 								if (!overriddenProperties.verticeAngles) overriddenProperties.verticeAngles = (anglesCur, verticeId) => {
 
 									const guiPoints = settings.guiPoints;
