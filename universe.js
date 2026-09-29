@@ -469,7 +469,19 @@ class Universe
 								if (!overriddenProperties.angles) overriddenProperties.angles = (anglesId, timeId = 0) => { return settings.object.geometry.times[timeId][anglesId]; }
 								if (!overriddenProperties.getVerticePosition) overriddenProperties.getVerticePosition = (verticeId, timeId) => {
 									const positionData = this.hyperSphere.getPositionData(verticeId, timeId);
-									const position = classSettings.settings.bufferGeometry.attributes.position;
+									const position = classSettings.settings.bufferGeometry.attributes.position,
+									 array = position.array, positionId = positionData.positionId;
+									return {
+										get x() { return array[positionId + 0]; },
+										set x(value) { array[positionId + 0] = value; },
+										get y() { return array[positionId + 1]; },
+										set y(value) { array[positionId + 1] = value; },
+										get z() { return array[positionId + 2]; },
+										set z(value) { array[positionId + 2] = value; },
+										get w() { return array[positionId + 3]; },
+										set w(value) { array[positionId + 3] = value; },
+									}
+/*									
 									const index = positionData.positionId / position.itemSize;
 									switch (position.itemSize) {
 										case 4:
@@ -478,6 +490,7 @@ class Universe
 											return new THREE.Vector3().fromBufferAttribute(position, index);
 										default: console.error(sUniverse + ': get angles. Invalid position.itemSize = ' + position.itemSize);
 									}
+*/									
 								}
 								if (!overriddenProperties.verticeAngles) overriddenProperties.verticeAngles = (anglesCur, verticeId) => {
 

@@ -149,7 +149,7 @@ const classSettings = {
 
 		probabilityDensity: false,
 		middleVertice: false,
-		log: true,//false,
+		//log: true,//false,
 		edges: false,
 		random: () => { return 0.5 },//replacing random vertices with strictly defined vertices.
 
