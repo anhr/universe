@@ -61,10 +61,10 @@
 
 		// Запуск симуляции с динамическим шагом радиуса
 		function runThomsonMomentum(initialPolarPoints, marks = 10) {
-			const N = initialPolarPoints.length;
+			const positionBlockLength = initialPolarPoints.length;
 
 			// Инициализация векторов скоростей и декартовых координат с помощью const
-			const velocities = Array.from({ length: N }, () => ({ x: 0, y: 0, z: 0, w: 0 }));
+			const velocities = Array.from({ length: positionBlockLength }, () => ({ x: 0, y: 0, z: 0, w: 0 }));
 			let currentR = rMin;
 			const cartesian = initialPolarPoints.map(p => polarToCartesian(p, currentR));
 
@@ -75,7 +75,7 @@
 				const rRatio = nextR / currentR;
 
 				// In-place масштабирование скоростей без пересоздания массива
-				for (let i = 0; i < N; i++) {
+				for (let i = 0; i < positionBlockLength; i++) {
 					velocities[i].x *= rRatio;
 					velocities[i].y *= rRatio;
 					velocities[i].z *= rRatio;
@@ -83,11 +83,11 @@
 				}
 
 				const eta = ETA_0 * Math.pow(currentR, 3);
-				const forces = Array.from({ length: N }, () => ({ x: 0, y: 0, z: 0, w: 0 }));
+				const forces = Array.from({ length: positionBlockLength }, () => ({ x: 0, y: 0, z: 0, w: 0 }));
 
 				// 1. Расчет Кулоновских сил отталкивания
-				for (let i = 0; i < N - 1; i++) {
-					for (let j = i + 1; j < N; j++) {
+				for (let i = 0; i < positionBlockLength - 1; i++) {
+					for (let j = i + 1; j < positionBlockLength; j++) {
 						const dx = cartesian[i].x - cartesian[j].x;
 						const dy = cartesian[i].y - cartesian[j].y;
 						const dz = cartesian[i].z - cartesian[j].z;
@@ -109,7 +109,7 @@
 				}
 
 				// 2. Обновление скоростей и позиций in-place
-				for (let i = 0; i < N; i++) {
+				for (let i = 0; i < positionBlockLength; i++) {
 					// Обновляем скорость v = BETA * v + eta * F
 					velocities[i].x = BETA * velocities[i].x + eta * forces[i].x;
 					velocities[i].y = BETA * velocities[i].y + eta * forces[i].y;
