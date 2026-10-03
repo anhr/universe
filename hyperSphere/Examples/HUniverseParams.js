@@ -52,7 +52,7 @@ const classSettings = {
 			//  1 - No damping. Not recommended for production
 			//Default 0.95.
 			//See https://chat.deepseek.com/share/azo3y7zgc6hov7mlfp for details.
-			DAMPING: 1,
+//			DAMPING: 1,
 
 			/**
 			 * ETA (Estimated Time Advance / Step Ratio) — нормализованный безразмерный 
@@ -82,8 +82,9 @@ const classSettings = {
 			 * Чтобы сохранить характерное относительное смещение при изменении R:
 			 * F ~ 1/R^2 (силы вырастают при уменьшении радиуса)
 			 * ETA(R) = ETA_0 * R^3
+			 * default 0.01
 			 */
-			ETA_0: 0.01,
+			//ETA_0: 0.01,
 
 			// коэффициент сохранения импульса (затухания инерции).
 			// Определяет, какая доля скорости с прошлого шага сохраняется на текущем.
