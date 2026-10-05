@@ -91,14 +91,27 @@
 
 		const marks = 10;
 		const positionBlockLength = positionArray.length / (itemSize * marks); // Количество 4D точек
+		const debug = true;
+		let timeId = 0;
+		const getOffset = (index, timeIdCur = timeId) => {
+			return (positionBlockLength * timeIdCur + //индекс начала блока точек для текущего времени
+				index) * //Индекс точки в текущем блоке точек для текущего времени
+				itemSize;
+		}
 
 		/**
 		 * Извлечение координат одной точки из positionArray по её индексу
 		 * @param {number} index интекс точки
+		 * @param {number} timeId интекс времени или интекс текущей итерации
 		 * @returns скорость в формате {x, y, z, w}
 		 */
-		function getPoint(index) {
-			const offset = index * itemSize;
+		function getPoint(index, timeIdCur) {
+			const offset = getOffset(index, timeIdCur);
+/*			
+			const offset = (positionBlockLength * timeIdCur + //индекс начала блока точек для текущего времени
+				index) * //Индекс точки в текущем блоке точек для текущего времени
+				itemSize;
+*/				
 			return {
 				x: positionArray[offset],
 				y: positionArray[offset + 1],
@@ -107,11 +120,23 @@
 			};
 		}
 
+		function verifyVertice(pt, targetRadius, epsilon = 1e-6) {
+			if (!debug) return;
+			const dist = Math.hypot(pt.x, pt.y, pt.z, pt.w);
+	
+			if (Math.abs(dist - targetRadius) > epsilon) {
+				console.warn(`Точка отклонилась от гиперсферы! R = ${dist}, ожидалось = ${targetRadius}`);
+				return false;
+			}
+			return true;
+		}
 		/**
 		 * Проверка принадлежности точек из глобального positionArray гиперсфере заданной с определенной точностью
 		 */
 		function verifyHyperSphere(targetRadius, epsilon = 1e-6) {
 			for (let i = 0; i < positionBlockLength; i++) {
+				if (!verifyVertice(getPoint(i), targetRadius)) return false;
+/*				
 				const pt = getPoint(i);
 				const dist = Math.hypot(pt.x, pt.y, pt.z, pt.w);
 
@@ -119,6 +144,7 @@
 					console.warn(`Точка #${i} отклонилась от гиперсферы! R = ${dist}, ожидалось = ${targetRadius}`);
 					return false;
 				}
+*/				
 			}
 			return true;
 		}
@@ -145,7 +171,7 @@
 
 			console.log(`\n--- Старт симуляции (TimeId 0, R = ${currentR.toFixed(2)}) ---`);
 
-			for (let timeId = 1; timeId <= marks - 1; timeId++) {
+			for (timeId = 1; timeId <= marks - 1; timeId++) {
 				const nextR = rMin + (rMax - rMin) * (timeId / (marks - 1));
 				const rRatio = nextR / currentR;
 
@@ -160,10 +186,12 @@
 				// 2. Расчет Кулоновских сил отталкивания
 				for (let i = 0; i < positionBlockLength - 1; i++) {
 					const iStride = i * itemSize;
-					const pi = getPoint(i);
+//					const iStride = getOffset(i);
+					const pi = getPoint(i, timeId - 1);
 					for (let j = i + 1; j < positionBlockLength; j++) {
 						const jStride = j * itemSize;
-						const pj = getPoint(j);
+//						const jStride = getOffset(j);
+						const pj = getPoint(j, timeId - 1);
 
 						const d = {x: pi.x - pj.x, y: pi.y - pj.y, z: pi.z - pj.z, w: pi.w - pj.w}
 
@@ -194,18 +222,21 @@
 				// 3. Обновление скоростей и позиций in-place прямо в глобальном positionArray
 				for (let i = 0; i < positionBlockLength; i++) {
 					const iStride = i * itemSize;
+//					const iStride = getOffset(i);
+
 
 					// Обновление скорости (Momentum)
-					velocities[iStride] = BETA * velocities[iStride] + eta * forces[iStride];
+					velocities[iStride + 0] = BETA * velocities[iStride + 0] + eta * forces[iStride + 0];
 					velocities[iStride + 1] = BETA * velocities[iStride + 1] + eta * forces[iStride + 1];
 					velocities[iStride + 2] = BETA * velocities[iStride + 2] + eta * forces[iStride + 2];
 					velocities[iStride + 3] = BETA * velocities[iStride + 3] + eta * forces[iStride + 3];
 
 					// Смещение координаты
-					const updatedX = positionArray[iStride] + velocities[iStride];
-					const updatedY = positionArray[iStride + 1] + velocities[iStride + 1];
-					const updatedZ = positionArray[iStride + 2] + velocities[iStride + 2];
-					const updatedW = positionArray[iStride + 3] + velocities[iStride + 3];
+					const offsetSrc = getOffset(i, timeId - 1);
+					const updatedX = positionArray[offsetSrc + 0] + velocities[iStride];
+					const updatedY = positionArray[offsetSrc + 1] + velocities[iStride + 1];
+					const updatedZ = positionArray[offsetSrc + 2] + velocities[iStride + 2];
+					const updatedW = positionArray[offsetSrc + 3] + velocities[iStride + 3];
 
 					// Нормализация и проекция обратно на гиперсферу радиуса nextR
 					const mag = Math.hypot(updatedX, updatedY, updatedZ, updatedW);
@@ -214,18 +245,22 @@
 					//Ее расстояние от центра координат перестает быть равным радиусу R.
 					//Без этой операции точки при каждом шаге итерации постепенно «разлетались» бы от центра, увеличивая свой радиус и нарушая геометрию задачи.
 					//Ту же самую работу можно выполнить, сделав преобразование в полярную систему координат и обратно, но это займет больше времени и уменьшается точность на полюсах.
-					positionArray[iStride + 0] = (updatedX / mag) * nextR;
-					positionArray[iStride + 1] = (updatedY / mag) * nextR;
-					positionArray[iStride + 2] = (updatedZ / mag) * nextR;
-					positionArray[iStride + 3] = (updatedW / mag) * nextR;
+					const offsetDest = getOffset(i);
+					positionArray[offsetDest + 0] = (updatedX / mag) * nextR;
+					positionArray[offsetDest + 1] = (updatedY / mag) * nextR;
+					positionArray[offsetDest + 2] = (updatedZ / mag) * nextR;
+					positionArray[offsetDest + 3] = (updatedW / mag) * nextR;
+
+					// Проверка, что после шага все точки корректно спроецировались на новую гиперсферу
+					verifyVertice(getPoint(i), nextR);
 				}
 
 				currentR = nextR;
-
-				// Проверка, что после шага все точки корректно спроецировались на новую гиперсферу
+/*				
 				if (!verifyHyperSphere(currentR)) {
 					throw new Error(`Ошибка проекции точек на итерации ${timeId}`);
 				}
+*/				
 
 				console.log(`\n=== Итерация ${timeId} / ${marks - 1} (R = ${currentR.toFixed(2)}) ===`);
 				console.log("Модуль скорости первой точки (v0):", Math.hypot(velocities[0], velocities[1], velocities[2], velocities[3]).toExponential(4));

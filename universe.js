@@ -467,6 +467,7 @@ class Universe
 							
 								}
 								if (!overriddenProperties.angles) overriddenProperties.angles = (anglesId, timeId = 0) => { return settings.object.geometry.times[timeId][anglesId]; }
+								overriddenProperties.getPositionTimeId = (timeId) => { return timeId; }
 								if (!overriddenProperties.getVerticePosition) overriddenProperties.getVerticePosition = (verticeId, timeId) => {
 									const positionData = this.hyperSphere.getPositionData(verticeId, timeId);
 									const position = classSettings.settings.bufferGeometry.attributes.position,
