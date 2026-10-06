@@ -107,11 +107,6 @@
 		 */
 		function getPoint(index, timeIdCur) {
 			const offset = getOffset(index, timeIdCur);
-/*			
-			const offset = (positionBlockLength * timeIdCur + //индекс начала блока точек для текущего времени
-				index) * //Индекс точки в текущем блоке точек для текущего времени
-				itemSize;
-*/				
 			return {
 				x: positionArray[offset],
 				y: positionArray[offset + 1],
@@ -136,15 +131,6 @@
 		function verifyHyperSphere(targetRadius, epsilon = 1e-6) {
 			for (let i = 0; i < positionBlockLength; i++) {
 				if (!verifyVertice(getPoint(i), targetRadius)) return false;
-/*				
-				const pt = getPoint(i);
-				const dist = Math.hypot(pt.x, pt.y, pt.z, pt.w);
-
-				if (Math.abs(dist - targetRadius) > epsilon) {
-					console.warn(`Точка #${i} отклонилась от гиперсферы! R = ${dist}, ожидалось = ${targetRadius}`);
-					return false;
-				}
-*/				
 			}
 			return true;
 		}
@@ -186,11 +172,9 @@
 				// 2. Расчет Кулоновских сил отталкивания
 				for (let i = 0; i < positionBlockLength - 1; i++) {
 					const iStride = i * itemSize;
-//					const iStride = getOffset(i);
 					const pi = getPoint(i, timeId - 1);
 					for (let j = i + 1; j < positionBlockLength; j++) {
 						const jStride = j * itemSize;
-//						const jStride = getOffset(j);
 						const pj = getPoint(j, timeId - 1);
 
 						const d = {x: pi.x - pj.x, y: pi.y - pj.y, z: pi.z - pj.z, w: pi.w - pj.w}
@@ -205,13 +189,13 @@
 						const fz = d.z * m;
 						const fw = d.w * m;
 
-						// Применяем силу к точке i (отталкивание от j)					forces[iStride] += fx;
+						// Применяем силу к точке i (отталкивание от j)
 						forces[iStride + 0] += fx;
 						forces[iStride + 1] += fy;
 						forces[iStride + 2] += fz;
 						forces[iStride + 3] += fw;
 
-						// Применяем протипоположную силу к точке j (3-й закон Ньютона)						forces[jStride] -= fx;
+						// Применяем протипоположную силу к точке j (3-й закон Ньютона)
 						forces[jStride + 0] -= fx;
 						forces[jStride + 1] -= fy;
 						forces[jStride + 2] -= fz;
@@ -222,7 +206,6 @@
 				// 3. Обновление скоростей и позиций in-place прямо в глобальном positionArray
 				for (let i = 0; i < positionBlockLength; i++) {
 					const iStride = i * itemSize;
-//					const iStride = getOffset(i);
 
 
 					// Обновление скорости (Momentum)
@@ -256,11 +239,6 @@
 				}
 
 				currentR = nextR;
-/*				
-				if (!verifyHyperSphere(currentR)) {
-					throw new Error(`Ошибка проекции точек на итерации ${timeId}`);
-				}
-*/				
 
 				console.log(`\n=== Итерация ${timeId} / ${marks - 1} (R = ${currentR.toFixed(2)}) ===`);
 				console.log("Модуль скорости первой точки (v0):", Math.hypot(velocities[0], velocities[1], velocities[2], velocities[3]).toExponential(4));
