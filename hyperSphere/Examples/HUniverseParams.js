@@ -26,7 +26,7 @@ import * as fileHandler from '../../../../commonNodeJS/master/fileHandler.js';
 
 const classSettings = {
 	compute: {
-		isUseCPU: true,
+		//isUseCPU: true,
 		config: {
 			//					type: 'START_COMPUTE',//Default 'START_COMPUTE'
 
@@ -52,7 +52,7 @@ const classSettings = {
 			//  1 - No damping. Not recommended for production
 			//Default 0.95.
 			//See https://chat.deepseek.com/share/azo3y7zgc6hov7mlfp for details.
-//			DAMPING: 1,
+//			DAMPING: 0.95,
 
 			/**
 			 * ETA (Estimated Time Advance / Step Ratio) — нормализованный безразмерный 
@@ -150,7 +150,7 @@ const classSettings = {
 
 		probabilityDensity: false,
 		middleVertice: false,
-		log: true,//false,
+		log: false,//default true
 		edges: false,
 		random: () => { return 0.5 },//replacing random vertices with strictly defined vertices.
 
@@ -166,7 +166,7 @@ const classSettings = {
 			//color: 0xffffff,
 			geometry: {
 
-				positionsFileName: 'positions5.bin',
+				//positionsFileName: 'positions5.bin',
 				//Tesseract https://en.wikipedia.org/wiki/Tesseract
 				//Please set indices.edges for tesseract
 				angles: [
@@ -286,7 +286,7 @@ const classSettings = {
 						[Math.PI / 4, Math.PI / 22, -Math.PI / 2],//3
 						[Math.PI / 5, Math.PI / 23, Math.PI],//4
 					],
-						angles: { count: 5, },
+						angles: { count: 5000, },
 						//angles: { count: 500000, },//недостаточно памяти при количестве шагов плеера 1000
 						//angles: { count: 124875, },//выделяется максимально возможное количество памяти при шагов плеера 134. ВНИМАНИЕ!!! Использовать с осторожностью. Вебстраница сильно зависает.
 
@@ -337,7 +337,7 @@ const myThreeOptions = {
 	scene: { scale: { x: 1, y: 1, z: 1 }},
 	playerOptions: {
 
-		//marks: 1000,
+		marks: 1000,
 		//marks: 750,//при количестве вершин равном 124875 GPU зависает и перезапускается с предупреждением: A valid external Instance reference no longer exists.
 		//marks: 1000,//недостаточно памяти при количестве вершин равном 500000
 

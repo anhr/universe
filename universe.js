@@ -1076,6 +1076,21 @@ class Universe
 			
 			};
 			this.hyperSphere = this.getHyperSphere(options, classSettings);
+
+			//для увеличения скорости итераций по времени, я решил назначить цвета всех точек заранее.
+			const marks = options.playerOptions.marks, settings = classSettings.settings,
+				color = settings.bufferGeometry.attributes.color,
+				positionBlockLength = color.array.length / marks; //Количество точек для заданного времени;
+			for (let timeId = 1; timeId < marks; timeId++) {
+				const verticeColor = settings.object.color(timeId), wScale = options.scales.w;
+				const rgb = options.palette.toColor(verticeColor, wScale.min, wScale.max);
+				for (let colorId = positionBlockLength * timeId; colorId < positionBlockLength * (timeId + 1); colorId++) {
+					color.array[colorId++] = rgb.r;
+					color.array[colorId++] = rgb.g;
+					color.array[colorId++] = rgb.b;
+				}
+			}
+			
 			if (classSettings.edges) classSettings.edges = new Proxy(classSettings.edges, {
 
 				set: (edges, name, value) => {
