@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta charset="utf-8" />
+	<title>Tomson GPU</title>
+</head>
+<body>
+	<script type="module">
+				const ETA_0 = 0.01;
+				const BETA = 0.85;
+
+				const rMin = 0.1;
+				const rMax = 1.0;
+
+				const itemSize = 4; // 4D: x, y, z, w
+
+				// Плоский массив 4D координат точек для всех шагов симуляции
+				const positionArray = new Float32Array([
+					-0.02587701566517353, 0.0675637423992157, -0.05302936211228371, 0.04419736936688423,
+					-0.016921283677220345, -0.054973144084215164, -0.014062980189919472, -0.08058446645736694,
+					0.003661202499642968, -0.014033776707947254, -0.051428329199552536, 0.08452677726745605,
+					-0.03790852054953575, 0.0704442486166954, 0.04782545194029808, 0.03623918071389198,
+					0.004120172467082739, 0.042841169983148575, 0.016064807772636414, -0.08882331103086472,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+				]);
+
+				const marks = 10;
+				const positionBlockLength = positionArray.length / (itemSize * marks);
+
+				const getOffset = (index, timeIdCur) => {
+					return (positionBlockLength * timeIdCur + index) * itemSize;
+				};
+
+				function getPoint(array, index, timeIdCur) {
+					const offset = getOffset(index, timeIdCur);
+					return {
+						x: array[offset],
+						y: array[offset + 1],
+						z: array[offset + 2],
+						w: array[offset + 3]
+					};
+				}
+
+				// Шейдер WebGPU (WGSL)
+				const shaderCode = `
+					struct Params {
+						eta : f32,
+						beta : f32,
+						rRatio : f32,
+						nextR : f32,
+						timeId : u32,
+						positionBlockLength : u32,
+					};
+
+					@group(0) @binding(0) var<uniform> params : Params;
+					@group(0) @binding(1) var<storage, read_write> positions : array<vec4<f32>>;
+					@group(0) @binding(2) var<storage, read_write> velocities : array<vec4<f32>>;
+
+					@compute @workgroup_size(64)
+					fn main(@builtin(global_invocation_id) global_id : vec3<u32>) {
+						let i = global_id.x;
+						if (i >= params.positionBlockLength) {
+							return;
+						}
+
+						// 1. Масштабирование скорости
+						var v = velocities[i] * params.rRatio;
+
+						// 2. Вычисление силы отталкивания
+						let srcOffset = (params.timeId - 1u) * params.positionBlockLength + i;
+						let pi = positions[srcOffset];
+						var force = vec4<f32>(0.0, 0.0, 0.0, 0.0);
+
+						for (var j : u32 = 0u; j < params.positionBlockLength; j = j + 1u) {
+							if (i == j) {
+								continue;
+							}
+
+							let jOffset = (params.timeId - 1u) * params.positionBlockLength + j;
+							let pj = positions[jOffset];
+
+							let d = pi - pj;
+							let d2 = dot(d, d);
+							let dist = sqrt(d2);
+
+							if (dist > 0.0) {
+								let m = 1.0 / (d2 * dist);
+								force = force + d * m;
+							}
+						}
+
+						// 3. Обновление скорости (Momentum)
+						v = params.beta * v + params.eta * force;
+						velocities[i] = v;
+
+						// 4. Обновление позиции и проекция на гиперсферу
+						let updated = pi + v;
+						let mag = length(updated);
+
+						let destOffset = params.timeId * params.positionBlockLength + i;
+						positions[destOffset] = (updated / mag) * params.nextR;
+					}
+				`;
+
+				async function runThomsonGPU() {
+					if (!navigator.gpu) {
+						console.error("WebGPU не поддерживается вашим браузером!");
+						return;
+					}
+
+					const adapter = await navigator.gpu.requestAdapter();
+					const device = await adapter.requestDevice();
+
+					// Буфер позиций
+					const gpuPositionsBuffer = device.createBuffer({
+						size: positionArray.byteLength,
+						usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
+					});
+					device.queue.writeBuffer(gpuPositionsBuffer, 0, positionArray);
+
+					// Буфер скоростей
+					const velocitiesArray = new Float32Array(positionBlockLength * itemSize);
+					const gpuVelocitiesBuffer = device.createBuffer({
+						size: velocitiesArray.byteLength,
+						usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+					});
+					device.queue.writeBuffer(gpuVelocitiesBuffer, 0, velocitiesArray);
+
+					// Uniform-буфер для параметров
+					const paramsBufferSize = 32; // 8 x 4 bytes (aligned)
+					const gpuParamsBuffer = device.createBuffer({
+						size: paramsBufferSize,
+						usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+					});
+
+					const shaderModule = device.createShaderModule({ code: shaderCode });
+
+					const pipeline = device.createComputePipeline({
+						layout: 'auto',
+						compute: {
+							module: shaderModule,
+							entryPoint: 'main',
+						},
+					});
+
+					const bindGroup = device.createBindGroup({
+						layout: pipeline.getBindGroupLayout(0),
+						entries: [
+							{ binding: 0, resource: { buffer: gpuParamsBuffer } },
+							{ binding: 1, resource: { buffer: gpuPositionsBuffer } },
+							{ binding: 2, resource: { buffer: gpuVelocitiesBuffer } },
+						],
+					});
+
+					let currentR = rMin;
+					console.log(`--- Старт симуляции WebGPU (TimeId 0, R = ${currentR.toFixed(2)}) ---`);
+
+					for (let timeId = 1; timeId <= marks - 1; timeId++) {
+						const nextR = rMin + (rMax - rMin) * (timeId / (marks - 1));
+						const rRatio = nextR / currentR;
+						const eta = ETA_0 * Math.pow(currentR, 3);
+
+						// Обновляем Uniforms
+						const paramsArray = new ArrayBuffer(paramsBufferSize);
+						const floatView = new Float32Array(paramsArray);
+						const uintView = new Uint32Array(paramsArray);
+
+						floatView[0] = eta;
+						floatView[1] = BETA;
+						floatView[2] = rRatio;
+						floatView[3] = nextR;
+						uintView[4] = timeId;
+						uintView[5] = positionBlockLength;
+
+						device.queue.writeBuffer(gpuParamsBuffer, 0, paramsArray);
+
+						// Запуск вычислительного шага (Dispatch)
+						const commandEncoder = device.createCommandEncoder();
+						const passEncoder = commandEncoder.beginComputePass();
+						passEncoder.setPipeline(pipeline);
+						passEncoder.setBindGroup(0, bindGroup);
+						passEncoder.dispatchWorkgroups(Math.ceil(positionBlockLength / 64));
+						passEncoder.end();
+
+						device.queue.submit([commandEncoder.finish()]);
+
+						currentR = nextR;
+					}
+
+					// Чтение данных результатов из GPU
+					const readBuffer = device.createBuffer({
+						size: positionArray.byteLength,
+						usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+					});
+
+					const copyEncoder = device.createCommandEncoder();
+					copyEncoder.copyBufferToBuffer(gpuPositionsBuffer, 0, readBuffer, 0, positionArray.byteLength);
+					device.queue.submit([copyEncoder.finish()]);
+
+					await readBuffer.mapAsync(GPUMapMode.READ);
+					const resultBuffer = new Float32Array(readBuffer.getMappedRange().slice(0));
+					readBuffer.unmap();
+
+					// Вывод результатов в консоль идентично CPU-версии
+					for (let timeId = 1; timeId <= marks - 1; timeId++) {
+						const rCur = rMin + (rMax - rMin) * (timeId / (marks - 1));
+						console.log(`\n=== Итерация ${timeId} / ${marks - 1} (R = ${rCur.toFixed(2)}) ===`);
+
+						const updatedPoints = [];
+						for (let i = 0; i < positionBlockLength; i++) {
+							updatedPoints.push(getPoint(resultBuffer, i, timeId));
+						}
+						console.log("Новые декартовы координаты всех точек (WebGPU):", updatedPoints);
+					}
+				}
+
+				runThomsonGPU();
+	</script>
+</body>
+</html>

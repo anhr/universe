@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta charset="utf-8" />
+	<title>Tomson example</title>
+</head>
+<body>
+	<script type="module">
+				// ETA_0 — базовый коэффициент скорости обучения / шага градиентного спуска (Learning Rate).
+				const ETA_0 = 0.01;
+
+				// BETA — коэффициент сохранения импульса (затухания инерции).
+				const BETA = 0.85;
+
+				const rMin = 0.1; // Минимальный радиус
+				const rMax = 1.0; // Максимальный радиус
+
+				const itemSize = 4; // Размерность пространства (4D: x, y, z, w)
+
+				// Плоский массив 4D координат точек для всех шагов симуляции
+				const positionArray = new Float32Array([
+					-0.02587701566517353, 0.0675637423992157, -0.05302936211228371, 0.04419736936688423,
+					-0.016921283677220345, -0.054973144084215164, -0.014062980189919472, -0.08058446645736694,
+					0.003661202499642968, -0.014033776707947254, -0.051428329199552536, 0.08452677726745605,
+					-0.03790852054953575, 0.0704442486166954, 0.04782545194029808, 0.03623918071389198,
+					0.004120172467082739, 0.042841169983148575, 0.016064807772636414, -0.08882331103086472,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0,
+				]);
+
+				const marks = 10;
+				const positionBlockLength = positionArray.length / (itemSize * marks); // Количество точек на один временной шаг
+				const debug = true;
+
+				/**
+				 * Вычисление смещения точки в массиве
+				 */
+				const getOffset = (index, timeId) => {
+					return (positionBlockLength * timeId + index) * itemSize;
+				};
+
+				/**
+				 * Извлечение координат одной точки из positionArray по её индексу и временному шагу
+				 */
+				function getPoint(index, timeId) {
+					const offset = getOffset(index, timeId);
+					return {
+						x: positionArray[offset],
+						y: positionArray[offset + 1],
+						z: positionArray[offset + 2],
+						w: positionArray[offset + 3]
+					};
+				}
+
+				function verifyVertice(pt, targetRadius, epsilon = 1e-6) {
+					if (!debug) return true;
+					const dist = Math.hypot(pt.x, pt.y, pt.z, pt.w);
+
+					if (Math.abs(dist - targetRadius) > epsilon) {
+						console.warn(`Точка отклонилась от гиперсферы! R = ${dist}, ожидалось = ${targetRadius}`);
+						return false;
+					}
+					return true;
+				}
+
+				/**
+				 * Проверка принадлежности точек заданного временного шага гиперсфере
+				 */
+				function verifyHyperSphere(timeId, targetRadius, epsilon = 1e-6) {
+					for (let i = 0; i < positionBlockLength; i++) {
+						if (!verifyVertice(getPoint(i, timeId), targetRadius, epsilon)) return false;
+					}
+					return true;
+				}
+
+				// Запуск симуляции с динамическим шагом радиуса в глобальном positionArray
+				function runThomsonMomentum() {
+					if (!Number.isInteger(positionBlockLength)) {
+						console.error('Invalid positionBlockLength = ' + positionBlockLength);
+						return;
+					}
+
+					// Проверка исходных точек на гиперсфере rMin (для timeId = 0)
+					console.log("Проверка начального массива positionArray...");
+					if (!verifyHyperSphere(0, rMin)) {
+						throw new Error("Ошибка: начальные точки не лежат на гиперсфере радиуса rMin");
+					}
+					console.log("Начальный массив успешно верифицирован!");
+
+					// Выделяем память под скорости и силы только для одной итерации
+					const velocities = new Float32Array(positionBlockLength * itemSize);
+					const forces = new Float32Array(positionBlockLength * itemSize);
+
+					let currentR = rMin;
+
+					console.log(`\n--- Старт симуляции (TimeId 0, R = ${currentR.toFixed(2)}) ---`);
+
+					for (let timeId = 1; timeId <= marks - 1; timeId++) {
+						const nextR = rMin + (rMax - rMin) * (timeId / (marks - 1));
+						const rRatio = nextR / currentR;
+
+						// 1. In-place масштабирование скоростей при изменении радиуса пространства
+						for (let k = 0; k < velocities.length; k++) {
+							velocities[k] *= rRatio;
+						}
+
+						const eta = ETA_0 * Math.pow(currentR, 3);
+						forces.fill(0); // Сброс сил перед новым шагом
+
+						// 2. Расчет Кулоновских сил отталкивания на основе предыдущего шага (timeId - 1)
+						for (let i = 0; i < positionBlockLength - 1; i++) {
+							const iStride = i * itemSize;
+							const pi = getPoint(i, timeId - 1);
+
+							for (let j = i + 1; j < positionBlockLength; j++) {
+								const jStride = j * itemSize;
+								const pj = getPoint(j, timeId - 1);
+
+								const d = { x: pi.x - pj.x, y: pi.y - pj.y, z: pi.z - pj.z, w: pi.w - pj.w };
+
+								const d2 = d.x * d.x + d.y * d.y + d.z * d.z + d.w * d.w;
+								const dist = Math.sqrt(d2);
+
+								const m = 1 / (d2 * dist);
+
+								const fx = d.x * m;
+								const fy = d.y * m;
+								const fz = d.z * m;
+								const fw = d.w * m;
+
+								// Применяем силу к точке i (отталкивание от j)
+								forces[iStride + 0] += fx;
+								forces[iStride + 1] += fy;
+								forces[iStride + 2] += fz;
+								forces[iStride + 3] += fw;
+
+								// Применяем противоположную силу к точке j (3-й закон Ньютона)
+								forces[jStride + 0] -= fx;
+								forces[jStride + 1] -= fy;
+								forces[jStride + 2] -= fz;
+								forces[jStride + 3] -= fw;
+							}
+						}
+
+						// 3. Обновление скоростей и запись новых позиций в свой блок текущего timeId
+						for (let i = 0; i < positionBlockLength; i++) {
+							const iStride = i * itemSize;
+
+							// Обновление скорости (Momentum)
+							velocities[iStride + 0] = BETA * velocities[iStride + 0] + eta * forces[iStride + 0];
+							velocities[iStride + 1] = BETA * velocities[iStride + 1] + eta * forces[iStride + 1];
+							velocities[iStride + 2] = BETA * velocities[iStride + 2] + eta * forces[iStride + 2];
+							velocities[iStride + 3] = BETA * velocities[iStride + 3] + eta * forces[iStride + 3];
+
+							// Смещение относительно позиции с предыдущего шага (timeId - 1)
+							const offsetSrc = getOffset(i, timeId - 1);
+							const updatedX = positionArray[offsetSrc + 0] + velocities[iStride + 0];
+							const updatedY = positionArray[offsetSrc + 1] + velocities[iStride + 1];
+							const updatedZ = positionArray[offsetSrc + 2] + velocities[iStride + 2];
+							const updatedW = positionArray[offsetSrc + 3] + velocities[iStride + 3];
+
+							// Нормализация и проекция обратно на гиперсферу радиуса nextR
+							const mag = Math.hypot(updatedX, updatedY, updatedZ, updatedW);
+
+							// Запись результатов в текущий слой времени (timeId)
+							const offsetDest = getOffset(i, timeId);
+							positionArray[offsetDest + 0] = (updatedX / mag) * nextR;
+							positionArray[offsetDest + 1] = (updatedY / mag) * nextR;
+							positionArray[offsetDest + 2] = (updatedZ / mag) * nextR;
+							positionArray[offsetDest + 3] = (updatedW / mag) * nextR;
+
+							// Проверка, что после шага все точки корректно спроецировались
+							verifyVertice(getPoint(i, timeId), nextR);
+						}
+
+						currentR = nextR;
+
+						console.log(`\n=== Итерация ${timeId} / ${marks - 1} (R = ${currentR.toFixed(2)}) ===`);
+						console.log("Модуль скорости первой точки (v0):", Math.hypot(velocities[0], velocities[1], velocities[2], velocities[3]).toExponential(4));
+
+						// Извлечение координат всех обновленных точек для текущей итерации
+						const updatedPoints = [];
+						for (let i = 0; i < positionBlockLength; i++) {
+							updatedPoints.push(getPoint(i, timeId));
+						}
+						console.log("Новые декартовы координаты всех точек:", updatedPoints);
+					}
+				}
+
+				// Запуск симуляции
+				runThomsonMomentum();
+	</script>
+</body>
+</html>
