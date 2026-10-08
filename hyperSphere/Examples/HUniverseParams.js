@@ -100,7 +100,7 @@ const classSettings = {
 
 			//Сила отталкивания. Чем меньше значение, тем слабее силы отталкивания между точками, и тем медленнее они двигаются
 //deprecated
-//REPULSION_STRENGTH: 1,//10,//По умолчанию не определено и зависит от количества вершин REPULSION_STRENGTH = config.a / classSettings.settings.object.geometry.angles.length.
+REPULSION_STRENGTH: 1,//10,//По умолчанию не определено и зависит от количества вершин REPULSION_STRENGTH = config.a / classSettings.settings.object.geometry.angles.length.
 				//a: 50,//имеет эффект только если не определен REPULSION_STRENGTH. Default 50
 
 
