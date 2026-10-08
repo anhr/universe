@@ -55,7 +55,8 @@
 		//Private https://gemini.google.com/app/9f9d634b8146885b
 		
 		const π = Math.PI;
-		let angles, count, currentStep, radiusPrev, radiusStep;
+		let positionArray,//angles,//Сейчас вместо углов предаются координаты точек в декартовой системе координат из settings.bufferGeometry.attributes.position.array
+			count, currentStep, radiusPrev, radiusStep;
 
 		//WebGPU start
 		
@@ -791,12 +792,15 @@
 			// Создаем буфер для одного числа u32. Этот буфер используется для генератора случайных чисел в GPU.
 			timeBuffer = device.createBuffer({ size: 4, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
 
+/*			
 			const initialPos = new Float32Array(count * 4);
 			for (let i = 0; i < config.pointsPerStep; i++) {
 				const p = polarToCartesian(angles[i].latitude, angles[i].longitude, angles[i].altitude, config.baseRadius), index = i * 4;
 				initialPos[index] = p.x; initialPos[index + 1] = p.y; initialPos[index + 2] = p.z; initialPos[index + 3] = p.w;
 			}
 			device.queue.writeBuffer(posBuf, 0, initialPos);
+*/			
+			device.queue.writeBuffer(posBuf, 0, positionArray);
 
 			//Создание буфера случайных чисел, которые затем будут использоваться в WebGPU вместо герерации случайного числа в WebGPU
 
@@ -1062,6 +1066,8 @@
 					} else {
 						// Двоичные данные
 						elStatus.innerText = "Binary data received";
+						positionArray = new Float32Array(event.data);
+/*						
 						const initialAngles = new Float32Array(event.data);
 						angles = new Array(count).fill(null).map(() => ({ latitude: 0, longitude: 0, altitude: 0 }));
 						const anglesItemSize = 4;
@@ -1072,6 +1078,7 @@
 							anglesItem.longitude = initialAngles[index++];
 							anglesItem.altitude = initialAngles[index++];
 						}
+*/						
 						try {
 							await runAuto();
 						} catch (e) {

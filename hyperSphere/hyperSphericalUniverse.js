@@ -40,6 +40,7 @@ class HypersphericalUniverse extends SphericalUniverse {
 	 **/
 	constructor(classSettings = {}, myThreeOptions) {
 		classSettings.utils = utils;
+		if (classSettings.compute.config.ETA_0 === undefined) classSettings.compute.config.ETA_0 = 0.01;
 		super(classSettings, myThreeOptions);
 
 		//Localization

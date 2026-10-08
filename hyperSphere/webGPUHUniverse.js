@@ -219,7 +219,8 @@ class WebGPUHUniverse {
 								if (data.code === 1) {
 									//Connection established. Ready to work.
 									socket.send(JSON.stringify(config));
-
+									socket.send(settings.bufferGeometry.attributes.position.array);
+/*
 									const anglesItemSize = 4, initialAngles = new Float32Array(config.pointsPerStep * anglesItemSize), angles = settings.object.geometry.angles;
 									settings.bufferGeometry.userData.timeId--;//Углы вершин брать из предыдущего шага проигрывателя
 									for (let i = 0; i < config.pointsPerStep; i++) {
@@ -229,6 +230,7 @@ class WebGPUHUniverse {
 									}
 									settings.bufferGeometry.userData.timeId++;
 									socket.send(initialAngles.buffer);
+*/									
 								}
 								break;
 							case "PROGRESS":
