@@ -158,7 +158,22 @@
 				}
 				if (navigator.gpu.enumerateAdapters) availableAdapters = await navigator.gpu.enumerateAdapters();
 				if (availableAdapters.length === 0) {
-					const high = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
+
+					//для устранения предупреждения
+					//webGPUHUniverse.html:161 The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127
+					//из консоли:
+
+					// 1. Проверяем, является ли операционная система Windows
+					const isWindows = navigator.userAgentData
+						? navigator.userAgentData.platform === "Windows"
+						: navigator.userAgent.indexOf("Windows") !== -1;
+
+					// 2. Формируем опции: на Windows оставляем объект пустым
+					const adapterOptions = isWindows ? {} : { powerPreference: 'high-performance' };
+
+					// 3. Вызываем метод без раздражающего предупреждения
+					const high = await navigator.gpu.requestAdapter(adapterOptions);
+//					const high = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
 					if (high) availableAdapters.push(high);
 					else throw new Error('No available adapters');
 				}
@@ -232,7 +247,7 @@
 			if (device) {
 				cleanupGpuResources();
 			}
-			if (!await findAdapters()) return;
+			if ((availableAdapters.length === 0) && !await findAdapters()) return;
 			const adapter = availableAdapters[idx];
 
 			//Выделяем необходимый размер памяти
