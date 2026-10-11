@@ -57,10 +57,13 @@
 		const π = Math.PI;
 		let positionArray,//angles,//Сейчас вместо углов предаются координаты точек в декартовой системе координат из settings.bufferGeometry.attributes.position.array
 			count, currentStep, radiusPrev, radiusStep;
+		const itemSize = 4; // 4D: x, y, z, w. и размер цвета
+		const sError = "WebGPU ERROR: ";
 
 		//WebGPU start
 		
-		let device, pipeline, posBuf, velBuf, paramBuf, debugBuf, messageArray, bindGroup, timeBuffer;//, anglesBufGPU
+		let device, pipeline, velBuf, gpuParamsBuffer, gpuPositionsBuffer,//paramBuf, posBuf
+			debugBuf, messageArray, bindGroup, timeBuffer;//, anglesBufGPU
 		let availableAdapters = [];
 		
 		// Если ваш GPU-цикл runAuto работает очень быстро (например, 200 FPS), то за одну миллисекунду может пройти несколько кадров.
@@ -69,6 +72,22 @@
 		const timeMultiplier = 1000;
 
 		async function finalSyncGPU() {
+
+			// Чтение данных результатов из GPU
+			const readBuffer = device.createBuffer({
+				size: positionArray.byteLength,
+				usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+			});
+
+			const copyEncoder = device.createCommandEncoder();
+			copyEncoder.copyBufferToBuffer(gpuPositionsBuffer, 0, readBuffer, 0, positionArray.byteLength);
+			device.queue.submit([copyEncoder.finish()]);
+
+			await readBuffer.mapAsync(GPUMapMode.READ);
+			const resultBuffer = new Float32Array(readBuffer.getMappedRange().slice(0));
+			socket.send(resultBuffer.buffer);
+			readBuffer.unmap(); readBuffer.destroy();
+/*			
 			const posReadBuf = device.createBuffer({ size: count * 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
 			const posEnc = device.createCommandEncoder();
 			posEnc.copyBufferToBuffer(posBuf, 0, posReadBuf, 0, count * 16);
@@ -76,8 +95,9 @@
 			await posReadBuf.mapAsync(GPUMapMode.READ);
 			const posData = new Float32Array(posReadBuf.getMappedRange());
 			socket.send(posData.buffer);
-			log('Data is ready.');
 			posReadBuf.unmap(); posReadBuf.destroy();
+*/			
+			log('Data is ready.');
 
 		}
 
@@ -184,7 +204,7 @@
 				}
 			} catch (e) {
 				select.innerHTML = '<option value="-1">' + e.message + '</option>';
-				setState("WebGPU ERROR: " + e.message, true);
+				setState(sError + e.message, true);
 				return false;
 			}
 			return true;
@@ -196,24 +216,47 @@
 			if (currentStep < config.totalSteps) {
 
 				//Для генератора случайных чисел
-				device.queue.writeBuffer(timeBuffer, 0, new Uint32Array([Math.floor(performance.now() * timeMultiplier)]));
+				//device.queue.writeBuffer(timeBuffer, 0, new Uint32Array([Math.floor(performance.now() * timeMultiplier)]));
 
 				const newRadius = radiusPrev + radiusStep;
-				device.queue.writeBuffer(paramBuf, 0, new Float32Array([radiusPrev, newRadius, currentStep * config.pointsPerStep]));
+
+				const currentR = radiusPrev, timeId = currentStep, positionBlockLength = config.pointsPerStep;
+				const nextR = newRadius;
+				const rRatio = nextR / currentR;
+				const eta = config.ETA_0 * Math.pow(currentR, 3);
+
+				// Обновляем Uniforms
+				const paramsArray = new ArrayBuffer(paramsBufferSize);
+				const floatView = new Float32Array(paramsArray);
+				const uintView = new Uint32Array(paramsArray);
+
+				floatView[0] = eta;
+				floatView[1] = config.BETA;
+				floatView[2] = rRatio;
+				floatView[3] = nextR;
+				uintView[4] = timeId;
+				uintView[5] = positionBlockLength;
+
+				device.queue.writeBuffer(gpuParamsBuffer, 0, paramsArray);
+				
+				
+//				device.queue.writeBuffer(paramBuf, 0, new Float32Array([radiusPrev, newRadius, currentStep * config.pointsPerStep]));
 				const encoder = device.createCommandEncoder();
 				const pass = encoder.beginComputePass();
 				pass.setPipeline(pipeline); pass.setBindGroup(0, bindGroup);
 				pass.dispatchWorkgroups(Math.ceil(config.pointsPerStep / 64));
 				pass.end();
 				device.queue.submit([encoder.finish()]);
+				/*
 				if (config.DEBUG_MODE) await readDebugValue(currentStep);
 				else await readMessageValue(currentStep);
+				*/
 				updateDisplay();
 				radiusPrev = newRadius;// currentStep++;
 				return;
 			}
 
-			await readMessageValue(currentStep);
+			//await readMessageValue(currentStep);
 			updateDisplay();
 			await finalSyncGPU();
 		}
@@ -243,11 +286,12 @@
 		};
 
 		let recommendationThrow;// requiredPosBufSize, adapter, currentDeviceLimit;
+		const paramsBufferSize = 32; // 8 x 4 bytes (aligned)
 		async function initWebGPU(idx) {
 			if (device) {
 				cleanupGpuResources();
 			}
-			if ((availableAdapters.length === 0) && !await findAdapters()) return;
+			if (!await findAdapters()) return;
 			const adapter = availableAdapters[idx];
 
 			//Выделяем необходимый размер памяти
@@ -497,270 +541,64 @@
 
 			// ГЕНЕРАЦИЯ ШЕЙДЕРА (МЕТАПРОГРАММИРОВАНИЕ)
 			const dynamicShaderCode = `
-							/* СТРУКТУРЫ ДАННЫХ */
-							struct Params {
-								radiusPrev: f32,// Предыдущий радиус сферы
-								radius: f32,    // Текущий радиус сферы
-								stepOffset: f32 // Индекс начала текущей группы
-							};
+					struct Params {
+						eta : f32,
+						beta : f32,
+						rRatio : f32,
+						nextR : f32,
+						timeId : u32,
+						positionBlockLength : u32,
+					};
 
-							struct PolarAngles {
-								latitude: f32, longitude: f32, altitude: f32, _pad: f32
-							};
+					@group(0) @binding(${bindingId++}) var<uniform> params : Params;
+					@group(0) @binding(${bindingId++}) var<storage, read_write> positions : array<vec4<f32>>;
+					@group(0) @binding(${bindingId++}) var<storage, read_write> velocities : array<vec4<f32>>;
 
-							struct Message {
-								errorCode: u32,
-								i: u32,
-								value: f32,
-							};
+					@compute @workgroup_size(64)
+					fn main(@builtin(global_invocation_id) global_id : vec3<u32>) {
+						let i = global_id.x;
+						if (i >= params.positionBlockLength) {
+							return;
+						}
 
-							struct StartingPointParams {
-								lat: f32,
-								alt: f32,
-								P: vec4<f32>,
-								tangentBasis: mat3x4<f32>
-							};
+						// 1. Масштабирование скорости
+						var v = velocities[i] * params.rRatio;
 
-							${config.DEBUG_MODE ?
-							`
-									struct Debug {
-										value: vec4<f32>,
-										i: u32,
-										j: u32
-									};
-									`
-							: ``}
+						// 2. Вычисление силы отталкивания
+						let srcOffset = (params.timeId - 1u) * params.positionBlockLength + i;
+						let pi = positions[srcOffset];
+						var force = vec4<f32>(0.0, 0.0, 0.0, 0.0);
 
-							/* ПРИВЯЗКИ */
-							@group(0) @binding(${bindingId++}) var<storage, read_write> positions: array<vec4<f32>>;
-							@group(0) @binding(${bindingId++}) var<storage, read_write> velocities: array<vec4<f32>>;
-							@group(0) @binding(${bindingId++}) var<uniform> p_param: Params;
-							@group(0) @binding(${bindingId++}) var<storage, read_write> messageBuffer: Message;
-							${config.RANDOM_POINTS != 0 ? `@group(0) @binding(${bindingId++}) var<uniform> uTime: u32; //Для генератора случайных чисел` : ``}
-							${config.RANDOM_POINTS === 2 ? `@group(0) @binding(${bindingId++}) var<storage, read> randomPool: array<f32>;// Используем динамический размер массива для гибкости` : ``}
-							@group(0) @binding(${bindingId++}) var<storage, read> invCdfLut: array<f32>; // Таблица для ускорения inverseCDF_S3
-							${config.DEBUG_MODE ? `@group(0) @binding(${bindingId++}) var<storage, read_write> debug: Debug;` : ``}
-
-							/* ВШИТЫЕ КОНСТАНТЫ (Generated by JS) */
-							const PI: f32 = ${π};
-							const DAMPING: f32 = ${config.DAMPING.toFixed(8)};
-							const REPULSION: f32 = ${config.REPULSION_STRENGTH.toFixed(8)};
-							const POINTS_PER_STEP: u32 = ${Math.floor(config.pointsPerStep)}u;
-
-							${random_gpu}
-
-							${hyperbola_gpu}
-
-							fn inverseCDF_S3(u: f32) -> f32 {
-								// Оптимизация LUT: Линейная интерполяция значений из таблицы
-								let lutSize = arrayLength(&invCdfLut);
-								let pos = u * f32(lutSize - 1u);
-								let i0 = u32(floor(pos));
-								let i1 = min(i0 + 1u, lutSize - 1u);
-								let fract_part = pos - f32(i0);
-								return mix(invCdfLut[i0], invCdfLut[i1], fract_part);
+						for (var j : u32 = 0u; j < params.positionBlockLength; j = j + 1u) {
+							if (i == j) {
+								continue;
 							}
 
-							fn getDistance(dist: f32, R: f32, arc: f32, ${ramdom_param}) -> f32 {
-								if (arc == 0.0) { return 0.0; }
-								let y = 1.0 / arc - 1.0 / PI;
-								return dist / (1.0 + (y * R * random(${ramdom_param2})));
+							let jOffset = (params.timeId - 1u) * params.positionBlockLength + j;
+							let pj = positions[jOffset];
+
+							let d = pi - pj;
+							let d2 = dot(d, d);
+							let dist = sqrt(d2);
+
+							if (dist > 0.0) {
+								let m = 1.0 / (d2 * dist);
+								force = force + d * m;
 							}
+						}
 
-							// 2. Создание ортонормированного базиса в касательном пространстве
-							fn createTangentBasis(latitude: f32, longitude: f32, altitude: f32) -> mat3x4<f32> {
-								let a = altitude; let b = PI / 2.0 - latitude; let c = longitude;
-								let sina = sin(a); let cosa = cos(a); let sinb = sin(b); let cosb = cos(b); let sinc = sin(c); let cosc = cos(c);
+						// 3. Обновление скорости (Momentum)
+						v = params.beta * v + params.eta * force;
+						velocities[i] = v;
 
-								// e1 - направление увеличения altitude
-								let e1 = normalize(vec4<f32>(-sina, cosa*cosb, cosa*sinb*cosc, cosa*sinb*sinc));
+						// 4. Обновление позиции и проекция на гиперсферу
+						let updated = pi + v;
+						let mag = length(updated);
 
-								// e2 - направление увеличения b (уменьшения latitude)
-								var e2 = vec4<f32>(0.0, -sina*sinb, sina*cosb*cosc, sina*cosb*sinc);
-								let n2 = length(e2);
-								if (n2 > 1e-10) { e2 = e2 / n2; } else { e2 = vec4<f32>(0.0, 0.0, 0.0, 0.0); }
-
-								// e3 - направление увеличения longitude
-								var e3 = vec4<f32>(0.0, 0.0, -sina*sinb*sinc, sina*sinb*cosc);
-								let n3 = length(e3);
-								if (n3 > 1e-10) { e3 = e3 / n3; } else { e2 = vec4<f32>(0.0, 0.0, 0.0, 0.0); }
-
-								return mat3x4<f32>(e1, e2, e3);
-							}
-							fn calculateNewPoint(startingPointParams: StartingPointParams, distance: f32, eta: f32, psi: f32, R: f32, ${ramdom_param}) -> PolarAngles {
-
-								// Исходная точка
-								let P = startingPointParams.P;
-
-								// Касательный базис
-								let e1 = startingPointParams.tangentBasis[0]; let e2 = startingPointParams.tangentBasis[1]; let e3 = startingPointParams.tangentBasis[2];
-
-								//Компилятор оптимизирует эту строку и не будет по нескольку раз вычислять одинаковые тригонометрические функции
-								let u = cos(eta) * e1 + sin(eta) * cos(psi) * e2 + sin(eta) * sin(psi) * e3;
-
-								let delta = distance / R;
-
-								// Обратное преобразование в углы
-								var angles = cartesianToPolarRandom(cos(delta) * P + R * sin(delta) * u);
-
-								if (abs((abs(startingPointParams.lat) - PI / 2)) < 1e-12) { angles.longitude = random(${ramdom_param2}) * 2 * PI - PI; }//Противоположная вершина находится на полюсе
-
-								return angles;
-							}
-							fn getStartingPointParams(oppositeVertice: PolarAngles) -> StartingPointParams {
-								let lat = oppositeVertice.latitude; let lon = oppositeVertice.longitude; let alt = oppositeVertice.altitude;
-
-								// Исходная точка
-								let objectP = polarToCartesian(lat, lon, alt, 1.0); let P = vec4<f32>(objectP.w, objectP.z, objectP.x, objectP.y);
-
-
-								// Касательный базис
-								let tangentBasis = createTangentBasis(lat, lon, alt);
-
-								return StartingPointParams(lat, alt, P, tangentBasis);
-							}
-
-							fn getRandomAngles(startingPointParams: StartingPointParams, arc: f32, ${ramdom_param}) -> PolarAngles {
-
-								// Правильное распределение для равномерного покрытия:
-								// Вероятность попасть в сферическую шапочку радиуса d пропорциональна sin^3(d/R)
-								let R = 1.0; let distance = getDistance(R * inverseCDF_S3(random(${ramdom_param2})), R, arc, ${ramdom_param2}) * 2;
-
-								let angles = calculateNewPoint(
-									startingPointParams,
-									distance,//максимальная дистанция находится на противоположной стороне гиперсферы
-									acos(2.0 * random(${ramdom_param2}) - 1),//eta. первый угол направления (полярный угол). 0 ≤ eta ≤ π
-									random(${ramdom_param2}) * 2 * PI,//psi. второй угол направления (азимутальный угол). 0 ≤ psi < 2π или -π ≤ psi ≤ π
-									R,
-									${ramdom_param2}
-								);
-								return angles;
-							}
-
-							fn GetRandomVertice(arc: f32, oppositeVertice: PolarAngles, ${ramdom_param}) -> PolarAngles {
-								return getRandomAngles(getStartingPointParams(oppositeVertice), arc, ${ramdom_param2});
-							}
-
-							/* МАТЕМАТИКА ВНУТРИ GPU */
-							fn cartesianToPolar(v: vec4<f32>) -> PolarAngles {
-								let r = length(v);
-
-								// altitude рассчитывается корректно через acos (от 0 до PI)
-								let alt = acos(clamp(v.w / r, -1.0, 1.0));
-
-								// Считаем длину проекции на плоскость XY для определения четверти широты
-								let rXY = length(v.xy);
-
-								var lat = 0.0f; var lon = 0.0f;
-
-								//точка в 4D-пространстве оказывается на самой оси W (то есть её декартовы координаты x = 0, y = 0, z = 0), её проекция на всё трехмерное пространство XYZ сжимается в сингулярную точку — ноль.
-								if (rXY < 0.0001 && abs(v.z) < 0.0001) {
-								} else {
-									// Math.atan2(z, rXY) сохраняет правильный знак и четверть широты
-									lat = atan2(v.z, rXY);
-									lon = atan2(v.y, v.x);
-								}
-
-								return PolarAngles(lat, lon, alt, 0.0);
-							}
-
-							fn cartesianToPolarRandom(Q: vec4<f32>) -> PolarAngles {
-								return cartesianToPolar(vec4<f32>(Q[2], Q[3], Q[1], Q[0] ));
-							}
-
-							fn polarToCartesian(lat: f32, lon: f32, alt: f32, r: f32) -> vec4<f32> {
-								let r_xyz = r * sin(alt);
-								return vec4<f32>(r_xyz * cos(lat) * cos(lon), r_xyz * cos(lat) * sin(lon), r_xyz * sin(lat), r * cos(alt));
-							}
-
-							${config.DEBUG_MODE ? `var<private> isDebugInfo: bool = false;` : ``}
-
-							@compute @workgroup_size(64)
-							fn main(@builtin(global_invocation_id) id: vec3<u32>) {
-								let i = id.x;
-								if (i >= POINTS_PER_STEP) { return; }
-
-								${config.RANDOM_POINTS === 3 ? `
-								//  Один раз вычисляем качественное зерно через хеш
-								// Смешиваем ID точки и время
-								let initial_hash = hash_u32(i ^ uTime);
-
-								// Превращаем в f32 от 0 до 1 для работы функции random
-								var state: f32 = f32(initial_hash) / f32(0xffffffffu);` : ``}
-								${config.RANDOM_POINTS === 2 ? `
-								// Создаем локальный счетчик для вычисления случайного
-								var callStep: u32 = 0u;` : ``}
-
-								${config.RANDOM_POINTS === 1 ? `
-								// Инициализируем локальное состояние один раз
-								var seed = i ^ uTime;` : ``}
-
-								${config.DEBUG_MODE ? `if (i == 0u) { isDebugInfo = true; } else { isDebugInfo = false; }` : ``}
-								/*
-								${config.DEBUG_MODE ? `if (isDebugInfo) {
-									debug.i = i;
-									debug.j = 0;
-									//debug.value = vec4<f32>(r1, r2, r3, r4);
-									debug.value = vec4<f32>(0.1, 0.2, 0.3, 0.4);
-								}` : ``}
-								*/
-
-
-								let prevOffset = u32(p_param.stepOffset - f32(POINTS_PER_STEP));
-								let currOffset = u32(p_param.stepOffset);
-
-								let p1 = positions[prevOffset + i];
-
-								// СБОР СИЛ
-								var force = vec4<f32>(0.0);
-								for (var j = 0u; j < POINTS_PER_STEP; j++) {
-									if (i == j) { continue; }
-									//${config.DEBUG_MODE ? `if ((i == 0u) && (j == 1u)) { isDebugInfo = true; } else { isDebugInfo = false; }` : ``}
-									let p2 = positions[prevOffset + j];
-									let angles2 = cartesianToPolar(p2);
-									var d = p1 - p2;
-									var dist = length(d);
-									let arc = PI - hyperbola_gpu((dist / p_param.radiusPrev / 2.0) * PI, i);
-
-									// Случайное направление для точки j (может быть противоположным для лучшего разведения)
-									let polarNoise2 = GetRandomVertice(arc, angles2${config.RANDOM_POINTS === 1 ? `, &seed` :
-										config.RANDOM_POINTS === 2 ? `, i, &callStep` :
-											config.RANDOM_POINTS === 3 ? `, &state` : ``});
-									let noise2 = polarToCartesian(polarNoise2.latitude, polarNoise2.longitude, polarNoise2.altitude, p_param.radiusPrev);
-
-									// Вектор от i к j
-									d = p1 - noise2;
-									let d2 = dot(d, d);
-									dist = sqrt(d2);
-									if (dist == 0) {
-										messageBuffer.errorCode = 3u; // Код ошибки 3 = "main: Invalid dist"
-										messageBuffer.i = 0;
-										messageBuffer.value = dist;
-										return;
-									}
-
-									let m = REPULSION / d2;
-									force.x += (d.x / dist) * m; force.y += (d.y / dist) * m; force.z += (d.z / dist) * m; force.w += (d.w / dist) * m;
-								}
-
-								// ИНТЕГРАЦИЯ СКОРОСТИ И ПОЗИЦИИ
-								let v_new = velocities[i] * DAMPING + force;
-								velocities[i] = v_new;
-								let next_pos_unit = p1 + v_new;
-
-								//пересчитываем декартовые коодинаты для текущего шага проигрывателя
-								let polar = cartesianToPolar(next_pos_unit);
-								positions[currOffset + i] = polarToCartesian(polar.latitude, polar.longitude, polar.altitude, p_param.radius);
-								${config.DEBUG_MODE ? `if (isDebugInfo) {
-									debug.i = i;
-									debug.j = 0;
-									debug.value = positions[currOffset + i];
-									//debug.value = next_pos_unit;
-									//debug.value = vec4<f32>(polar.latitude, polar.longitude, polar.altitude, p_param.radius);
-								}` : ``}
-
-							}
-						`;
+						let destOffset = params.timeId * params.positionBlockLength + i;
+						positions[destOffset] = (updated / mag) * params.nextR;
+					}
+				`;
 
 			pipeline = device.createComputePipeline({
 				layout: 'auto', compute: { module: device.createShaderModule({ code: dynamicShaderCode }), entryPoint: 'main' }
@@ -798,14 +636,37 @@
 			// 1. Включаем перехват ВАЛИДАЦИОННЫХ ошибок (превышение лимитов — это валидация)
 			device.pushErrorScope('validation');
 
+/*			
 			posBuf = device.createBuffer({ size: requiredPosBufSize, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
 			velBuf = device.createBuffer({ size: config.pointsPerStep * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
 			paramBuf = device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
 			debugBuf = device.createBuffer({ size: 32, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
 			messageArray = device.createBuffer({ size: 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
+*/			
+
+			// Буфер позиций
+			gpuPositionsBuffer = device.createBuffer({
+				size: positionArray.byteLength,
+				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
+			});
+			device.queue.writeBuffer(gpuPositionsBuffer, 0, positionArray);
+
+			// Буфер скоростей
+			const velocitiesArray = new Float32Array(config.pointsPerStep * itemSize);
+			const gpuVelocitiesBuffer = device.createBuffer({
+				size: velocitiesArray.byteLength,
+				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+			});
+			device.queue.writeBuffer(gpuVelocitiesBuffer, 0, velocitiesArray);
+
+			// Uniform-буфер для параметров
+			gpuParamsBuffer = device.createBuffer({
+				size: paramsBufferSize,
+				usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+			});
 
 			// Создаем буфер для одного числа u32. Этот буфер используется для генератора случайных чисел в GPU.
-			timeBuffer = device.createBuffer({ size: 4, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+			//timeBuffer = device.createBuffer({ size: 4, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
 
 /*			
 			const initialPos = new Float32Array(count * 4);
@@ -815,7 +676,6 @@
 			}
 			device.queue.writeBuffer(posBuf, 0, initialPos);
 */			
-			device.queue.writeBuffer(posBuf, 0, positionArray);
 
 			//Создание буфера случайных чисел, которые затем будут использоваться в WebGPU вместо герерации случайного числа в WebGPU
 
@@ -854,7 +714,7 @@
 				});
 				device.queue.writeBuffer(randomBuffer, 0, randomData);
 			}
-
+/*
 			// --- ПРЕДРАСЧЕТ inverseCDF_S3 LUT ---
 			const invCdfLutSize = 1024;
 			const invCdfData = new Float32Array(invCdfLutSize);
@@ -867,8 +727,9 @@
 				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
 			});
 			device.queue.writeBuffer(invCdfBuffer, 0, invCdfData);
-
+*/
 			bindingId = 0;
+/*			
 			const entries = [
 				{ binding: bindingId++, resource: { buffer: posBuf } },
 				{ binding: bindingId++, resource: { buffer: velBuf } },
@@ -879,6 +740,12 @@
 			if (config.RANDOM_POINTS === 2) entries.push({ binding: bindingId++, resource: { buffer: randomBuffer } });// Буфер LUT
 			entries.push({ binding: bindingId++, resource: { buffer: invCdfBuffer } }); // Новый буфер LUT для inverseCDF
 			if (config.DEBUG_MODE) entries.push({ binding: bindingId++, resource: { buffer: debugBuf } });
+*/			
+			const entries = [
+				{ binding: bindingId++, resource: { buffer: gpuParamsBuffer } },
+				{ binding: bindingId++, resource: { buffer: gpuPositionsBuffer } },
+				{ binding: bindingId++, resource: { buffer: gpuVelocitiesBuffer } },
+			]
 			bindGroup = device.createBindGroup({ layout: pipeline.getBindGroupLayout(0), entries: entries });
 			log("GPU Device Ready");
 		}
@@ -1042,7 +909,6 @@
 				setState("Connection established. Ready for computation.");
 				log("Connected to relay server successfully.");
 			};
-			const sError = "WebGPU ERROR: ";
 
 			// 4. Прием сообщений
 			socket.onmessage = async (event) => {
@@ -1128,14 +994,15 @@
 		}
 		// Удобная функция очистки всех используемых буферов/ресурсов
 		function cleanupGpuResources() {
-			destroyIfBuffer(posBuf);
+//			destroyIfBuffer(posBuf);
 			destroyIfBuffer(velBuf);
-			destroyIfBuffer(paramBuf);
+//			destroyIfBuffer(paramBuf);
 			destroyIfBuffer(debugBuf);
 			destroyIfBuffer(messageArray);
 			destroyIfBuffer(timeBuffer);
 
-			posBuf = velBuf = paramBuf = debugBuf = messageArray = timeBuffer = null;
+//			posBuf = velBuf = paramBuf = debugBuf = messageArray = timeBuffer = null;
+			velBuf = debugBuf = messageArray = timeBuffer = null;
 			bindGroup = pipeline = null;
 
 			try {
