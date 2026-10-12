@@ -100,7 +100,7 @@ const classSettings = {
 
 			//Сила отталкивания. Чем меньше значение, тем слабее силы отталкивания между точками, и тем медленнее они двигаются
 //deprecated
-REPULSION_STRENGTH: 1,//10,//По умолчанию не определено и зависит от количества вершин REPULSION_STRENGTH = config.a / classSettings.settings.object.geometry.angles.length.
+//REPULSION_STRENGTH: 1,//10,//По умолчанию не определено и зависит от количества вершин REPULSION_STRENGTH = config.a / classSettings.settings.object.geometry.angles.length.
 				//a: 50,//имеет эффект только если не определен REPULSION_STRENGTH. Default 50
 
 
@@ -166,7 +166,7 @@ REPULSION_STRENGTH: 1,//10,//По умолчанию не определено �
 			//color: 0xffffff,
 			geometry: {
 
-				positionsFileName: 'positions5.bin',
+				//positionsFileName: 'positions5.bin',
 				//Tesseract https://en.wikipedia.org/wiki/Tesseract
 				//Please set indices.edges for tesseract
 				angles: [
@@ -337,7 +337,7 @@ const myThreeOptions = {
 	scene: { scale: { x: 1, y: 1, z: 1 }},
 	playerOptions: {
 
-		marks: 1000,
+		marks: 100,
 		//marks: 750,//при количестве вершин равном 124875 GPU зависает и перезапускается с предупреждением: A valid external Instance reference no longer exists.
 		//marks: 1000,//недостаточно памяти при количестве вершин равном 500000
 
