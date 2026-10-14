@@ -18,7 +18,7 @@
 import SphericalUniverse from '../sphere/sphericalUniverse.js';
 import HyperSphere3D from '../../../commonNodeJS/master/HyperSphere/hyperSphere3D.js';
 import * as utils from '../../../commonNodeJS/master/HyperSphere/utilsHSphere.js'
-import { graphFolderChild, graphFolderClose, timeAnalysis } from '../../../commonNodeJS/master/HyperSphere/distanceOfVertices/thomsonAnalysisHSphere.js'
+import { graphFolderChild, graphFolderClose, timeAnalysis } from '../../../commonNodeJS/master/HyperSphere/distanceOfVertices/TA.js'
 import { dat } from '../../../commonNodeJS/master/dat/dat.module.js';
 
 //select one:
