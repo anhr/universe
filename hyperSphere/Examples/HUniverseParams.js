@@ -28,7 +28,7 @@ const classSettings = {
 	compute: {
 		//isUseCPU: true,
 		config: {
-			//					type: 'START_COMPUTE',//Default 'START_COMPUTE'
+			//serverAddress: 'uytiuytui',
 
 			//Select one:
 
@@ -155,7 +155,7 @@ const classSettings = {
 		random: () => { return 0.5 },//replacing random vertices with strictly defined vertices.
 
 	},
-	debug: false,
+	//debug: false,
 	settings: {
 
 		noGetMaxPairsFloat32Length: true,
@@ -166,7 +166,7 @@ const classSettings = {
 			//color: 0xffffff,
 			geometry: {
 
-				//positionsFileName: 'positions5.bin',
+				positionsFileName: 'positions5.bin',
 				//Tesseract https://en.wikipedia.org/wiki/Tesseract
 				//Please set indices.edges for tesseract
 				angles: [
@@ -337,7 +337,7 @@ const myThreeOptions = {
 	scene: { scale: { x: 1, y: 1, z: 1 }},
 	playerOptions: {
 
-		marks: 100,
+		//marks: 100,
 		//marks: 750,//при количестве вершин равном 124875 GPU зависает и перезапускается с предупреждением: A valid external Instance reference no longer exists.
 		//marks: 1000,//недостаточно памяти при количестве вершин равном 500000
 
