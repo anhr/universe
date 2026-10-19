@@ -34,8 +34,8 @@ class WebGPUHUniverse extends WebGPUClient {
 		super();
 		let //socket
 //			elRow,//окно статуса выполнения вычислений на GPU
-//			updateDisplay, start,
-			setStatus, currentStep, radiusPrev, cProgress;
+//			setStatus, updateDisplay, start,
+			currentStep, radiusPrev, cProgress;
 		this.isDataReady//true: вычисление точек на GPU успешно завершено.
 		this.createCProgress = (elProgress, config) => {
 			if (cProgress) console.error(sWebGPU + ':createCProgress(). Duplicate cProgress')
