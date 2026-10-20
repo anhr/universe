@@ -64,7 +64,7 @@ app.Map("/ws", async (HttpContext context) => {
         }
         else
 		{
-			await webSocket.CloseAsync((WebSocketCloseStatus)4001, "Unknown clientType4: " + clientType, CancellationToken.None);
+			await webSocket.CloseAsync((WebSocketCloseStatus)4001, "Unknown clientType: " + clientType, CancellationToken.None);
 			return;
 		}
 
