@@ -41,7 +41,7 @@ class HypersphericalUniverse extends SphericalUniverse {
 	constructor(classSettings = {}, myThreeOptions) {
 		classSettings.utils = utils;
 //		classSettings.compute.config.serverAddress ||= 'ws://localhost:5000/ws?type=main';
-		classSettings.compute.serverAddress ||= 'ws://localhost:5000/ws?type=main';
+		classSettings.compute.serverAddress ||= 'ws://localhost:5000/ws';
 		if (classSettings.compute.config.ETA_0 === undefined) classSettings.compute.config.ETA_0 = 0.01;
 		if (classSettings.compute.config.BETA === undefined) classSettings.compute.config.BETA = 0.85;
 		super(classSettings, myThreeOptions);

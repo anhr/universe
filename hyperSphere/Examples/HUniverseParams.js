@@ -27,8 +27,8 @@ import * as fileHandler from '../../../../commonNodeJS/master/fileHandler.js';
 const classSettings = {
 	compute: {
 		//isUseCPU: true,
+		//serverAddress: 'ws://localhost:5000/ws',
 		config: {
-			//serverAddress: 'uytiuytui',
 
 			//Select one:
 

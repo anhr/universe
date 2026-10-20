@@ -62,8 +62,13 @@ app.Map("/ws", async (HttpContext context) => {
                 await SendStatus(mainPageSocket, 1, "Ready to work.");
             }
         }
+        else
+		{
+			await webSocket.CloseAsync((WebSocketCloseStatus)4001, "Unknown clientType4: " + clientType, CancellationToken.None);
+			return;
+		}
 
-        connections.Add(webSocket);
+		connections.Add(webSocket);
 
         var buffer = new byte[1024 * 4]; // 4KB buffer
         try

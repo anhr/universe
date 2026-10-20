@@ -37,6 +37,8 @@ class WebGPUHUniverse extends WebGPUClient {
 //			setStatus, updateDisplay, start,
 			currentStep, radiusPrev, cProgress;
 		this.isDataReady//true: вычисление точек на GPU успешно завершено.
+		this.pageType = () => { return 'main'; }
+	    this.name = () => { return ' Thomson' }
 		this.createCProgress = (elProgress, config) => {
 			if (cProgress) console.error(sWebGPU + ':createCProgress(). Duplicate cProgress')
 			cProgress = document.createElement('input');
