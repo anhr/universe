@@ -18,7 +18,9 @@ var connections = new List<WebSocket>();
 
 // Статические переменные для хранения активных сокетов
 WebSocket? mainPageSocket = null;
+WebSocket? mainThomsonAnalysisPageSocket = null;
 WebSocket? gpuEngineSocket = null;
+WebSocket? gpuThomsonAnalysisEngineSocket = null;
 
 app.Map("/ws", async (HttpContext context) => {
     if (context.WebSockets.IsWebSocketRequest)
@@ -47,7 +49,7 @@ app.Map("/ws", async (HttpContext context) => {
                 await SendStatus(webSocket, 1, "Ready to work.");
             }
         }
-        else if (clientType == "gpu")
+		else if (clientType == "gpu")
         {
             if (gpuEngineSocket != null && gpuEngineSocket.State == WebSocketState.Open)
             {
@@ -62,7 +64,44 @@ app.Map("/ws", async (HttpContext context) => {
                 await SendStatus(mainPageSocket, 1, "Ready to work.");
             }
         }
-        else
+
+		//Thomson Analysis
+
+		else if (clientType == "mainThomsonAnalysis")
+		{
+			if (mainThomsonAnalysisPageSocket != null && mainThomsonAnalysisPageSocket.State == WebSocketState.Open)
+			{
+				await webSocket.CloseAsync((WebSocketCloseStatus)4001, "Main Thomson Analys Page already connected", CancellationToken.None);
+				return;
+			}
+			mainThomsonAnalysisPageSocket = webSocket;
+
+			// Проверяем готовность Engine
+			if (gpuThomsonAnalysisEngineSocket == null || gpuThomsonAnalysisEngineSocket.State != WebSocketState.Open)
+			{
+				await SendStatus(webSocket, 2, "");//Waiting for Thomson Analysis Engine...
+			}
+			else
+			{
+				await SendStatus(webSocket, 1, "Ready to work.");
+			}
+		}
+		else if (clientType == "gpuThomsonAnalysis")
+		{
+			if (gpuThomsonAnalysisEngineSocket != null && gpuThomsonAnalysisEngineSocket.State == WebSocketState.Open)
+			{
+				await webSocket.CloseAsync((WebSocketCloseStatus)4001, "Thomson Analysis Engine already connected", CancellationToken.None);
+				return;
+			}
+			gpuThomsonAnalysisEngineSocket = webSocket;
+
+			// Уведомляем главную страницу, что Engine подключен
+			if (mainThomsonAnalysisPageSocket != null && mainThomsonAnalysisPageSocket.State == WebSocketState.Open)
+			{
+				await SendStatus(mainThomsonAnalysisPageSocket, 1, "Ready to work.");
+			}
+		}
+		else
 		{
 			await webSocket.CloseAsync((WebSocketCloseStatus)4001, "Unknown clientType: " + clientType, CancellationToken.None);
 			return;
@@ -104,13 +143,31 @@ app.Map("/ws", async (HttpContext context) => {
                     await gpuEngineSocket.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(data)), WebSocketMessageType.Text, true, CancellationToken.None);
                 }
             }
-            if (webSocket == gpuEngineSocket)
+			if (webSocket == gpuEngineSocket)
             {
                 gpuEngineSocket = null;
                 if (mainPageSocket != null) await SendStatus(mainPageSocket, 0, "Engine disconnected. Waiting...");
             }
-        }
-    }
+
+			//Thomson Analysis
+
+			if (webSocket == mainThomsonAnalysisPageSocket)
+			{
+				mainThomsonAnalysisPageSocket = null;
+				if (gpuThomsonAnalysisEngineSocket != null && gpuThomsonAnalysisEngineSocket.State == WebSocketState.Open)
+				{
+					//Уведомляем Hupersphere Universe Engine что главная страница отключена. Это позволяет остановить вычисления
+					var data = JsonSerializer.Serialize(new { type = "MAIN_DISCONNECTED" });
+					await gpuThomsonAnalysisEngineSocket.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(data)), WebSocketMessageType.Text, true, CancellationToken.None);
+				}
+			}
+			if (webSocket == gpuThomsonAnalysisEngineSocket)
+			{
+				gpuThomsonAnalysisEngineSocket = null;
+				if (mainThomsonAnalysisPageSocket != null) await SendStatus(mainThomsonAnalysisPageSocket, 0, "Engine disconnected. Waiting...");
+			}
+		}
+	}
     else
     {
         context.Response.StatusCode = StatusCodes.Status400BadRequest;
