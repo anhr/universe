@@ -34,25 +34,16 @@
 	</style>
 </head>
 <body>
-	<div class="engine-status">
-		<h3>ENGINE: Hypersphere Universe</h3>
-		<div>VIDEO CARD: <select id="gpuSelect"><option value="-1">Search for video cards...</option></select></div>
-		<div>STATUS: <span id="status">IDLE</span></div>
-		<div>SOURCE: <span id="client">---</span></div>
-		<div>PROGRESS: <span id="stepCounter">0</span> / <span id="totalStepsDisplay">0</span> | R: <span id="radVal">0.00</span> </div>
-		<div>Points Per Step: <span id="pointsPerStep">---</span></div>
-		<div>ELAPSE TIME: <span id="timeResult" class="timer">---</span></div>
-		<div id="socket-status">
-			<strong>Socket Status:</strong> <span id="stateText">Waiting for connection to server...</span><br>
-		</div>
-	</div>
-	<div id="log"></div>
 
 	<script type="module">
 
 		//"WebGPU Hyperspherical Universe" in https://gemini.google.com
 		//Public https://gemini.google.com/share/e56abc54cfb9
 		//Private https://gemini.google.com/app/9f9d634b8146885b
+
+		import GPUThomsonEngine from './GPUThomsonEngine.js'
+		const gPUThomsonEngine = new GPUThomsonEngine();
+		document.body.innerHTML += gPUThomsonEngine.engineStatusElement();
 		
 		const π = Math.PI;
 		let positionArray,//angles,//Сейчас вместо углов предаются координаты точек в декартовой системе координат из settings.bufferGeometry.attributes.position.array
