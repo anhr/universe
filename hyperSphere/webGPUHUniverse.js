@@ -37,7 +37,7 @@ class WebGPUHUniverse extends WebGPUClient {
 //			setStatus, updateDisplay, start,
 			currentStep, radiusPrev, cProgress;
 		this.isDataReady//true: вычисление точек на GPU успешно завершено.
-		this.webGPUPage = () => { return '<a href="../webGPUHUniverse.html" target="_blank" style="color: blue;">Hypersphere Universe Engine</a>'; }
+		this.webGPUPage = () => { return '<a href="../webGPUHUniverse.html" target="_blank" style="color: blue;">Thomson Problen For Hypersphere Engine</a>'; }
 		this.pageType = () => { return 'main'; }
 	    this.name = () => { return ' Thomson' }
 		this.createCProgress = (elProgress, config) => {

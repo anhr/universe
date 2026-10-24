@@ -44,18 +44,19 @@
 		import GPUTAEngine from './GPUTAEngine.js'
 		const gPUTAEngine = new GPUTAEngine();
 		document.body.innerHTML += gPUTAEngine.engineStatusElement();
-		
+/*		
 		const π = Math.PI;
 		let positionArray,//angles,//Сейчас вместо углов предаются координаты точек в декартовой системе координат из settings.bufferGeometry.attributes.position.array
 			count, currentStep, radiusPrev, radiusStep;
 		const itemSize = 4; // 4D: x, y, z, w. и размер цвета
-		const sError = "WebGPU ERROR: ";
+*/
+//		const sError = "WebGPU ERROR: ";
 
 		//WebGPU start
 		
-		let device, pipeline, velBuf, gpuParamsBuffer, gpuPositionsBuffer,//paramBuf, posBuf
+		let velBuf, gpuPositionsBuffer,//pipeline, device, paramBuf, posBuf, gpuParamsBuffer
 			debugBuf, messageArray, bindGroup, timeBuffer;//, anglesBufGPU
-		let availableAdapters = [];
+//		let availableAdapters = [];
 		
 		// Если ваш GPU-цикл runAuto работает очень быстро (например, 200 FPS), то за одну миллисекунду может пройти несколько кадров.
 		// В этом случае в течение этой миллисекунды uTime будет одинаковым целым числом, и все кадры внутри этого промежутка выдадут идентичные «случайные» числа.
@@ -140,14 +141,14 @@
 
 			readBuf.unmap(); readBuf.destroy();
 		}
-		
+/*		
 		async function getSafeAdapterName(adapter, index) {
 			if (!adapter) return `${index + 1}. Unknown device`;
 			let name = "WebGPU Adapter";
 			if (adapter.info) name = adapter.info.description || adapter.info.vendor || name;
 			return `${index + 1}. ${name}`;
 		}
-
+*/
 		async function findAdapters() {
 			availableAdapters.length = 0;
 			const select = document.getElementById('gpuSelect');
@@ -191,7 +192,8 @@
 			return true;
 		}
 
-		let start;
+//		let start;
+/*
 		const progressStep = async (currentStepNew) => {
 			currentStep = currentStepNew;
 			if (currentStep < config.totalSteps) {
@@ -228,10 +230,6 @@
 				pass.dispatchWorkgroups(Math.ceil(config.pointsPerStep / 64));
 				pass.end();
 				device.queue.submit([encoder.finish()]);
-				/*
-				if (config.DEBUG_MODE) await readDebugValue(currentStep);
-				else await readMessageValue(currentStep);
-				*/
 				updateDisplay();
 				radiusPrev = newRadius;// currentStep++;
 				return;
@@ -241,6 +239,8 @@
 			updateDisplay();
 			await finalSyncGPU();
 		}
+*/
+/*
 		const runAuto = async () => {
 			start = performance.now();
 			const idx = parseInt(document.getElementById('gpuSelect').value);
@@ -265,9 +265,11 @@
 			document.getElementById('totalStepsDisplay').innerText = config.totalSteps;
 			progressStep(currentStep);
 		};
+*/
 
 		let recommendationThrow;// requiredPosBufSize, adapter, currentDeviceLimit;
-		const paramsBufferSize = 32; // 8 x 4 bytes (aligned)
+//		const paramsBufferSize = 32; // 8 x 4 bytes (aligned)
+/*
 		async function initWebGPU(idx) {
 			if (device) {
 				cleanupGpuResources();
@@ -687,6 +689,7 @@
 			bindGroup = device.createBindGroup({ layout: pipeline.getBindGroupLayout(0), entries: entries });
 			log("GPU Device Ready");
 		}
+*/
 
 		//WebGPU end
 
@@ -758,7 +761,7 @@
 
 			return (low + high) / 2;
 		}
-		
+/*		
 		const setState = (text, boError = false) => {
 			const stateText = document.getElementById('stateText');
 			stateText.innerHTML = text;
@@ -772,12 +775,14 @@
 			}));
 			if (boError) log('<span  style="color: red;">' + message + '</span>');
 		}
-
-		let socket;
+*/
+//		let socket;
+/*
 		const elStatus = document.getElementById('status');
 		const elClient = document.getElementById('client');
-		let reconnectTimer = null; // Переменная для хранения таймера переподключения
-		let config;
+*/
+//		let reconnectTimer = null; // Переменная для хранения таймера переподключения
+//		let config;
 
 		async function connectToServer() {
 			// Если таймер уже запущен, очищаем его, чтобы избежать дублирования циклов
@@ -898,12 +903,14 @@
 				}
 			};
 		}
-
+/*
 		// Запуск первичного подключения при загрузке страницы Hypersphere Universe Engine
 		if (await findAdapters()) {
 			await connectToServer();
 		}
-		function log(m) { document.getElementById('log').innerHTML += `<div>> ${m}</div>`; }
+*/
+//		function log(m) { document.getElementById('log').innerHTML += `<div>> ${m}</div>`; }
+/*
 		// Безопасная функция для уничтожения буферов
 		function destroyIfBuffer(buf) {
 			if (!buf) return;
@@ -916,6 +923,8 @@
 				console.warn('Buffer destroy error (ignored):', e);
 			}
 		}
+*/
+/*
 		// Удобная функция очистки всех используемых буферов/ресурсов
 		function cleanupGpuResources() {
 			destroyIfBuffer(velBuf);
@@ -937,9 +946,12 @@
 			}
 			device = null; // Обязательно освобождаем ссылку!
 		}
+*/
+/*		
 		window.addEventListener('beforeunload', () => {
 			cleanupGpuResources();
 		});
+*/		
 	</script>
 </body>
 </html>

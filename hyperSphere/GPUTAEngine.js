@@ -24,8 +24,13 @@ import GPUEngine from './GPUEngine.js'
 
 class GPUTAEngine extends GPUEngine {
 	constructor (){
-	 super();
+		super();
 		this.engineName = () => { return 'Thomson Analysis for hypersphere'; }
+		this.type = () => { return 'gpuThomsonAnalysis'; }
+		this.addElements = () => { return `
+	<div>PROGRESS: <span id="stepCounter">0</span> / <span id="totalStepsDisplay">0</span> | R: <span id="radVal">0.00</span> </div>
+	<div>Points Per Step: <span id="pointsPerStep">---</span></div>
+		`; }
 	}
 }
 export default GPUTAEngine

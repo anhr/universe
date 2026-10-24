@@ -44,18 +44,20 @@
 		import GPUThomsonEngine from './GPUThomsonEngine.js'
 		const gPUThomsonEngine = new GPUThomsonEngine();
 		document.body.innerHTML += gPUThomsonEngine.engineStatusElement();
-		
+		await gPUThomsonEngine.start();
+/*		
 		const π = Math.PI;
 		let positionArray,//angles,//Сейчас вместо углов предаются координаты точек в декартовой системе координат из settings.bufferGeometry.attributes.position.array
 			count, currentStep, radiusPrev, radiusStep;
 		const itemSize = 4; // 4D: x, y, z, w. и размер цвета
-		const sError = "WebGPU ERROR: ";
+*/
+//		const sError = "WebGPU ERROR: ";
 
 		//WebGPU start
 		
-		let device, pipeline, velBuf, gpuParamsBuffer, gpuPositionsBuffer,//paramBuf, posBuf
-			debugBuf, messageArray, bindGroup, timeBuffer;//, anglesBufGPU
-		let availableAdapters = [];
+		let velBuf,//pipeline, device, paramBuf, posBuf, gpuPositionsBuffer, gpuParamsBuffer
+			debugBuf, messageArray, timeBuffer;//, anglesBufGPU, bindGroup
+//		let availableAdapters = [];
 		
 		// Если ваш GPU-цикл runAuto работает очень быстро (например, 200 FPS), то за одну миллисекунду может пройти несколько кадров.
 		// В этом случае в течение этой миллисекунды uTime будет одинаковым целым числом, и все кадры внутри этого промежутка выдадут идентичные «случайные» числа.
@@ -78,16 +80,6 @@
 			const resultBuffer = new Float32Array(readBuffer.getMappedRange().slice(0));
 			socket.send(resultBuffer.buffer);
 			readBuffer.unmap(); readBuffer.destroy();
-/*			
-			const posReadBuf = device.createBuffer({ size: count * 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
-			const posEnc = device.createCommandEncoder();
-			posEnc.copyBufferToBuffer(posBuf, 0, posReadBuf, 0, count * 16);
-			device.queue.submit([posEnc.finish()]);
-			await posReadBuf.mapAsync(GPUMapMode.READ);
-			const posData = new Float32Array(posReadBuf.getMappedRange());
-			socket.send(posData.buffer);
-			posReadBuf.unmap(); posReadBuf.destroy();
-*/			
 			log('Data is ready.');
 
 		}
@@ -150,14 +142,15 @@
 
 			readBuf.unmap(); readBuf.destroy();
 		}
-		
+/*		
 		async function getSafeAdapterName(adapter, index) {
 			if (!adapter) return `${index + 1}. Unknown device`;
 			let name = "WebGPU Adapter";
 			if (adapter.info) name = adapter.info.description || adapter.info.vendor || name;
 			return `${index + 1}. ${name}`;
 		}
-
+*/
+/*
 		async function findAdapters() {
 			availableAdapters.length = 0;
 			const select = document.getElementById('gpuSelect');
@@ -200,8 +193,10 @@
 			}
 			return true;
 		}
+*/
 
-		let start;
+//		let start;
+/*
 		const progressStep = async (currentStepNew) => {
 			currentStep = currentStepNew;
 			if (currentStep < config.totalSteps) {
@@ -234,14 +229,10 @@
 //				device.queue.writeBuffer(paramBuf, 0, new Float32Array([radiusPrev, newRadius, currentStep * config.pointsPerStep]));
 				const encoder = device.createCommandEncoder();
 				const pass = encoder.beginComputePass();
-				pass.setPipeline(pipeline); pass.setBindGroup(0, bindGroup);
+				pass.setPipeline(pipeline); pass.setBindGroup(0, this.bindGroup);
 				pass.dispatchWorkgroups(Math.ceil(config.pointsPerStep / 64));
 				pass.end();
 				device.queue.submit([encoder.finish()]);
-				/*
-				if (config.DEBUG_MODE) await readDebugValue(currentStep);
-				else await readMessageValue(currentStep);
-				*/
 				updateDisplay();
 				radiusPrev = newRadius;// currentStep++;
 				return;
@@ -251,6 +242,8 @@
 			updateDisplay();
 			await finalSyncGPU();
 		}
+*/
+/*
 		const runAuto = async () => {
 			start = performance.now();
 			const idx = parseInt(document.getElementById('gpuSelect').value);
@@ -275,9 +268,11 @@
 			document.getElementById('totalStepsDisplay').innerText = config.totalSteps;
 			progressStep(currentStep);
 		};
+*/
 
 		let recommendationThrow;// requiredPosBufSize, adapter, currentDeviceLimit;
-		const paramsBufferSize = 32; // 8 x 4 bytes (aligned)
+//		const paramsBufferSize = 32; // 8 x 4 bytes (aligned)
+/*
 		async function initWebGPU(idx) {
 			if (device) {
 				cleanupGpuResources();
@@ -627,14 +622,6 @@
 			// 1. Включаем перехват ВАЛИДАЦИОННЫХ ошибок (превышение лимитов — это валидация)
 			device.pushErrorScope('validation');
 
-/*			
-			posBuf = device.createBuffer({ size: requiredPosBufSize, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
-			velBuf = device.createBuffer({ size: config.pointsPerStep * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
-			paramBuf = device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
-			debugBuf = device.createBuffer({ size: 32, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
-			messageArray = device.createBuffer({ size: 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC });
-*/			
-
 			// Буфер позиций
 			gpuPositionsBuffer = device.createBuffer({
 				size: positionArray.byteLength,
@@ -658,15 +645,6 @@
 
 			// Создаем буфер для одного числа u32. Этот буфер используется для генератора случайных чисел в GPU.
 			//timeBuffer = device.createBuffer({ size: 4, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
-
-/*			
-			const initialPos = new Float32Array(count * 4);
-			for (let i = 0; i < config.pointsPerStep; i++) {
-				const p = polarToCartesian(angles[i].latitude, angles[i].longitude, angles[i].altitude, config.baseRadius), index = i * 4;
-				initialPos[index] = p.x; initialPos[index + 1] = p.y; initialPos[index + 2] = p.z; initialPos[index + 3] = p.w;
-			}
-			device.queue.writeBuffer(posBuf, 0, initialPos);
-*/			
 
 			//Создание буфера случайных чисел, которые затем будут использоваться в WebGPU вместо герерации случайного числа в WebGPU
 
@@ -705,33 +683,7 @@
 				});
 				device.queue.writeBuffer(randomBuffer, 0, randomData);
 			}
-/*
-			// --- ПРЕДРАСЧЕТ inverseCDF_S3 LUT ---
-			const invCdfLutSize = 1024;
-			const invCdfData = new Float32Array(invCdfLutSize);
-			for (let i = 0; i < invCdfLutSize; i++) {
-				const u = i / (invCdfLutSize - 1);
-				invCdfData[i] = inverseCDF_S3(u);
-			}
-			const invCdfBuffer = device.createBuffer({
-				size: invCdfData.byteLength,
-				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-			});
-			device.queue.writeBuffer(invCdfBuffer, 0, invCdfData);
-*/
 			bindingId = 0;
-/*			
-			const entries = [
-				{ binding: bindingId++, resource: { buffer: posBuf } },
-				{ binding: bindingId++, resource: { buffer: velBuf } },
-				{ binding: bindingId++, resource: { buffer: paramBuf } },
-				{ binding: bindingId++, resource: { buffer: messageArray } },
-			]
-			if (config.RANDOM_POINTS != 0) entries.push({ binding: bindingId++, resource: { buffer: timeBuffer } });
-			if (config.RANDOM_POINTS === 2) entries.push({ binding: bindingId++, resource: { buffer: randomBuffer } });// Буфер LUT
-			entries.push({ binding: bindingId++, resource: { buffer: invCdfBuffer } }); // Новый буфер LUT для inverseCDF
-			if (config.DEBUG_MODE) entries.push({ binding: bindingId++, resource: { buffer: debugBuf } });
-*/			
 			const entries = [
 				{ binding: bindingId++, resource: { buffer: gpuParamsBuffer } },
 				{ binding: bindingId++, resource: { buffer: gpuPositionsBuffer } },
@@ -740,7 +692,7 @@
 			bindGroup = device.createBindGroup({ layout: pipeline.getBindGroupLayout(0), entries: entries });
 			log("GPU Device Ready");
 		}
-
+*/
 		//WebGPU end
 
 		function updateDisplay() {
@@ -811,7 +763,7 @@
 
 			return (low + high) / 2;
 		}
-		
+/*		
 		const setState = (text, boError = false) => {
 			const stateText = document.getElementById('stateText');
 			stateText.innerHTML = text;
@@ -825,13 +777,15 @@
 			}));
 			if (boError) log('<span  style="color: red;">' + message + '</span>');
 		}
-
-		let socket;
+*/
+//		let socket;
+/*
 		const elStatus = document.getElementById('status');
 		const elClient = document.getElementById('client');
-		let reconnectTimer = null; // Переменная для хранения таймера переподключения
-		let config;
-
+*/
+//		let reconnectTimer = null; // Переменная для хранения таймера переподключения
+//		let config;
+/*
 		async function connectToServer() {
 			// Если таймер уже запущен, очищаем его, чтобы избежать дублирования циклов
 			if (reconnectTimer) {
@@ -939,24 +893,11 @@
 						// Двоичные данные
 						elStatus.innerText = "Binary data received";
 						positionArray = new Float32Array(event.data);
-/*						
-						const initialAngles = new Float32Array(event.data);
-						angles = new Array(count).fill(null).map(() => ({ latitude: 0, longitude: 0, altitude: 0 }));
-						const anglesItemSize = 4;
-						for (let i = 0; i < config.pointsPerStep; i++) {
-							const anglesItem = angles[i];
-							let index = i * anglesItemSize;
-							anglesItem.latitude = initialAngles[index++];
-							anglesItem.longitude = initialAngles[index++];
-							anglesItem.altitude = initialAngles[index++];
-						}
-*/						
 						try {
 							await runAuto();
 						} catch (e) {
 							elStatus.innerText = "ERROR";
 							cleanupGpuResources();
-//                            setState(e.message, true); // <--- Сюда попадет абсолютно любой текст ошибки!
 							setState(sError + e.message, true);
 						}
 					}
@@ -965,12 +906,15 @@
 				}
 			};
 		}
-
+*/
+/*
 		// Запуск первичного подключения при загрузке страницы Hypersphere Universe Engine
 		if (await findAdapters()) {
 			await connectToServer();
 		}
-		function log(m) { document.getElementById('log').innerHTML += `<div>> ${m}</div>`; }
+*/
+//		function log(m) { document.getElementById('log').innerHTML += `<div>> ${m}</div>`; }
+/*
 		// Безопасная функция для уничтожения буферов
 		function destroyIfBuffer(buf) {
 			if (!buf) return;
@@ -983,6 +927,8 @@
 				console.warn('Buffer destroy error (ignored):', e);
 			}
 		}
+*/
+/*
 		// Удобная функция очистки всех используемых буферов/ресурсов
 		function cleanupGpuResources() {
 //			destroyIfBuffer(posBuf);
@@ -1007,9 +953,12 @@
 			}
 			device = null; // Обязательно освобождаем ссылку!
 		}
+*/
+/*		
 		window.addEventListener('beforeunload', () => {
 			cleanupGpuResources();
 		});
+*/		
 	</script>
 </body>
 </html>
