@@ -35,9 +35,9 @@ class GPUEngine {
 			const stateText = document.getElementById('stateText');
 			stateText.innerHTML = text;
 			stateText.style.color = boError ? "#ff4444" : "#00ffcc";
-			if(!boError || !socket || socket.readyState != WebSocket.OPEN) return;
+			if (!boError || !this.socket || this.socket.readyState != WebSocket.OPEN) return;
 			const message = 'ENGINE: ' + text;
-			socket.send(JSON.stringify({
+			this.socket.send(JSON.stringify({
 				type: 'STATUS',
 				code: 0,//error
 				message: message
@@ -47,16 +47,19 @@ class GPUEngine {
 	 
 		let availableAdapters = [];
 		this.sError = "WebGPU ERROR: ";
-		let socket;
+		this.socket;
 		this.pipeline;
 		this.bindGroup;
 		this.config;
-		this.radiusPrev;
-		this.radiusStep;
 
 		this.elapsedTime = {
 			start: 0,
 			setStart() { this.start = performance.now(); },
+			end() {
+				const end = performance.now();
+				const time = (end - this.start) / 1000;
+				document.getElementById('timeResult').innerText = `${(time).toFixed(3)} sec.`;
+			},
 		}
 		
 		async function getSafeAdapterName(adapter, index) {
@@ -119,38 +122,38 @@ class GPUEngine {
 			}
 
 			// Если прошлый сокет еще жив или закрывается — принудительно очищаем его
-			if (socket) {
-				socket.onerror = null;
-				socket.onclose = null;
-				socket.onopen = null;
-				socket.onmessage = null;
-				if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
-					socket.close();
+			if (_this.socket) {
+				_this.socket.onerror = null;
+				_this.socket.onclose = null;
+				_this.socket.onopen = null;
+				_this.socket.onmessage = null;
+				if (_this.socket.readyState === WebSocket.OPEN || _this.socket.readyState === WebSocket.CONNECTING) {
+					_this.socket.close();
 				}
-				socket = null;
+				_this.socket = null;
 			}
 
 			_this.setState("Connecting to server...");
 
-			socket = new WebSocket('ws://localhost:5000/ws?type=' + _this.type());
-			socket.binaryType = 'arraybuffer';
+			_this.socket = new WebSocket('ws://localhost:5000/ws?type=' + _this.type());
+			_this.socket.binaryType = 'arraybuffer';
 
 			// 1. Обработка ошибок (сервер недоступен)
-			socket.onerror = (error) => {
+			_this.socket.onerror = (error) => {
 				const failedUrl = error.target ? error.target.url : 'ws://localhost:5000/ws?type=gpu';
 				_this.setState("ERROR: Server unreachable at " + failedUrl, true);
 				console.error("WebSocket Error:", error);
 			};
 
 			// 2. ОБРАБОТКА ЗАКРЫТИЯ СОКЕТА И ЦИКЛ ПЕРЕПОДКЛЮЧЕНИЯ
-			socket.onclose = (event) => {
+			_this.socket.onclose = (event) => {
 				console.log(`Close code: ${event.code}, reason: ${event.reason}, wasClean: ${event.wasClean}`);
 
 				// КРИТИЧЕСКИЙ ЧЕК: Если код 4001, значит эта копия Engine уже запущена в другой вкладке.
 				// Мы НЕ должны переподключаться, чтобы не спамить сервер.
 				if (event.code === 4001) {
-					this.setState(`Rejected by server: ${event.reason || "Duplicate Engine instance."}`, true);
-					this.cleanupGpuResources();
+					_this.setState(`Rejected by server: ${event.reason || "Duplicate Engine instance."}`, true);
+					_this.cleanupGpuResources();
 					return;
 				}
 
@@ -162,10 +165,10 @@ class GPUEngine {
 					helpURL = ` See RFC: ${ rfcLink }, mozilla: ${ mozillaLink }`
 				}
 				const errorDetail = event.reason ? `Reason: ${event.reason}` : `Code: ${event.code}${helpURL}`;
-				this.setState(`Connection lost (${errorDetail}). Reconnecting in 5 seconds...`, true);
+				_this.setState(`Connection lost (${errorDetail}). Reconnecting in 5 seconds...`, true);
 
 				// Сбрасываем ресурсы GPU перед новым циклом, чтобы предотвратить "adapter is consumed"
-				this.cleanupGpuResources();
+				_this.cleanupGpuResources();
 
 				// Запускаем цикл повторного соединения через 5 секунд
 				reconnectTimer = setTimeout(() => {
@@ -174,13 +177,13 @@ class GPUEngine {
 			};
 
 			// 3. Успешное соединение
-			socket.onopen = (event) => {
+			_this.socket.onopen = (event) => {
 				_this.setState("Connection established. Ready for computation.");
 				_this.log("Connected to relay server successfully.");
 			};
 
 			// 4. Прием сообщений
-			socket.onmessage = async (event) => {
+			_this.socket.onmessage = async (event) => {
 				try {
 					_this.onmessage(event);
 /*					
@@ -213,7 +216,7 @@ class GPUEngine {
 								break;
 							default:
 								const error = 'socket message: Invalid data.type: ' + data.type;
-								this.setState(error, true);
+								_this.setState(error, true);
 						}
 					} else {
 						// Двоичные данные
@@ -223,8 +226,8 @@ class GPUEngine {
 							await runAuto();
 						} catch (e) {
 							elStatus.innerText = "ERROR";
-							this.cleanupGpuResources();
-							this.setState(sError + e.message, true);
+							_this.cleanupGpuResources();
+							_this.setState(sError + e.message, true);
 						}
 					}
 */					
@@ -259,27 +262,24 @@ class GPUEngine {
 		}
 		// Удобная функция очистки всех используемых буферов/ресурсов
 		this.cleanupGpuResources = () => {
-console.error('Under constraction');
-			/*
-			destroyIfBuffer(velBuf);
-			destroyIfBuffer(debugBuf);
-			destroyIfBuffer(messageArray);
-			destroyIfBuffer(timeBuffer);
+//			destroyIfBuffer(velBuf);
+//			destroyIfBuffer(debugBuf);
+//			destroyIfBuffer(messageArray);
+//			destroyIfBuffer(timeBuffer);
 
-			velBuf = debugBuf = messageArray = timeBuffer = null;
+//			velBuf = debugBuf = messageArray = timeBuffer = null;
 			this.bindGroup = this.pipeline = null;
 
 			try {
-				if (device) {
-					if (typeof device.destroy === 'function') {
-						device.destroy();
+				if (this.device) {
+					if (typeof this.device.destroy === 'function') {
+						this.device.destroy();
 					}
 				}
 			} catch (e) {
 				console.warn('Device destroy error:', e);
 			}
-			device = null; // Обязательно освобождаем ссылку!
-			*/
+			this.device = null; // Обязательно освобождаем ссылку!
 		}
 		this.runAuto = async () => {
 			this.elapsedTime.setStart();
@@ -300,11 +300,12 @@ console.error('Under constraction');
 				// Если буфер превысил лимит, мы попадем сюда. Прерываем выполнение!
 				recommendationThrow(validationError.message.replace(/\n/g, '<br>'));
 			}
-
+/*
 			this.radiusPrev = this.config.baseRadius;
 			this.radiusStep = (this.config.radiusMax - this.config.baseRadius) / (this.config.totalSteps - 1);
 			document.getElementById('totalStepsDisplay').innerText = this.config.totalSteps;
-			this.progressStep(currentStep);
+*/			
+			if (this.progressStepStart) this.progressStepStart();//currentStep);
 		};
 		const recommendationThrow = (recommendation) => {
 			const reqMb = (requiredPosBufSize / (1024 * 1024)).toFixed(1);
@@ -326,7 +327,7 @@ console.error('Under constraction');
 		this.device;
 		this.initWebGPU = async function (idx) {
 			if (this.device) {
-				cleanupGpuResources();
+				_this.cleanupGpuResources();
 			}
 			if (!await findAdapters()) return;
 			const adapter = availableAdapters[idx];

@@ -55,15 +55,14 @@
 
 		//WebGPU start
 		
-		let velBuf,//pipeline, device, paramBuf, posBuf, gpuPositionsBuffer, gpuParamsBuffer
-			debugBuf, messageArray, timeBuffer;//, anglesBufGPU, bindGroup
+//		let messageArray, debugBuf, velBuf, pipeline, device, paramBuf, posBuf, gpuPositionsBuffer, gpuParamsBuffer, timeBuffer;//, anglesBufGPU, bindGroup
 //		let availableAdapters = [];
 		
 		// Если ваш GPU-цикл runAuto работает очень быстро (например, 200 FPS), то за одну миллисекунду может пройти несколько кадров.
 		// В этом случае в течение этой миллисекунды uTime будет одинаковым целым числом, и все кадры внутри этого промежутка выдадут идентичные «случайные» числа.
 		// Что избежать этого умножаем на 1000, чтобы превратить миллисекунды в микросекунды.
 		const timeMultiplier = 1000;
-
+/*
 		async function finalSyncGPU() {
 
 			// Чтение данных результатов из GPU
@@ -83,7 +82,8 @@
 			log('Data is ready.');
 
 		}
-
+*/
+/*
 		async function readMessageValue(step) {
 			const readBuf = device.createBuffer({ size: 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
 			const encoder = device.createCommandEncoder();
@@ -119,7 +119,8 @@
 
 			readBuf.unmap(); readBuf.destroy();
 		}
-
+*/
+/*
 		async function readDebugValue(step) {
 			if(!config.DEBUG_MODE) return;
 			const readBuf = device.createBuffer({ size: 24, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
@@ -142,6 +143,7 @@
 
 			readBuf.unmap(); readBuf.destroy();
 		}
+*/
 /*		
 		async function getSafeAdapterName(adapter, index) {
 			if (!adapter) return `${index + 1}. Unknown device`;
@@ -694,7 +696,7 @@
 		}
 */
 		//WebGPU end
-
+/*
 		function updateDisplay() {
 			document.getElementById('stepCounter').innerText = currentStep;
 			document.getElementById('radVal').innerText = radiusPrev.toFixed(2);
@@ -709,7 +711,7 @@
 			const time = (end - start) / 1000;
 			document.getElementById('timeResult').innerText = `${(time).toFixed(3)} sec.`;
 		}
-
+*/
 		// --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ МАТЕМАТИКИ ---
 		
 		const polarToCartesian = (la, lo, al, r = 1) => {

@@ -18,7 +18,8 @@ import GPUEngine from './GPUEngine.js'
 class GPUThomsonEngine extends GPUEngine {
 	constructor (){
 		super();
-		let count, currentStep, positionArray;//config, 
+		let count, currentStep, positionArray,//config, 
+			radiusPrev, radiusStep, gpuParamsBuffer, gpuPositionsBuffer;
 		this.onmessage = async (event) => {
 			if (typeof event.data === 'string') {
 				const data = JSON.parse(event.data);
@@ -45,7 +46,7 @@ class GPUThomsonEngine extends GPUEngine {
 						this.log('Main page disconnected.');
 						break;
 					case "PROGRESS":
-						this.progressStep(data.currentStep);
+						progressStep(data.currentStep);
 						break;
 					default:
 						const error = 'socket message: Invalid data.type: ' + data.type;
@@ -300,12 +301,12 @@ class GPUThomsonEngine extends GPUEngine {
 					}
 				`;
 		}
+		const paramsBufferSize = 32; // 8 x 4 bytes (aligned)
 		this.createEntries = () => {
 			const itemSize = 4; // 4D: x, y, z, w. и размер цвета
-			const paramsBufferSize = 32; // 8 x 4 bytes (aligned)
 
 			// Буфер позиций
-			const gpuPositionsBuffer = this.device.createBuffer({
+			gpuPositionsBuffer = this.device.createBuffer({
 				size: positionArray.byteLength,
 				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
 			});
@@ -320,7 +321,7 @@ class GPUThomsonEngine extends GPUEngine {
 			this.device.queue.writeBuffer(gpuVelocitiesBuffer, 0, velocitiesArray);
 
 			// Uniform-буфер для параметров
-			const gpuParamsBuffer = this.device.createBuffer({
+			gpuParamsBuffer = this.device.createBuffer({
 				size: paramsBufferSize,
 				usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 			});
@@ -373,19 +374,39 @@ class GPUThomsonEngine extends GPUEngine {
 			]
 			this.bindGroup = this.device.createBindGroup({ layout: this.pipeline.getBindGroupLayout(0), entries: entries });
 		}
-		this.progressStep = async (currentStepNew) => {
-			currentStep = currentStepNew;
-			if (currentStep < config.totalSteps) {
+		this.progressStepStart = async () => {
+			radiusPrev = this.config.baseRadius;
+			radiusStep = (this.config.radiusMax - this.config.baseRadius) / (this.config.totalSteps - 1);
+			document.getElementById('totalStepsDisplay').innerText = this.config.totalSteps;
+			progressStep();
+		}
+		const progressStep = async (currentStepNew) => {
+			currentStep = currentStepNew != undefined ? currentStepNew : currentStep;
+			const _this = this;
+			function updateDisplay() {
+				document.getElementById('stepCounter').innerText = currentStep;
+				document.getElementById('radVal').innerText = radiusPrev.toFixed(2);
+				const progress = {
+					type: 'PROGRESS',
+					currentStep: currentStep,
+					radiusPrev: radiusPrev,
+				};
+				_this.socket.send(JSON.stringify(progress));
+
+				_this.elapsedTime.end();
+			}
+
+			if (currentStep < this.config.totalSteps) {
 
 				//Для генератора случайных чисел
 				//device.queue.writeBuffer(timeBuffer, 0, new Uint32Array([Math.floor(performance.now() * timeMultiplier)]));
 
 				const newRadius = radiusPrev + radiusStep;
 
-				const currentR = radiusPrev, timeId = currentStep, positionBlockLength = config.pointsPerStep;
+				const currentR = radiusPrev, timeId = currentStep, positionBlockLength = this.config.pointsPerStep;
 				const nextR = newRadius;
 				const rRatio = nextR / currentR;
-				const eta = config.ETA_0 * Math.pow(currentR, 3);
+				const eta = this.config.ETA_0 * Math.pow(currentR, 3);
 
 				// Обновляем Uniforms
 				const paramsArray = new ArrayBuffer(paramsBufferSize);
@@ -393,22 +414,20 @@ class GPUThomsonEngine extends GPUEngine {
 				const uintView = new Uint32Array(paramsArray);
 
 				floatView[0] = eta;
-				floatView[1] = config.BETA;
+				floatView[1] = this.config.BETA;
 				floatView[2] = rRatio;
 				floatView[3] = nextR;
 				uintView[4] = timeId;
 				uintView[5] = positionBlockLength;
 
-				device.queue.writeBuffer(gpuParamsBuffer, 0, paramsArray);
+				this.device.queue.writeBuffer(gpuParamsBuffer, 0, paramsArray);
 
-
-				//				device.queue.writeBuffer(paramBuf, 0, new Float32Array([radiusPrev, newRadius, currentStep * config.pointsPerStep]));
-				const encoder = device.createCommandEncoder();
+				const encoder = this.device.createCommandEncoder();
 				const pass = encoder.beginComputePass();
-				pass.setPipeline(pipeline); pass.setBindGroup(0, this.bindGroup);
-				pass.dispatchWorkgroups(Math.ceil(config.pointsPerStep / 64));
+				pass.setPipeline(this.pipeline); pass.setBindGroup(0, this.bindGroup);
+				pass.dispatchWorkgroups(Math.ceil(this.config.pointsPerStep / 64));
 				pass.end();
-				device.queue.submit([encoder.finish()]);
+				this.device.queue.submit([encoder.finish()]);
 				updateDisplay();
 				radiusPrev = newRadius;// currentStep++;
 				return;
@@ -416,6 +435,25 @@ class GPUThomsonEngine extends GPUEngine {
 
 			//await readMessageValue(currentStep);
 			updateDisplay();
+			async function finalSyncGPU() {
+
+				// Чтение данных результатов из GPU
+				const readBuffer = _this.device.createBuffer({
+					size: positionArray.byteLength,
+					usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+				});
+
+				const copyEncoder = _this.device.createCommandEncoder();
+				copyEncoder.copyBufferToBuffer(gpuPositionsBuffer, 0, readBuffer, 0, positionArray.byteLength);
+				_this.device.queue.submit([copyEncoder.finish()]);
+
+				await readBuffer.mapAsync(GPUMapMode.READ);
+				const resultBuffer = new Float32Array(readBuffer.getMappedRange().slice(0));
+				_this.socket.send(resultBuffer.buffer);
+				readBuffer.unmap(); readBuffer.destroy();
+				_this.log('Data is ready.');
+
+			}
 			await finalSyncGPU();
 		}
 	}
