@@ -122,12 +122,27 @@ app.Map("/ws", async (HttpContext context) => {
                     break;
                 }
 
-                // Broadcast received data to all OTHER connected clients
-                var message = new ArraySegment<byte>(buffer, 0, result.Count);
-                foreach (var client in connections.Where(c => c != webSocket && c.State == WebSocketState.Open))
+				// ќпредел€ем, кому именно пересылать Ч Ђнапарникуї по каналу
+				WebSocket? partner =
+					  webSocket == mainPageSocket ? gpuEngineSocket
+					: webSocket == gpuEngineSocket ? mainPageSocket
+					: webSocket == mainThomsonAnalysisPageSocket ? gpuThomsonAnalysisEngineSocket
+					: webSocket == gpuThomsonAnalysisEngineSocket ? mainThomsonAnalysisPageSocket
+					: null;
+
+				// Broadcast received data to all OTHER connected clients
+				var message = new ArraySegment<byte>(buffer, 0, result.Count);
+
+				if (partner != null && partner.State == WebSocketState.Open)
+				{
+					await partner.SendAsync(message, result.MessageType, result.EndOfMessage, CancellationToken.None);
+				}
+/*
+				foreach (var client in connections.Where(c => c != webSocket && c.State == WebSocketState.Open))
                 {
                     await client.SendAsync(message, result.MessageType, result.EndOfMessage, CancellationToken.None);
                 }
+*/
             }
         }
         finally

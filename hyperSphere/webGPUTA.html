@@ -44,6 +44,7 @@
 		import GPUTAEngine from './GPUTAEngine.js'
 		const gPUTAEngine = new GPUTAEngine();
 		document.body.innerHTML += gPUTAEngine.engineStatusElement();
+		await gPUTAEngine.start();
 /*		
 		const π = Math.PI;
 		let positionArray,//angles,//Сейчас вместо углов предаются координаты точек в декартовой системе координат из settings.bufferGeometry.attributes.position.array
@@ -786,7 +787,7 @@
 */
 //		let reconnectTimer = null; // Переменная для хранения таймера переподключения
 //		let config;
-
+/*
 		async function connectToServer() {
 			// Если таймер уже запущен, очищаем его, чтобы избежать дублирования циклов
 			if (reconnectTimer) {
@@ -906,6 +907,7 @@
 				}
 			};
 		}
+*/
 /*
 		// Запуск первичного подключения при загрузке страницы Hypersphere Universe Engine
 		if (await findAdapters()) {
