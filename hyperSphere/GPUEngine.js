@@ -228,14 +228,14 @@ class GPUEngine {
 					} else {
 						// Двоичные данные
 						this.elStatus.innerText = "Binary data received";
-						if (this.onmessageBinaryData) this.onmessageBinaryData(event);
-//						positionArray = new Float32Array(event.data);
+//						if (this.onmessageBinaryData) this.onmessageBinaryData(event);
+						this.positionArray = new Float32Array(event.data);
 						try {
 							await this.runAuto();
 						} catch (e) {
 							this.elStatus.innerText = "ERROR";
 							this.cleanupGpuResources();
-							this.setState(sError + e.message, true);
+							this.setState(this.sError + e.message, true);
 						}
 					}
 				} catch (e) {
@@ -341,8 +341,8 @@ class GPUEngine {
 
 			//Выделяем необходимый размер памяти
 			// 1. Рассчитываем точный объем в байтах для самой тяжелой структуры (posBuf)
-//			const requiredPosBufSize = this.config.totalSteps * this.config.pointsPerStep * 16;
-			const requiredPosBufSize = this.requiredPosBufSize();
+			const requiredPosBufSize = this.config.totalSteps * this.config.pointsPerStep * 16;
+//			const requiredPosBufSize = this.requiredPosBufSize();
 
 			// Базовые лимиты WebGPU по умолчанию
 			const DEFAULT_MAX_BUFFER = 268435456;      // 256 MB

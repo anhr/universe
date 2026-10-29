@@ -18,7 +18,7 @@ import GPUEngine from './GPUEngine.js'
 class GPUThomsonEngine extends GPUEngine {
 	constructor (){
 		super();
-		let count, currentStep, positionArray,
+		let count, currentStep,// positionArray,
 			radiusPrev, radiusStep, gpuParamsBuffer, gpuPositionsBuffer;
 		this.onmessageStartCompute = () => {
 			count = this.config.totalSteps * this.config.pointsPerStep;
@@ -26,9 +26,11 @@ class GPUThomsonEngine extends GPUEngine {
 			document.getElementById('totalStepsDisplay').innerText = this.config.totalSteps;
 			currentStep = 1;
 		}
+/*		
 		this.onmessageBinaryData = (event) => {
 			positionArray = new Float32Array(event.data);
 		}
+*/			
 		this.mainDisconnected = () => {
 			if (this.config) currentStep = this.config.totalSteps - 1;
 		}
@@ -96,7 +98,7 @@ class GPUThomsonEngine extends GPUEngine {
 			<div>Points Per Step: <span id="pointsPerStep">---</span></div>
 		`;
 		}
-		this.requiredPosBufSize = () => { return this.config.totalSteps * this.config.pointsPerStep * 16; }
+//		this.requiredPosBufSize = () => { return this.config.totalSteps * this.config.pointsPerStep * 16; }
 		this.deviceError = () => {
 			// Принудительно останавливаем циклы в runAuto (сбрасываем счетчик шагов)
 /*не помню почему вставил это условие
@@ -331,10 +333,10 @@ class GPUThomsonEngine extends GPUEngine {
 
 			// Буфер позиций
 			gpuPositionsBuffer = this.device.createBuffer({
-				size: positionArray.byteLength,
+				size: this.positionArray.byteLength,
 				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
 			});
-			this.device.queue.writeBuffer(gpuPositionsBuffer, 0, positionArray);
+			this.device.queue.writeBuffer(gpuPositionsBuffer, 0, this.positionArray);
 
 			// Буфер скоростей
 			const velocitiesArray = new Float32Array(this.config.pointsPerStep * itemSize);
@@ -463,12 +465,12 @@ class GPUThomsonEngine extends GPUEngine {
 
 				// Чтение данных результатов из GPU
 				const readBuffer = this.device.createBuffer({
-					size: positionArray.byteLength,
+					size: this.positionArray.byteLength,
 					usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
 				});
 
 				const copyEncoder = this.device.createCommandEncoder();
-				copyEncoder.copyBufferToBuffer(gpuPositionsBuffer, 0, readBuffer, 0, positionArray.byteLength);
+				copyEncoder.copyBufferToBuffer(gpuPositionsBuffer, 0, readBuffer, 0, this.positionArray.byteLength);
 				this.device.queue.submit([copyEncoder.finish()]);
 
 				await readBuffer.mapAsync(GPUMapMode.READ);
