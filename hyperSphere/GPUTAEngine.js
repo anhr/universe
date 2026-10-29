@@ -25,6 +25,7 @@ import GPUEngine from './GPUEngine.js'
 class GPUTAEngine extends GPUEngine {
 	constructor (){
 		super();
+/*
 		this.onmessage = async (event) => {
 			if (typeof event.data === 'string') {
 				const data = JSON.parse(event.data);
@@ -70,6 +71,7 @@ class GPUTAEngine extends GPUEngine {
 				}
 			}
 		}
+*/
 		this.engineName = () => { return 'Thomson Analysis for hypersphere'; }
 		this.type = () => { return 'gpuThomsonAnalysis'; }
 	}

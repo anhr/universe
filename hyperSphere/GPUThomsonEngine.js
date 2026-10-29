@@ -18,8 +18,31 @@ import GPUEngine from './GPUEngine.js'
 class GPUThomsonEngine extends GPUEngine {
 	constructor (){
 		super();
-		let count, currentStep, positionArray,//config, 
+		let count, currentStep, positionArray,
 			radiusPrev, radiusStep, gpuParamsBuffer, gpuPositionsBuffer;
+		this.onmessageStartCompute = () => {
+			count = this.config.totalSteps * this.config.pointsPerStep;
+			document.getElementById('pointsPerStep').innerText = this.config.pointsPerStep;
+			document.getElementById('totalStepsDisplay').innerText = this.config.totalSteps;
+			currentStep = 1;
+		}
+		this.onmessageBinaryData = (event) => {
+			positionArray = new Float32Array(event.data);
+		}
+		this.mainDisconnected = () => {
+			if (this.config) currentStep = this.config.totalSteps - 1;
+		}
+		this.dataType = (data) => {
+			switch (data.type) {
+				case "PROGRESS":
+					progressStep(data.currentStep);
+					break;
+				default:
+					const error = 'socket message: Invalid data.type: ' + type;
+					this.setState(error, true);
+			}
+		}
+/*
 		this.onmessage = async (event) => {
 			if (typeof event.data === 'string') {
 				const data = JSON.parse(event.data);
@@ -65,6 +88,7 @@ class GPUThomsonEngine extends GPUEngine {
 				}
 			}
 		}
+*/
 		this.engineName = () => { return 'Thomson problen for hypersphere'; }
 		this.type = () => { return 'gpu'; }
 		this.addElements = () => { return `
@@ -382,8 +406,8 @@ class GPUThomsonEngine extends GPUEngine {
 		}
 		const progressStep = async (currentStepNew) => {
 			currentStep = currentStepNew != undefined ? currentStepNew : currentStep;
-			const _this = this;
-			function updateDisplay() {
+//			const _this = this;
+			const updateDisplay = () => {
 				document.getElementById('stepCounter').innerText = currentStep;
 				document.getElementById('radVal').innerText = radiusPrev.toFixed(2);
 				const progress = {
@@ -391,9 +415,9 @@ class GPUThomsonEngine extends GPUEngine {
 					currentStep: currentStep,
 					radiusPrev: radiusPrev,
 				};
-				_this.socket.send(JSON.stringify(progress));
+				this.socket.send(JSON.stringify(progress));
 
-				_this.elapsedTime.end();
+				this.elapsedTime.end();
 			}
 
 			if (currentStep < this.config.totalSteps) {
@@ -435,23 +459,23 @@ class GPUThomsonEngine extends GPUEngine {
 
 			//await readMessageValue(currentStep);
 			updateDisplay();
-			async function finalSyncGPU() {
+			const finalSyncGPU = async () => {
 
 				// Чтение данных результатов из GPU
-				const readBuffer = _this.device.createBuffer({
+				const readBuffer = this.device.createBuffer({
 					size: positionArray.byteLength,
 					usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
 				});
 
-				const copyEncoder = _this.device.createCommandEncoder();
+				const copyEncoder = this.device.createCommandEncoder();
 				copyEncoder.copyBufferToBuffer(gpuPositionsBuffer, 0, readBuffer, 0, positionArray.byteLength);
-				_this.device.queue.submit([copyEncoder.finish()]);
+				this.device.queue.submit([copyEncoder.finish()]);
 
 				await readBuffer.mapAsync(GPUMapMode.READ);
 				const resultBuffer = new Float32Array(readBuffer.getMappedRange().slice(0));
-				_this.socket.send(resultBuffer.buffer);
+				this.socket.send(resultBuffer.buffer);
 				readBuffer.unmap(); readBuffer.destroy();
-				_this.log('Data is ready.');
+				this.log('Data is ready.');
 
 			}
 			await finalSyncGPU();

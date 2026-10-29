@@ -15,7 +15,7 @@
 
 class GPUEngine {
 	constructor() {
-		const _this = this;
+//		const _this = this;
 		this.engineStatusElement = () => { return `
 	<div class="engine-status">
 		<h3>ENGINE: ` + this.engineName() + `</h3>
@@ -69,7 +69,7 @@ class GPUEngine {
 			return `${index + 1}. ${name}`;
 		}
 
-		async function findAdapters() {
+		const findAdapters = async () => {
 			availableAdapters.length = 0;
 			const select = document.getElementById('gpuSelect');
 			try {
@@ -106,7 +106,7 @@ class GPUEngine {
 				}
 			} catch (e) {
 				select.innerHTML = '<option value="-1">' + e.message + '</option>';
-				_this.setState(_this.sError + e.message, true);
+				this.setState(this.sError + e.message, true);
 				return false;
 			}
 			return true;
@@ -114,7 +114,7 @@ class GPUEngine {
 		
 		let reconnectTimer = null; // Переменная для хранения таймера переподключения
 		
-		async function connectToServer() {
+		const connectToServer = async () => {
 			// Если таймер уже запущен, очищаем его, чтобы избежать дублирования циклов
 			if (reconnectTimer) {
 				clearTimeout(reconnectTimer);
@@ -122,38 +122,38 @@ class GPUEngine {
 			}
 
 			// Если прошлый сокет еще жив или закрывается — принудительно очищаем его
-			if (_this.socket) {
-				_this.socket.onerror = null;
-				_this.socket.onclose = null;
-				_this.socket.onopen = null;
-				_this.socket.onmessage = null;
-				if (_this.socket.readyState === WebSocket.OPEN || _this.socket.readyState === WebSocket.CONNECTING) {
-					_this.socket.close();
+			if (this.socket) {
+				this.socket.onerror = null;
+				this.socket.onclose = null;
+				this.socket.onopen = null;
+				this.socket.onmessage = null;
+				if (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING) {
+					this.socket.close();
 				}
-				_this.socket = null;
+				this.socket = null;
 			}
 
-			_this.setState("Connecting to server...");
+			this.setState("Connecting to server...");
 
-			_this.socket = new WebSocket('ws://localhost:5000/ws?type=' + _this.type());
-			_this.socket.binaryType = 'arraybuffer';
+			this.socket = new WebSocket('ws://localhost:5000/ws?type=' + this.type());
+			this.socket.binaryType = 'arraybuffer';
 
 			// 1. Обработка ошибок (сервер недоступен)
-			_this.socket.onerror = (error) => {
+			this.socket.onerror = (error) => {
 				const failedUrl = error.target ? error.target.url : 'ws://localhost:5000/ws?type=gpu';
-				_this.setState("ERROR: Server unreachable at " + failedUrl, true);
+				this.setState("ERROR: Server unreachable at " + failedUrl, true);
 				console.error("WebSocket Error:", error);
 			};
 
 			// 2. ОБРАБОТКА ЗАКРЫТИЯ СОКЕТА И ЦИКЛ ПЕРЕПОДКЛЮЧЕНИЯ
-			_this.socket.onclose = (event) => {
+			this.socket.onclose = (event) => {
 				console.log(`Close code: ${event.code}, reason: ${event.reason}, wasClean: ${event.wasClean}`);
 
 				// КРИТИЧЕСКИЙ ЧЕК: Если код 4001, значит эта копия Engine уже запущена в другой вкладке.
 				// Мы НЕ должны переподключаться, чтобы не спамить сервер.
 				if (event.code === 4001) {
-					_this.setState(`Rejected by server: ${event.reason || "Duplicate Engine instance."}`, true);
-					_this.cleanupGpuResources();
+					this.setState(`Rejected by server: ${event.reason || "Duplicate Engine instance."}`, true);
+					this.cleanupGpuResources();
 					return;
 				}
 
@@ -165,10 +165,10 @@ class GPUEngine {
 					helpURL = ` See RFC: ${ rfcLink }, mozilla: ${ mozillaLink }`
 				}
 				const errorDetail = event.reason ? `Reason: ${event.reason}` : `Code: ${event.code}${helpURL}`;
-				_this.setState(`Connection lost (${errorDetail}). Reconnecting in 5 seconds...`, true);
+				this.setState(`Connection lost (${errorDetail}). Reconnecting in 5 seconds...`, true);
 
 				// Сбрасываем ресурсы GPU перед новым циклом, чтобы предотвратить "adapter is consumed"
-				_this.cleanupGpuResources();
+				this.cleanupGpuResources();
 
 				// Запускаем цикл повторного соединения через 5 секунд
 				reconnectTimer = setTimeout(() => {
@@ -177,62 +177,69 @@ class GPUEngine {
 			};
 
 			// 3. Успешное соединение
-			_this.socket.onopen = (event) => {
-				_this.setState("Connection established. Ready for computation.");
-				_this.log("Connected to relay server successfully.");
+			this.socket.onopen = (event) => {
+				this.setState("Connection established. Ready for computation.");
+				this.log("Connected to relay server successfully.");
 			};
 
 			// 4. Прием сообщений
-			_this.socket.onmessage = async (event) => {
+			this.socket.onmessage = async (event) => {
 				try {
-					_this.onmessage(event);
-/*					
+//					this.onmessage(event);
 					if (typeof event.data === 'string') {
 						const data = JSON.parse(event.data);
 						switch (data.type) {
 							case "START_COMPUTE":
-								config = data;
+								this.config = data;
+								if (this.onmessageStartCompute) this.onmessageStartCompute();
+/*								
 								count = config.totalSteps * config.pointsPerStep;
 								document.getElementById('pointsPerStep').innerText = config.pointsPerStep;
 								document.getElementById('totalStepsDisplay').innerText = config.totalSteps;
-								elStatus.innerText = "CONFIG RECEIVED";
+*/								
+								this.elStatus.innerText = "CONFIG RECEIVED";
 								const clientText = event.origin || "Localhost";
-								elClient.innerText = clientText;
+								this.elClient.innerText = clientText;
 							
 								const stateText = document.getElementById('stateText');
 								stateText.innerHTML = 'Main page ' + clientText;
 								stateText.style.color = "#00ffcc";
 							
-								currentStep = 1;
-								log('Start compute. Source: ' + clientText);
+								this.log('Start compute. Source: ' + clientText);
 								break;
 							case "MAIN_DISCONNECTED":
-								elStatus.innerText = "IDLE";
-								if (config) currentStep = config.totalSteps - 1;
-								log('Main page disconnected.');
+								this.elStatus.innerText = "IDLE";
+								if (this.mainDisconnected) this.mainDisconnected()
+//								if (this.config) currentStep = this.config.totalSteps - 1;
+								this.log('Main page disconnected.');
 								break;
+/*								
 							case "PROGRESS":
 								progressStep(data.currentStep);
 								break;
-							default:
-								const error = 'socket message: Invalid data.type: ' + data.type;
-								_this.setState(error, true);
+*/								
+							default: 
+								if (this.dataType) this.dataType(data);
+								else {
+									const error = 'socket message: Invalid data.type: ' + data.type;
+									this.setState(error, true);
+								}
 						}
 					} else {
 						// Двоичные данные
-						elStatus.innerText = "Binary data received";
-						positionArray = new Float32Array(event.data);
+						this.elStatus.innerText = "Binary data received";
+						if (this.onmessageBinaryData) this.onmessageBinaryData(event);
+//						positionArray = new Float32Array(event.data);
 						try {
-							await runAuto();
+							await this.runAuto();
 						} catch (e) {
-							elStatus.innerText = "ERROR";
-							_this.cleanupGpuResources();
-							_this.setState(sError + e.message, true);
+							this.elStatus.innerText = "ERROR";
+							this.cleanupGpuResources();
+							this.setState(sError + e.message, true);
 						}
 					}
-*/					
 				} catch (e) {
-					_this.setState(_this.sError + e.message, true);
+					this.setState(this.sError + e.message, true);
 				}
 			};
 		}
@@ -287,7 +294,7 @@ class GPUEngine {
 			const idx = parseInt(document.getElementById('gpuSelect').value);
 			if (idx === -1) {
 				const message = "Select a video card";
-				_this.setState(message, true);
+				this.setState(message, true);
 				return;
 			}
 
@@ -327,7 +334,7 @@ class GPUEngine {
 		this.device;
 		this.initWebGPU = async function (idx) {
 			if (this.device) {
-				_this.cleanupGpuResources();
+				this.cleanupGpuResources();
 			}
 			if (!await findAdapters()) return;
 			const adapter = availableAdapters[idx];
