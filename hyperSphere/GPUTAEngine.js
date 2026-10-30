@@ -74,6 +74,7 @@ class GPUTAEngine extends GPUEngine {
 */
 		this.engineName = () => { return 'Thomson Analysis for hypersphere'; }
 		this.type = () => { return 'gpuThomsonAnalysis'; }
+		this.createShaderCode = () => { console.error('Under constraction') }
 	}
 }
 export default GPUTAEngine
