@@ -218,6 +218,15 @@ class GPUEngine {
 								progressStep(data.currentStep);
 								break;
 */								
+							case "RUN":
+								try {
+									await this.runAuto(); // runAuto уже async
+								} catch (e) {
+									this.elStatus.innerText = "ERROR";
+									this.cleanupGpuResources();
+									this.setState(this.sError + e.message, true);
+								}
+							break;								
 							default: 
 								if (this.dataType) this.dataType(data);
 								else {
@@ -229,6 +238,7 @@ class GPUEngine {
 						// Двоичные данные
 						this.elStatus.innerText = "Binary data received";
 //						if (this.onmessageBinaryData) this.onmessageBinaryData(event);
+/*						
 						this.positionArray = new Float32Array(event.data);
 						try {
 							await this.runAuto();
@@ -236,6 +246,24 @@ class GPUEngine {
 							this.elStatus.innerText = "ERROR";
 							this.cleanupGpuResources();
 							this.setState(this.sError + e.message, true);
+						}
+*/
+						const view = new DataView(event.data);
+						const tag = new TextDecoder().decode(new Uint8Array(event.data, 0, 4));
+						const payload = new Float32Array(event.data, 4); // offset 4 байта
+						
+						switch (tag) {
+						  case "POSN":
+						    this.positionArray = payload;
+						    this.log(`Received positions: ${payload.length}`);
+						    break;
+						  case "RADS":
+						    this.radiiArray = payload;
+						    this.log(`Received radii: ${payload.length}`);
+						    break;
+						  default:
+						    this.setState(`ERROR: unknown binary tag "${tag}"`, true);
+						    return;
 						}
 					}
 				} catch (e) {

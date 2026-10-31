@@ -23,7 +23,7 @@ const MyThree = window.__myThree__;
 
 import ProgressBar from '../../../commonNodeJS/master/ProgressBar/ProgressBar.js'
 import * as utils from '../../../commonNodeJS/master/HyperSphere/utilsHSphere.js'
-import WebGPUClient from '../../../commonNodeJS/master/HyperSphere/webGPUClient.js'
+import WebGPUClient from './webGPUClient.js'
 
 
 const sWebGPU = 'WebGPUHUniverse';
