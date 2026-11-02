@@ -21,7 +21,7 @@
  * http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as Spinner from '../../Spinner.js';
+import * as Spinner from '../../../commonNodeJS/master/Spinner.js';
 
 const sThomsonAnalysisWebGPU = 'ThomsonAnalysisWebGPU';
 
@@ -29,7 +29,7 @@ const sThomsonAnalysisWebGPU = 'ThomsonAnalysisWebGPU';
 // 1. WGSL-ШЕЙДЕР: TILED REDUCTION
 // ============================================================================
 
-const tiledShaderWGSL = /* wgsl */`
+export const tiledShaderWGSL = /* wgsl */`
 /**
  * Tiled reduction для Thomson problem.
  *

@@ -309,7 +309,7 @@ export async function graphFolderChild(folder, classSettings, textController, ti
 			console.log(sThomsonAnalysisHSphere + `: CPU elapsed = ${elapsed.toFixed(3)} ms`);
 		}
 	}
-	new WebGPUTA().compute(computeCPU,// classSettings.compute,
+	new WebGPUTA(classSettings).compute(computeCPU,// classSettings.compute,
 		{
 			config : {
 				pointsPerStep: anglesLength,//Количество точек для шага проигрывателя.

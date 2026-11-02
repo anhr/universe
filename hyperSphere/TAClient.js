@@ -25,7 +25,7 @@ const sThomsonAnalysisWebGPU = 'ThomsonAnalysisWebGPU';
 
 class WebGPUTA extends WebGPUClient {
 
-    constructor() {
+    constructor(classSettings) {
 		super();
 	    this.webGPUPage = () => { return '<a href="../webGPUTA.html" target="_blank" style="color: blue;">Thomson Analysis Engine</a>'; }
 	    this.pageType = () => { return 'mainThomsonAnalysis'; }
@@ -33,7 +33,21 @@ class WebGPUTA extends WebGPUClient {
         this.setElRow = () => {}
         this.createCProgress = () => {}
         this.setCurrentStep = () => {}
-        this.sendData = () => {}
+        this.sendData = () => {
+            const marks = classSettings.settings.options.playerOptions.marks;
+            const rArray = new Float32Array(marks);
+            
+            for (let timeId = 0; timeId < marks; timeId++) {
+                rArray[timeId] = classSettings.overriddenProperties.rTime(timeId);
+            }
+/*            
+            for (let t = 0; t < marks; t++) {
+                const r = rTimeResolver ? rTimeResolver(t) : 1;
+                rArray[t] = (typeof r === 'number' && r > 0) ? r : 1;
+            }
+*/   
+		    this.sendBinary("RADS", rArray);
+        }
     }
 }
 export default WebGPUTA;

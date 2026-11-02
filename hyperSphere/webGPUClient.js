@@ -258,7 +258,7 @@ class WebGPUClient {
 						socket.send(JSON.stringify({ type: "PROGRESS", currentStep: currentStep + 1 }));
 				}
 */				
-				const sendBinary = (socket, tag, typedArray) => {
+				this.sendBinary = (tag, typedArray) => {
 					if (tag.length !== 4) throw new Error("tag must be 4 chars");
 					const payload = typedArray.buffer
 						? new Uint8Array(typedArray.buffer, typedArray.byteOffset, typedArray.byteLength)
@@ -281,8 +281,8 @@ class WebGPUClient {
 //									socket.send(settings.bufferGeometry.attributes.position.array);
 								
 								    //бинарные буферы — в любом порядке, в любом количестве
-								    sendBinary(socket, "POSN", settings.bufferGeometry.attributes.position.array);
-								    //sendBinary(socket, "RADS", settings.radiiArray); // ваш новый массив
+								    this.sendBinary("POSN", settings.bufferGeometry.attributes.position.array);
+								    //this.sendBinary("RADS", settings.radiiArray); // ваш новый массив
 									if (this.sendData) this.sendData();
 								
 								    //отдельная команда запуска

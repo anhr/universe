@@ -258,8 +258,8 @@ class GPUEngine {
 						    this.log(`Received positions: ${payload.length}`);
 						    break;
 						  case "RADS":
-						    this.radiiArray = payload;
-						    this.log(`Received radii: ${payload.length}`);
+						    this.rArray = payload;
+						    this.log(`Received radius array: ${payload.length}`);
 						    break;
 						  default:
 						    this.setState(`ERROR: unknown binary tag "${tag}"`, true);
