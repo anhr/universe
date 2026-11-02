@@ -23,6 +23,8 @@ class GPUTAEngine extends GPUEngine {
 		this.engineName = () => { return 'Thomson Analysis for hypersphere'; }
 		this.type = () => { return 'gpuThomsonAnalysis'; }
 		this.createShaderCode = () => { return ThomsonAnalysisGPU.tiledShaderWGSL; }
+		this.paramsBufferSize = ThomsonAnalysisGPU.paramsBufferSize;
+		this.createEntries = () => { ThomsonAnalysisGPU.createEntries(this); }
 	}
 }
 export default GPUTAEngine

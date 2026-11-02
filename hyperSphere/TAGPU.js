@@ -25,6 +25,8 @@ import * as Spinner from '../../../commonNodeJS/master/Spinner.js';
 
 const sThomsonAnalysisWebGPU = 'ThomsonAnalysisWebGPU';
 
+export const paramsBufferSize = 16;
+
 // ============================================================================
 // 1. WGSL-ШЕЙДЕР: TILED REDUCTION
 // ============================================================================
@@ -46,7 +48,7 @@ const TILE : u32 = 256u;
 struct Params {
     N     : u32,//Количество точек для шага проигрывателя. offset 0,  size 4
     marks : u32,//Количество шагов проигрывателя. offset 4,  size 4
-    //Итого занимает 8 байт. А нужно кратно 16
+    //Итого занимает 8 байт. А нужно кратно paramsBufferSize = 16
 
     //В WGSL у структуры, используемой как uniform, размер должен быть кратен 16 байтам, а поле-структура выравнивается по 16-байтовой границе.
     //Это требование спецификации WebGPU (и в целом std140-подобное выравнивание).
@@ -228,6 +230,46 @@ class WebGPUThomsonEvaluator {
         return true;
     }
 
+    createEntries(GPUTAEngine) {
+        const device = GPUTAEngine.device;
+        const rBuffer = device.createBuffer({
+            size: GPUTAEngine.rArray.byteLength,
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        });
+        device.queue.writeBuffer(rBuffer, 0, GPUTAEngine.rArray);
+
+        const marks = GPUTAEngine.config.totalSteps, N = GPUTAEngine.config.pointsPerStep, perPointCount = marks * N;
+        const energyBuf = device.createBuffer({
+            size: perPointCount * 4,
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+        });
+        const minD2Buf = device.createBuffer({
+            size: perPointCount * 4,
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+        });
+        {
+            const buf = new ArrayBuffer(GPUTAEngine.paramsBufferSize);
+            new Uint32Array(buf, 0, 2).set([N, marks]);
+            device.queue.writeBuffer(GPUTAEngine.gpuParamsBuffer, 0, buf);
+        }
+
+        GPUTAEngine.bindGroup = device.createBindGroup({
+            layout: GPUTAEngine.pipeline.getBindGroupLayout(0),
+            entries: [
+                { binding: 0, resource: { buffer: GPUTAEngine.gpuPositionsBuffer } },
+                { binding: 1, resource: { buffer: rBuffer } },
+                { binding: 2, resource: { buffer: energyBuf } },
+                { binding: 3, resource: { buffer: minD2Buf } },
+                { binding: 4, resource: { buffer: GPUTAEngine.gpuParamsBuffer } },
+            ],
+        });
+/*        
+        return {
+            rBuffer: rBuffer,
+        }
+*/        
+    }
+
     /**
      * Батч-вычисление метрик для всех timeId.
      */
@@ -241,7 +283,9 @@ class WebGPUThomsonEvaluator {
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         });
         device.queue.writeBuffer(posBuffer, 0, positionData);
-
+        console.error('Under constraction')
+        createEntries({ device: device, rArray: rArray, config: { pointsPerStep: N, totalSteps: marks }});
+/*
         const rBuffer = device.createBuffer({
             size: rArray.byteLength,
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
@@ -257,9 +301,9 @@ class WebGPUThomsonEvaluator {
             size: perPointCount * 4,
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
         });
-
+*/
         const uniformBuf = device.createBuffer({
-            size: 16,
+            size: paramsBufferSize,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
         {
@@ -354,6 +398,11 @@ class WebGPUThomsonEvaluator {
 // ============================================================================
 
 const _gpuEvaluator = new WebGPUThomsonEvaluator();
+
+
+export function createEntries(GPUTAEngine) {
+    return _gpuEvaluator.createEntries(GPUTAEngine);
+}
 
 /**
  * Публичный способ узнать, доступен ли WebGPU.

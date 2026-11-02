@@ -18,8 +18,8 @@ import GPUEngine from './GPUEngine.js'
 class GPUThomsonEngine extends GPUEngine {
 	constructor (){
 		super();
-		let count, currentStep,// positionArray,
-			radiusPrev, radiusStep, gpuParamsBuffer, gpuPositionsBuffer;
+		let count, currentStep,
+			radiusPrev, radiusStep;//, gpuParamsBuffer, gpuPositionsBuffer;
 		this.onmessageStartCompute = () => {
 			count = this.config.totalSteps * this.config.pointsPerStep;
 			document.getElementById('pointsPerStep').innerText = this.config.pointsPerStep;
@@ -327,16 +327,17 @@ class GPUThomsonEngine extends GPUEngine {
 					}
 				`;
 		}
-		const paramsBufferSize = 32; // 8 x 4 bytes (aligned)
+		this.paramsBufferSize = 32; // 8 x 4 bytes (aligned)
 		this.createEntries = () => {
 			const itemSize = 4; // 4D: x, y, z, w. и размер цвета
-
+/*
 			// Буфер позиций
 			gpuPositionsBuffer = this.device.createBuffer({
 				size: this.positionArray.byteLength,
 				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
 			});
 			this.device.queue.writeBuffer(gpuPositionsBuffer, 0, this.positionArray);
+*/			
 
 			// Буфер скоростей
 			const velocitiesArray = new Float32Array(this.config.pointsPerStep * itemSize);
@@ -345,13 +346,13 @@ class GPUThomsonEngine extends GPUEngine {
 				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
 			});
 			this.device.queue.writeBuffer(gpuVelocitiesBuffer, 0, velocitiesArray);
-
+/*
 			// Uniform-буфер для параметров
 			gpuParamsBuffer = this.device.createBuffer({
 				size: paramsBufferSize,
 				usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 			});
-
+*/
 			// Создаем буфер для одного числа u32. Этот буфер используется для генератора случайных чисел в GPU.
 			//timeBuffer = this.device.createBuffer({ size: 4, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
 
@@ -394,8 +395,8 @@ class GPUThomsonEngine extends GPUEngine {
 			}
 			let bindingId = 0;
 			const entries = [
-				{ binding: bindingId++, resource: { buffer: gpuParamsBuffer } },
-				{ binding: bindingId++, resource: { buffer: gpuPositionsBuffer } },
+				{ binding: bindingId++, resource: { buffer: this.gpuParamsBuffer } },
+				{ binding: bindingId++, resource: { buffer: this.gpuPositionsBuffer } },
 				{ binding: bindingId++, resource: { buffer: gpuVelocitiesBuffer } },
 			]
 			this.bindGroup = this.device.createBindGroup({ layout: this.pipeline.getBindGroupLayout(0), entries: entries });
@@ -435,7 +436,7 @@ class GPUThomsonEngine extends GPUEngine {
 				const eta = this.config.ETA_0 * Math.pow(currentR, 3);
 
 				// Обновляем Uniforms
-				const paramsArray = new ArrayBuffer(paramsBufferSize);
+				const paramsArray = new ArrayBuffer(this.paramsBufferSize);
 				const floatView = new Float32Array(paramsArray);
 				const uintView = new Uint32Array(paramsArray);
 
@@ -446,7 +447,7 @@ class GPUThomsonEngine extends GPUEngine {
 				uintView[4] = timeId;
 				uintView[5] = positionBlockLength;
 
-				this.device.queue.writeBuffer(gpuParamsBuffer, 0, paramsArray);
+				this.device.queue.writeBuffer(this.gpuParamsBuffer, 0, paramsArray);
 
 				const encoder = this.device.createCommandEncoder();
 				const pass = encoder.beginComputePass();
@@ -470,7 +471,7 @@ class GPUThomsonEngine extends GPUEngine {
 				});
 
 				const copyEncoder = this.device.createCommandEncoder();
-				copyEncoder.copyBufferToBuffer(gpuPositionsBuffer, 0, readBuffer, 0, this.positionArray.byteLength);
+				copyEncoder.copyBufferToBuffer(this.gpuPositionsBuffer, 0, readBuffer, 0, this.positionArray.byteLength);
 				this.device.queue.submit([copyEncoder.finish()]);
 
 				await readBuffer.mapAsync(GPUMapMode.READ);

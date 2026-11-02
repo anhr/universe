@@ -13,6 +13,7 @@
  * http://www.apache.org/licenses/LICENSE-2.0
 */
 
+const sGPUEngine = 'GPUEngine';
 class GPUEngine {
 	constructor() {
 //		const _this = this;
@@ -142,7 +143,7 @@ class GPUEngine {
 			this.socket.onerror = (error) => {
 				const failedUrl = error.target ? error.target.url : 'ws://localhost:5000/ws?type=gpu';
 				this.setState("ERROR: Server unreachable at " + failedUrl, true);
-				console.error("WebSocket Error:", error);
+				console.error(sGPUEngine + ": WebSocket Error: " + error);
 			};
 
 			// 2. ОБРАБОТКА ЗАКРЫТИЯ СОКЕТА И ЦИКЛ ПЕРЕПОДКЛЮЧЕНИЯ
@@ -404,7 +405,7 @@ class GPUEngine {
 
 			// НАЗНАЧАЕМ ГЛОБАЛЬНЫЙ ПЕРЕХВАТЧИК ОШИБОК СРАЗУ ПОСЛЕ СОЗДАНИЯ DEVICE
 			this.device.onuncaughterror = (event) => {
-				console.error("Uncaught WebGPU error:", event.error.message);
+				console.error(sGPUEngine + ": Uncaught WebGPU error: " + event.error.message);
 
 /*				
 				// Принудительно останавливаем циклы в runAuto (сбрасываем счетчик шагов)
@@ -541,7 +542,7 @@ class GPUEngine {
 									return *state;
 								}`
 					break;
-				default: console.error('Invalid RANDOM_POINTS = ' + RANDOM_POINTS);
+				default: console.error(sGPUEngine + ': Invalid RANDOM_POINTS = ' + RANDOM_POINTS);
 			}
 			let hyperbola_gpu;
 			const calculateHyperbola = (p) => {
@@ -699,7 +700,22 @@ class GPUEngine {
 			//Сейчас использую универсальный перехватчик во время исполнения
 			// 1. Включаем перехват ВАЛИДАЦИОННЫХ ошибок (превышение лимитов — это валидация)
 			this.device.pushErrorScope('validation');
-			this.createEntries();
+			
+			// Буфер позиций
+			this.gpuPositionsBuffer = this.device.createBuffer({
+				size: this.positionArray.byteLength,
+				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
+			});
+			this.device.queue.writeBuffer(this.gpuPositionsBuffer, 0, this.positionArray);
+			
+			// Uniform-буфер для параметров
+			if(this.paramsBufferSize === undefined) console.error(sGPUEngine + '.initWebGPU: Invalid this.paramsBufferSize = ' + this.paramsBufferSize);
+			this.gpuParamsBuffer = this.device.createBuffer({
+				size: this.paramsBufferSize,
+				usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+			});
+			
+			this.createEntries(this);
 /*
 			// Буфер позиций
 			gpuPositionsBuffer = device.createBuffer({
