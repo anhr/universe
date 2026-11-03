@@ -20,6 +20,15 @@ import GPUEngine from './GPUEngine.js'
 class GPUTAEngine extends GPUEngine {
 	constructor (){
 		super();
+//		this.device = null;
+		this.workgroupSize = 256;
+		this.bind = null;
+/*		
+		this.tiledPipeline = null;
+		this.initialized = false;
+		this.initFailed = false;
+		this.workgroupSize = 256;
+*/		
 		this.engineName = () => { return 'Thomson Analysis for hypersphere'; }
 		this.type = () => { return 'gpuThomsonAnalysis'; }
 		this.createShaderCode = () => {
@@ -154,7 +163,7 @@ fn main(
 									//See struct Params in this.createShaderCode
 		this.createEntries = () => {
 //			ThomsonAnalysisGPU.createEntries(this);
-			const device = this.device, gpuBuffers = this.gpuBuffers;
+			const device = this.device, gpuBuffers = this.gpuBuffers, WG = this.workgroupSize;
 			gpuBuffers.rBuffer = device.createBuffer({
 				size: this.rArray.byteLength,
 				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
@@ -177,7 +186,7 @@ fn main(
 				device.queue.writeBuffer(gpuBuffers.gpuParamsBuffer, 0, buf);
 			}
 	
-			GPUTAEngine.bindGroup = device.createBindGroup({
+			this.bind = device.createBindGroup({
 				layout: this.pipeline.getBindGroupLayout(0),
 				entries: [
 					{ binding: 0, resource: { buffer: gpuBuffers.gpuPositionsBuffer } },
@@ -187,6 +196,78 @@ fn main(
 					{ binding: 4, resource: { buffer: gpuBuffers.gpuParamsBuffer } },
 				],
 			});
+		}
+		this.gpuStart = async () => {
+			const device = this.device, WG = this.workgroupSize, gpuBuffers = this.gpuBuffers;
+			const marks = this.config.totalSteps, N = this.config.pointsPerStep, perPointCount = marks * N;
+			const encoder = device.createCommandEncoder();
+			{
+				const pass = encoder.beginComputePass();
+				pass.setPipeline(this.pipeline);
+				pass.setBindGroup(0, this.bind);
+				pass.dispatchWorkgroups(Math.ceil(N / WG), marks, 1);
+				pass.end();
+			}
+	
+			const readEnergy = device.createBuffer({
+				size: perPointCount * 4,
+				usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+			});
+			const readMinD2 = device.createBuffer({
+				size: perPointCount * 4,
+				usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+			});
+			encoder.copyBufferToBuffer(gpuBuffers.energyBuf, 0, readEnergy, 0, perPointCount * 4);
+			encoder.copyBufferToBuffer(gpuBuffers.minD2Buf, 0, readMinD2, 0, perPointCount * 4);
+	
+			device.queue.submit([encoder.finish()]);
+	
+			await readEnergy.mapAsync(GPUMapMode.READ);
+			await readMinD2.mapAsync(GPUMapMode.READ);
+	
+			const energyArr = new Float32Array(readEnergy.getMappedRange().slice(0));
+			const minD2Arr = new Float32Array(readMinD2.getMappedRange().slice(0));
+	
+			readEnergy.unmap();
+			readMinD2.unmap();
+	
+			const results = new Array(marks);
+	
+			for (let t = 0; t < marks; t++) {
+				const off = t * N;
+	
+				let totalEnergy = 0;
+				let sumMinD = 0;
+				const minDs = new Float64Array(N);
+	
+				for (let i = 0; i < N; i++) {
+					totalEnergy += energyArr[off + i];
+					const md = Math.sqrt(minD2Arr[off + i]);
+					minDs[i] = md;
+					sumMinD += md;
+				}
+				totalEnergy /= 2;
+	
+				const meanD = sumMinD / N;
+	
+				let variance = 0;
+				for (let i = 0; i < N; i++) {
+					const diff = minDs[i] - meanD;
+					variance += diff * diff;
+				}
+				variance /= N;
+	
+				const stdDev = Math.sqrt(variance);
+				const deviationPercent = meanD > 0 ? (stdDev / meanD) * 100 : 0;
+	
+				results[t] = { totalEnergy, meanD, variance, stdDev, deviationPercent };
+			}
+
+			Object.entries(gpuBuffers).forEach(b => b[1].destroy());
+			[readEnergy, readMinD2].forEach(b => b.destroy());
+
+			this.socket.send(JSON.stringify(results));
+			this.log('Data is ready.');
 		}
 	}
 }
