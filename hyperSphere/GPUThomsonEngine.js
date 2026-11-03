@@ -338,14 +338,15 @@ class GPUThomsonEngine extends GPUEngine {
 			});
 			this.device.queue.writeBuffer(gpuPositionsBuffer, 0, this.positionArray);
 */			
+			const gpuBuffers = this.gpuBuffers;
 
 			// Буфер скоростей
 			const velocitiesArray = new Float32Array(this.config.pointsPerStep * itemSize);
-			const gpuVelocitiesBuffer = this.device.createBuffer({
+			gpuBuffers.gpuVelocitiesBuffer = this.device.createBuffer({
 				size: velocitiesArray.byteLength,
 				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
 			});
-			this.device.queue.writeBuffer(gpuVelocitiesBuffer, 0, velocitiesArray);
+			this.device.queue.writeBuffer(gpuBuffers.gpuVelocitiesBuffer, 0, velocitiesArray);
 /*
 			// Uniform-буфер для параметров
 			gpuParamsBuffer = this.device.createBuffer({
@@ -395,13 +396,13 @@ class GPUThomsonEngine extends GPUEngine {
 			}
 			let bindingId = 0;
 			const entries = [
-				{ binding: bindingId++, resource: { buffer: this.gpuParamsBuffer } },
-				{ binding: bindingId++, resource: { buffer: this.gpuPositionsBuffer } },
-				{ binding: bindingId++, resource: { buffer: gpuVelocitiesBuffer } },
+				{ binding: bindingId++, resource: { buffer: gpuBuffers.gpuParamsBuffer } },
+				{ binding: bindingId++, resource: { buffer: gpuBuffers.gpuPositionsBuffer } },
+				{ binding: bindingId++, resource: { buffer: gpuBuffers.gpuVelocitiesBuffer } },
 			]
 			this.bindGroup = this.device.createBindGroup({ layout: this.pipeline.getBindGroupLayout(0), entries: entries });
 		}
-		this.progressStepStart = async () => {
+		this.gpuStart = async () => {
 			radiusPrev = this.config.baseRadius;
 			radiusStep = (this.config.radiusMax - this.config.baseRadius) / (this.config.totalSteps - 1);
 			document.getElementById('totalStepsDisplay').innerText = this.config.totalSteps;
@@ -447,7 +448,7 @@ class GPUThomsonEngine extends GPUEngine {
 				uintView[4] = timeId;
 				uintView[5] = positionBlockLength;
 
-				this.device.queue.writeBuffer(this.gpuParamsBuffer, 0, paramsArray);
+				this.device.queue.writeBuffer(this.gpuBuffers.gpuParamsBuffer, 0, paramsArray);
 
 				const encoder = this.device.createCommandEncoder();
 				const pass = encoder.beginComputePass();
@@ -471,7 +472,7 @@ class GPUThomsonEngine extends GPUEngine {
 				});
 
 				const copyEncoder = this.device.createCommandEncoder();
-				copyEncoder.copyBufferToBuffer(this.gpuPositionsBuffer, 0, readBuffer, 0, this.positionArray.byteLength);
+				copyEncoder.copyBufferToBuffer(this.gpuBuffers.gpuPositionsBuffer, 0, readBuffer, 0, this.positionArray.byteLength);
 				this.device.queue.submit([copyEncoder.finish()]);
 
 				await readBuffer.mapAsync(GPUMapMode.READ);

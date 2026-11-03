@@ -25,13 +25,13 @@ import * as Spinner from '../../../commonNodeJS/master/Spinner.js';
 
 const sThomsonAnalysisWebGPU = 'ThomsonAnalysisWebGPU';
 
-export const paramsBufferSize = 16;
+const paramsBufferSize = 16;
 
 // ============================================================================
 // 1. WGSL-ШЕЙДЕР: TILED REDUCTION
 // ============================================================================
 
-export const tiledShaderWGSL = /* wgsl */`
+const tiledShaderWGSL = /* wgsl */`
 /**
  * Tiled reduction для Thomson problem.
  *
@@ -399,10 +399,11 @@ class WebGPUThomsonEvaluator {
 
 const _gpuEvaluator = new WebGPUThomsonEvaluator();
 
-
+/*
 export function createEntries(GPUTAEngine) {
     return _gpuEvaluator.createEntries(GPUTAEngine);
 }
+*/
 
 /**
  * Публичный способ узнать, доступен ли WebGPU.

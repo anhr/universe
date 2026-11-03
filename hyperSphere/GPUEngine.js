@@ -341,7 +341,7 @@ class GPUEngine {
 			this.radiusStep = (this.config.radiusMax - this.config.baseRadius) / (this.config.totalSteps - 1);
 			document.getElementById('totalStepsDisplay').innerText = this.config.totalSteps;
 */			
-			if (this.progressStepStart) this.progressStepStart();//currentStep);
+			this.gpuStart();//currentStep);
 		};
 		const recommendationThrow = (recommendation) => {
 			const reqMb = (requiredPosBufSize / (1024 * 1024)).toFixed(1);
@@ -700,22 +700,24 @@ class GPUEngine {
 			//Сейчас использую универсальный перехватчик во время исполнения
 			// 1. Включаем перехват ВАЛИДАЦИОННЫХ ошибок (превышение лимитов — это валидация)
 			this.device.pushErrorScope('validation');
+
+			this.gpuBuffers = {};
 			
 			// Буфер позиций
-			this.gpuPositionsBuffer = this.device.createBuffer({
+			this.gpuBuffers.gpuPositionsBuffer = this.device.createBuffer({
 				size: this.positionArray.byteLength,
 				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
 			});
-			this.device.queue.writeBuffer(this.gpuPositionsBuffer, 0, this.positionArray);
+			this.device.queue.writeBuffer(this.gpuBuffers.gpuPositionsBuffer, 0, this.positionArray);
 			
 			// Uniform-буфер для параметров
 			if(this.paramsBufferSize === undefined) console.error(sGPUEngine + '.initWebGPU: Invalid this.paramsBufferSize = ' + this.paramsBufferSize);
-			this.gpuParamsBuffer = this.device.createBuffer({
+			this.gpuBuffers.gpuParamsBuffer = this.device.createBuffer({
 				size: this.paramsBufferSize,
 				usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 			});
 			
-			this.createEntries(this);
+			this.createEntries();
 /*
 			// Буфер позиций
 			gpuPositionsBuffer = device.createBuffer({
