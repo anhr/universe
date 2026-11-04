@@ -1,6 +1,6 @@
 /**
- * @module WebGPU
- * @description [WebGPU]{@link https://gpuweb.github.io/gpuweb/}. GPU Compute on the web.
+ * @module WebGPUHUniverse
+ * @description [WebGPU]{@link https://gpuweb.github.io/gpuweb/}. GPU Compute of the hyperspherical universe.
  *
  * @author [Andrej Hristoliubov]{@link https://github.com/anhr}
  *
@@ -27,9 +27,11 @@ import WebGPUClient from './webGPUClient.js'
 
 
 const sWebGPU = 'WebGPUHUniverse';
-
 class WebGPUHUniverse extends WebGPUClient {
 
+	/**
+	 * [WebGPU]{@link https://gpuweb.github.io/gpuweb/}. GPU Compute of the hyperspherical universe.
+	 */
 	constructor() {
 		super();
 		let //socket

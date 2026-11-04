@@ -17,9 +17,8 @@
 
 import * as utils from '../../../commonNodeJS/master/HyperSphere/utilsHSphere.js'
 import three from '../../../commonNodeJS/master/three.js'
-import { dat } from '../../../commonNodeJS/master/dat/dat.module.js';
-//import * as ThomsonAnalysisGPU from './TAClient.js';
-import WebGPUTA from './TAClient.js';
+//import { dat } from '../../../commonNodeJS/master/dat/dat.module.js';
+import WebGPUTA from './webGPUTA.js';
 
 let params, currentStep,
 	totalEnergyMin;//минимум потенциальной энергии. Если реальная энергия totalEnergy существенно выше totalEnergyMin (на 5-10% и более) и график перестал падать — вы гарантированно застряли в локальном минимуме, и итерационный процесс работает неэффективно.
@@ -113,7 +112,7 @@ function getTheoreticalMinEnergy4D(N = params.pointsPerStep) {
 
 	return calculatedEnergy * 2;//Непонятно почему надо умножать на 2. Тогда отклонение от минимума будет стремится к нулю
 }
-
+/*
 let lang;
 const localization = (languageCode) => {
 	if (lang) return lang;
@@ -159,7 +158,7 @@ deviationPercent стремится к 0% (например, < 2-5%):
 	}
 	return lang;
 }
-
+*/
 const tomsonAnalysisRes = {}, aTomsonAnalysisRes = [];
 
 /**
@@ -223,7 +222,7 @@ export async function timeAnalysis(fThomsonAnalysis, elStep, stepFormat, classSe
 export function graphFolderClose(folder) { graphFolderControllersDislay('none'); }
 
 let isGraphFolderChildCreated = false;
-
+/*
 function getLiEl(controller) {
 
 	var el = controller.domElement;
@@ -253,7 +252,7 @@ const graphFolderControllers = [],//Этот массив нужен для ск
 			dislayEl(controller, display);
 		})
 	}
-
+*/
 /**
  * Adds to the <b>dat.gui</b> folder the graphs of the analysis of the results of solving the Thomson problem.
  * @param {GUI} folder <b>dat.gui</b> folder.
@@ -309,7 +308,7 @@ export async function graphFolderChild(folder, classSettings, textController, ti
 			console.log(sThomsonAnalysisHSphere + `: CPU elapsed = ${elapsed.toFixed(3)} ms`);
 		}
 	}
-	new WebGPUTA(classSettings).compute(computeCPU,// classSettings.compute,
+	new WebGPUTA(classSettings, textController, timeIdController, createLabel, sTimeID).compute(computeCPU,// classSettings.compute,
 		{
 			config : {
 				pointsPerStep: anglesLength,//Количество точек для шага проигрывателя.
@@ -409,7 +408,7 @@ export async function graphFolderChild(folder, classSettings, textController, ti
 	}
 */
 console.error('Under constraction')
-return;
+//return;
 	// ==== Отладочный вывод aTomsonAnalysisRes построчно ====
 	if (classSettings.debug && classSettings.debug.log) {
 		console.log('=== aTomsonAnalysisRes (per timeId) ===');
@@ -719,7 +718,7 @@ export async function evaluateDistribution(stepIndex = 0, paramsNew) {
 	} else return sourceObj;
 }
 
-function getTotalEnergyPercent(currentVal) { return ` of ${totalEnergyMin.toFixed(4)} ${(((currentVal - totalEnergyMin) / totalEnergyMin) * 100).toFixed(1)}%` }
+//function getTotalEnergyPercent(currentVal) { return ` of ${totalEnergyMin.toFixed(4)} ${(((currentVal - totalEnergyMin) / totalEnergyMin) * 100).toFixed(1)}%` }
 
 function drawAnalysisGraph(aAnalysis, propertyKey, canvas, boText = true) {
 	canvas ||= document.getElementById('analysisGraphCanvas');

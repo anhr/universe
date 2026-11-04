@@ -150,7 +150,7 @@ const classSettings = {
 
 		probabilityDensity: false,
 		middleVertice: false,
-		log: false,
+		log: false,//нет значения по умолчанию. Надо явно задавать
 		edges: false,
 		random: () => { return 0.5 },//replacing random vertices with strictly defined vertices.
 
