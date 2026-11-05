@@ -17,7 +17,7 @@
 
 import * as utils from '../../../commonNodeJS/master/HyperSphere/utilsHSphere.js'
 import three from '../../../commonNodeJS/master/three.js'
-//import { dat } from '../../../commonNodeJS/master/dat/dat.module.js';
+import { dat } from '../../../commonNodeJS/master/dat/dat.module.js';
 import WebGPUTA from './webGPUTA.js';
 
 let params, currentStep,
@@ -112,7 +112,7 @@ function getTheoreticalMinEnergy4D(N = params.pointsPerStep) {
 
 	return calculatedEnergy * 2;//Непонятно почему надо умножать на 2. Тогда отклонение от минимума будет стремится к нулю
 }
-/*
+
 let lang;
 const localization = (languageCode) => {
 	if (lang) return lang;
@@ -158,8 +158,9 @@ deviationPercent стремится к 0% (например, < 2-5%):
 	}
 	return lang;
 }
-*/
-const tomsonAnalysisRes = {}, aTomsonAnalysisRes = [];
+
+const tomsonAnalysisRes = {};
+let aTomsonAnalysisRes = [];
 
 /**
  * Analysis for selected time.
@@ -222,7 +223,7 @@ export async function timeAnalysis(fThomsonAnalysis, elStep, stepFormat, classSe
 export function graphFolderClose(folder) { graphFolderControllersDislay('none'); }
 
 let isGraphFolderChildCreated = false;
-/*
+
 function getLiEl(controller) {
 
 	var el = controller.domElement;
@@ -252,7 +253,7 @@ const graphFolderControllers = [],//Этот массив нужен для ск
 			dislayEl(controller, display);
 		})
 	}
-*/
+
 /**
  * Adds to the <b>dat.gui</b> folder the graphs of the analysis of the results of solving the Thomson problem.
  * @param {GUI} folder <b>dat.gui</b> folder.
@@ -307,8 +308,193 @@ export async function graphFolderChild(folder, classSettings, textController, ti
 			const elapsed = window.performance.now() - classSettings.debug.timestamp;
 			console.log(sThomsonAnalysisHSphere + `: CPU elapsed = ${elapsed.toFixed(3)} ms`);
 		}
+		createGraph();
 	}
-	new WebGPUTA(classSettings, textController, timeIdController, createLabel, sTimeID).compute(computeCPU,// classSettings.compute,
+	const createGraph = (aTomsonAnalysisResNew) => {
+		if (aTomsonAnalysisResNew) aTomsonAnalysisRes = aTomsonAnalysisResNew;
+		// ==== Отладочный вывод aTomsonAnalysisRes построчно ====
+		if (classSettings.debug && classSettings.debug.log) {
+			console.log('=== aTomsonAnalysisRes (per timeId) ===');
+			for (let t = 0; t < marks; t++) {
+				console.log(`[timeId=${t}]`, aTomsonAnalysisRes[t]);
+			}
+			console.log('=== end aTomsonAnalysisRes ===');
+		}
+		// ====
+
+		if (textController) dislayEl(textController, 'none');
+		if (timeIdController) dislayEl(timeIdController, 'none');
+
+		const createGraphController = (displayProperty) => {
+			if (displayProperty === 'totalEnergyPercent') return;//вместо этого используется totalEnergy
+			if (createLabel) {
+				const info = aTomsonAnalysisRes[aTomsonAnalysisRes.length - 1][displayProperty];
+				const labelController = createLabel(sTimeID);
+				const lang = localization(classSettings.settings.options.getLanguageCode());
+				let title;
+				switch (displayProperty) {
+					case 'totalEnergy': title = lang.totalEnergyPercent; break;
+					case 'deviationPercent': title = lang.deviationPercent; break;
+					case 'meanD': title = lang.meanD; break;
+					case 'stdDev': title = lang.stdDev; break;
+					case 'variance': title = lang.variance; break;
+					default: console.error(sThomsonAnalysisHSphere + ' createGraphController: Invalid displayProperty: ' + displayProperty);
+				}
+				dat.controllerNameAndTitle(labelController, displayProperty + ': ' + info.toFixed(4) + (displayProperty === 'totalEnergy' ? getTotalEnergyPercent(info) : ''), title);
+			}
+
+			// 1. Создаем пустой контроллер-контейнер (привязываем к пустой функции)
+			const dummyObj = {};
+			dummyObj[displayProperty] = function () { };
+			const canvasController = folder.add(dummyObj, displayProperty);
+			canvasController.name('');
+
+			// Отключаем клики по самой строке GUI, чтобы не триггерить "кнопку"
+			canvasController.domElement.style.pointerEvents = 'none';
+
+			// Скрываем правую часть управления dat.gui
+			const rightPart = canvasController.domElement.querySelector('.c') || canvasController.domElement.querySelector('.widget');
+			if (rightPart) rightPart.style.display = 'none';
+
+			// Растягиваем текстовый блок на 100% ширины папки
+			const labelPart = canvasController.domElement.querySelector('div');
+			if (labelPart) {
+				labelPart.style.width = '100%';
+				labelPart.style.float = 'none';
+			}
+
+			// 2. Создаем HTML-холст и встраиваем его внутрь контроллера
+			const canvas = document.createElement('canvas');
+
+			// 4. Настраиваем сам контейнер строки, чтобы холст встал ровно по левому краю
+			canvasController.domElement.style.width = '100%';
+			canvasController.domElement.style.padding = '0';
+			canvasController.domElement.style.margin = '0';
+
+			// 5. Вставляем холст напрямую в корневой элемент контроллера (вместо labelPart)
+			canvasController.domElement.appendChild(canvas);
+
+			// Убедимся, что у самого холста сброшены внешние отступы
+			canvas.style.width = '100%';
+			canvas.style.marginLeft = '0';
+			canvas.style.padding = '0';
+			canvas.style.display = 'block'; // Предотвращаем лишние нижние отступы (inline-gap)
+			canvas.style.pointerEvents = 'auto'; // Возвращаем мышь холсту для интерактива
+
+			// =========================================================================
+			// 6. СОЗДАНИЕ ТУЛТИПА (ВСПЛЫВАЮЩЕГО ОКНА) ДЛЯ КУРСОРA
+			// =========================================================================
+			const tooltip = document.createElement('div');
+			tooltip.style.position = 'fixed';
+			tooltip.style.display = 'none';
+			tooltip.style.padding = '4px 8px';
+			tooltip.style.background = 'rgba(0, 0, 0, 0.85)';
+			tooltip.style.color = '#fff';
+			tooltip.style.border = '1px solid #555';
+			tooltip.style.borderRadius = '4px';
+			tooltip.style.fontFamily = 'sans-serif';
+			tooltip.style.fontSize = '11px';
+			tooltip.style.lineHeight = '1.3';
+			tooltip.style.pointerEvents = 'none'; // Пропускаем клики сквозь тултип
+			tooltip.style.zIndex = '10000';
+			tooltip.style.boxShadow = '0px 2px 6px rgba(0,0,0,0.5)';
+			document.body.appendChild(tooltip);
+
+			canvas.addEventListener('mousemove', (e) => {
+				if (!aTomsonAnalysisRes || aTomsonAnalysisRes.length === 0) return;
+
+				const rect = canvas.getBoundingClientRect();
+				const mouseX = e.clientX - rect.left;
+
+				// Ограничения отрисовки из функции drawAnalysisGraph
+				const paddingLeft = 15;
+				const paddingRight = 25;
+				const graphWidth = rect.width - (paddingLeft + paddingRight);
+
+				if (graphWidth <= 0) return;
+
+				// Вычисляем индекс timeId по X координате курсора
+				let index = Math.round(((mouseX - paddingLeft) / graphWidth) * (aTomsonAnalysisRes.length - 1));
+
+				// Ограничиваем индекс диапазоном массива [0, aTomsonAnalysisRes.length - 1]
+				index = Math.max(0, Math.min(index, aTomsonAnalysisRes.length - 1));
+
+				const itemData = aTomsonAnalysisRes[index];
+				if (!itemData || itemData[displayProperty] === undefined) {
+					tooltip.style.display = 'none';
+					return;
+				}
+
+				// Формируем текст тултипа
+				let text = `<b>timeId:</b> ${index}`;//<br/><b>${displayProperty}:</b> ${valStr}`;
+
+				Object.keys(itemData).forEach(key => {
+					if (key === 'totalEnergyPercent') return;
+					const val = itemData[key];
+					const valStr = typeof val === 'number' ? val.toFixed(4) : val;
+					text += `<br/><b>${key}:</b> ${valStr}`;
+					if (key === 'totalEnergy' && typeof val === 'number') {
+						text += getTotalEnergyPercent(val);
+					}
+				});
+
+				tooltip.innerHTML = text;
+				tooltip.style.display = 'block';
+
+				// ПОЗИЦИОНИРОВАНИЕ СЛЕВА ОТ МЫШКИ:
+				const tooltipWidth = tooltip.offsetWidth;
+				tooltip.style.left = (e.clientX - tooltipWidth - 12) + 'px';
+				tooltip.style.top = (e.clientY + 12) + 'px';
+			});
+
+			canvas.addEventListener('mouseleave', () => {
+				tooltip.style.display = 'none';
+			});
+			// =========================================================================
+
+			// 4. ФУНКЦИЯ ИЗМЕНЕНИЯ ВЫСОТЫ ИЗ ПРОГРАММЫ
+			let currentTargetHeight = 150;
+
+			function setGraphHeight(newHeightPx) {
+				currentTargetHeight = newHeightPx;
+
+				const rowElement = canvasController.domElement.closest('li') || canvasController.domElement;
+				if (rowElement) {
+					rowElement.style.height = 'auto';
+					rowElement.style.lineHeight = 'normal';
+				}
+
+				canvasController.domElement.style.height = currentTargetHeight + 'px';
+				canvas.style.height = currentTargetHeight + 'px';
+
+				drawAnalysisGraph(aTomsonAnalysisRes, displayProperty, canvas, false);
+			}
+
+			// 6. АВТОПДСТРОЙКА ПРИ РАСТЯГИВАНИИ МЫШКОЙ (ResizeObserver)
+			const resizeObserver = new ResizeObserver((entries) => {
+				for (let entry of entries) {
+					const newWidth = entry.contentRect.width;
+
+					if (newWidth > 0) {
+						drawAnalysisGraph(aTomsonAnalysisRes, displayProperty, canvas, false);
+					}
+
+				}
+			});
+
+			// Запускаем отслеживание для контейнера нашего контроллера
+			resizeObserver.observe(canvasController.domElement);
+
+			// Задаем начальную высоту, например, 150px
+			setGraphHeight(150);
+
+			graphFolderControllers.push(canvasController);
+		}
+		Object.keys(aTomsonAnalysisRes[0]).forEach(key => {
+			createGraphController(key);
+		});
+	}
+	new WebGPUTA(classSettings, createGraph).compute(computeCPU,// classSettings.compute,
 		{
 			config : {
 				pointsPerStep: anglesLength,//Количество точек для шага проигрывателя.
@@ -407,189 +593,8 @@ export async function graphFolderChild(folder, classSettings, textController, ti
 		}
 	}
 */
-console.error('Under constraction')
-//return;
-	// ==== Отладочный вывод aTomsonAnalysisRes построчно ====
-	if (classSettings.debug && classSettings.debug.log) {
-		console.log('=== aTomsonAnalysisRes (per timeId) ===');
-		for (let t = 0; t < marks; t++) {
-			console.log(`[timeId=${t}]`, aTomsonAnalysisRes[t]);
-		}
-		console.log('=== end aTomsonAnalysisRes ===');
-	}
-	// ====
-
-	if (textController) dislayEl(textController, 'none');
-	if (timeIdController) dislayEl(timeIdController, 'none');
-
-	const createGraphController = (displayProperty) => {
-		if (displayProperty === 'totalEnergyPercent') return;//вместо этого используется totalEnergy
-		if (createLabel) {
-			const info = aTomsonAnalysisRes[aTomsonAnalysisRes.length - 1][displayProperty];
-			const labelController = createLabel(sTimeID);
-			const lang = localization(classSettings.settings.options.getLanguageCode());
-			let title;
-			switch (displayProperty) {
-				case 'totalEnergy': title = lang.totalEnergyPercent; break;
-				case 'deviationPercent': title = lang.deviationPercent; break;
-				case 'meanD': title = lang.meanD; break;
-				case 'stdDev': title = lang.stdDev; break;
-				case 'variance': title = lang.variance; break;
-				default: console.error(sThomsonAnalysisHSphere + ' createGraphController: Invalid displayProperty: ' + displayProperty);
-			}
-			dat.controllerNameAndTitle(labelController, displayProperty + ': ' + info.toFixed(4) + (displayProperty === 'totalEnergy' ? getTotalEnergyPercent(info) : ''), title);
-		}
-
-		// 1. Создаем пустой контроллер-контейнер (привязываем к пустой функции)
-		const dummyObj = {};
-		dummyObj[displayProperty] = function () { };
-		const canvasController = folder.add(dummyObj, displayProperty);
-		canvasController.name('');
-
-		// Отключаем клики по самой строке GUI, чтобы не триггерить "кнопку"
-		canvasController.domElement.style.pointerEvents = 'none';
-
-		// Скрываем правую часть управления dat.gui
-		const rightPart = canvasController.domElement.querySelector('.c') || canvasController.domElement.querySelector('.widget');
-		if (rightPart) rightPart.style.display = 'none';
-
-		// Растягиваем текстовый блок на 100% ширины папки
-		const labelPart = canvasController.domElement.querySelector('div');
-		if (labelPart) {
-			labelPart.style.width = '100%';
-			labelPart.style.float = 'none';
-		}
-
-		// 2. Создаем HTML-холст и встраиваем его внутрь контроллера
-		const canvas = document.createElement('canvas');
-
-		// 4. Настраиваем сам контейнер строки, чтобы холст встал ровно по левому краю
-		canvasController.domElement.style.width = '100%';
-		canvasController.domElement.style.padding = '0';
-		canvasController.domElement.style.margin = '0';
-
-		// 5. Вставляем холст напрямую в корневой элемент контроллера (вместо labelPart)
-		canvasController.domElement.appendChild(canvas);
-
-		// Убедимся, что у самого холста сброшены внешние отступы
-		canvas.style.width = '100%';
-		canvas.style.marginLeft = '0';
-		canvas.style.padding = '0';
-		canvas.style.display = 'block'; // Предотвращаем лишние нижние отступы (inline-gap)
-		canvas.style.pointerEvents = 'auto'; // Возвращаем мышь холсту для интерактива
-
-		// =========================================================================
-		// 6. СОЗДАНИЕ ТУЛТИПА (ВСПЛЫВАЮЩЕГО ОКНА) ДЛЯ КУРСОРA
-		// =========================================================================
-		const tooltip = document.createElement('div');
-		tooltip.style.position = 'fixed';
-		tooltip.style.display = 'none';
-		tooltip.style.padding = '4px 8px';
-		tooltip.style.background = 'rgba(0, 0, 0, 0.85)';
-		tooltip.style.color = '#fff';
-		tooltip.style.border = '1px solid #555';
-		tooltip.style.borderRadius = '4px';
-		tooltip.style.fontFamily = 'sans-serif';
-		tooltip.style.fontSize = '11px';
-		tooltip.style.lineHeight = '1.3';
-		tooltip.style.pointerEvents = 'none'; // Пропускаем клики сквозь тултип
-		tooltip.style.zIndex = '10000';
-		tooltip.style.boxShadow = '0px 2px 6px rgba(0,0,0,0.5)';
-		document.body.appendChild(tooltip);
-
-		canvas.addEventListener('mousemove', (e) => {
-			if (!aTomsonAnalysisRes || aTomsonAnalysisRes.length === 0) return;
-
-			const rect = canvas.getBoundingClientRect();
-			const mouseX = e.clientX - rect.left;
-
-			// Ограничения отрисовки из функции drawAnalysisGraph
-			const paddingLeft = 15;
-			const paddingRight = 25;
-			const graphWidth = rect.width - (paddingLeft + paddingRight);
-
-			if (graphWidth <= 0) return;
-
-			// Вычисляем индекс timeId по X координате курсора
-			let index = Math.round(((mouseX - paddingLeft) / graphWidth) * (aTomsonAnalysisRes.length - 1));
-
-			// Ограничиваем индекс диапазоном массива [0, aTomsonAnalysisRes.length - 1]
-			index = Math.max(0, Math.min(index, aTomsonAnalysisRes.length - 1));
-
-			const itemData = aTomsonAnalysisRes[index];
-			if (!itemData || itemData[displayProperty] === undefined) {
-				tooltip.style.display = 'none';
-				return;
-			}
-
-			// Формируем текст тултипа
-			let text = `<b>timeId:</b> ${index}`;//<br/><b>${displayProperty}:</b> ${valStr}`;
-
-			Object.keys(itemData).forEach(key => {
-				if (key === 'totalEnergyPercent') return;
-				const val = itemData[key];
-				const valStr = typeof val === 'number' ? val.toFixed(4) : val;
-				text += `<br/><b>${key}:</b> ${valStr}`;
-				if (key === 'totalEnergy' && typeof val === 'number') {
-					text += getTotalEnergyPercent(val);
-				}
-			});
-
-			tooltip.innerHTML = text;
-			tooltip.style.display = 'block';
-
-			// ПОЗИЦИОНИРОВАНИЕ СЛЕВА ОТ МЫШКИ:
-			const tooltipWidth = tooltip.offsetWidth;
-			tooltip.style.left = (e.clientX - tooltipWidth - 12) + 'px';
-			tooltip.style.top = (e.clientY + 12) + 'px';
-		});
-
-		canvas.addEventListener('mouseleave', () => {
-			tooltip.style.display = 'none';
-		});
-		// =========================================================================
-
-		// 4. ФУНКЦИЯ ИЗМЕНЕНИЯ ВЫСОТЫ ИЗ ПРОГРАММЫ
-		let currentTargetHeight = 150;
-
-		function setGraphHeight(newHeightPx) {
-			currentTargetHeight = newHeightPx;
-
-			const rowElement = canvasController.domElement.closest('li') || canvasController.domElement;
-			if (rowElement) {
-				rowElement.style.height = 'auto';
-				rowElement.style.lineHeight = 'normal';
-			}
-
-			canvasController.domElement.style.height = currentTargetHeight + 'px';
-			canvas.style.height = currentTargetHeight + 'px';
-
-			drawAnalysisGraph(aTomsonAnalysisRes, displayProperty, canvas, false);
-		}
-
-		// 6. АВТОПДСТРОЙКА ПРИ РАСТЯГИВАНИИ МЫШКОЙ (ResizeObserver)
-		const resizeObserver = new ResizeObserver((entries) => {
-			for (let entry of entries) {
-				const newWidth = entry.contentRect.width;
-
-				if (newWidth > 0) {
-					drawAnalysisGraph(aTomsonAnalysisRes, displayProperty, canvas, false);
-				}
-
-			}
-		});
-
-		// Запускаем отслеживание для контейнера нашего контроллера
-		resizeObserver.observe(canvasController.domElement);
-
-		// Задаем начальную высоту, например, 150px
-		setGraphHeight(150);
-
-		graphFolderControllers.push(canvasController);
-	}
-	Object.keys(aTomsonAnalysisRes[0]).forEach(key => {
-		createGraphController(key);
-	});
+//console.error('Under constraction')
+	//return;
 }
 
 /**
@@ -718,7 +723,7 @@ export async function evaluateDistribution(stepIndex = 0, paramsNew) {
 	} else return sourceObj;
 }
 
-//function getTotalEnergyPercent(currentVal) { return ` of ${totalEnergyMin.toFixed(4)} ${(((currentVal - totalEnergyMin) / totalEnergyMin) * 100).toFixed(1)}%` }
+function getTotalEnergyPercent(currentVal) { return ` of ${totalEnergyMin.toFixed(4)} ${(((currentVal - totalEnergyMin) / totalEnergyMin) * 100).toFixed(1)}%` }
 
 function drawAnalysisGraph(aAnalysis, propertyKey, canvas, boText = true) {
 	canvas ||= document.getElementById('analysisGraphCanvas');
