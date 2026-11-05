@@ -18,19 +18,13 @@ import GPUEngine from './GPUEngine.js'
 class GPUThomsonEngine extends GPUEngine {
 	constructor (){
 		super();
-		let count, currentStep,
-			radiusPrev, radiusStep;//, gpuParamsBuffer, gpuPositionsBuffer;
+		let count, currentStep, radiusPrev, radiusStep;
 		this.onmessageStartCompute = () => {
 			count = this.config.totalSteps * this.config.pointsPerStep;
 			document.getElementById('pointsPerStep').innerText = this.config.pointsPerStep;
 			document.getElementById('totalStepsDisplay').innerText = this.config.totalSteps;
 			currentStep = 1;
 		}
-/*		
-		this.onmessageBinaryData = (event) => {
-			positionArray = new Float32Array(event.data);
-		}
-*/			
 		this.mainDisconnected = () => {
 			if (this.config) currentStep = this.config.totalSteps - 1;
 		}
@@ -44,53 +38,6 @@ class GPUThomsonEngine extends GPUEngine {
 					this.setState(error, true);
 			}
 		}
-/*
-		this.onmessage = async (event) => {
-			if (typeof event.data === 'string') {
-				const data = JSON.parse(event.data);
-				switch (data.type) {
-					case "START_COMPUTE":
-						this.config = data;
-						count = this.config.totalSteps * this.config.pointsPerStep;
-						document.getElementById('pointsPerStep').innerText = this.config.pointsPerStep;
-						document.getElementById('totalStepsDisplay').innerText = this.config.totalSteps;
-						this.elStatus.innerText = "CONFIG RECEIVED";
-						const clientText = event.origin || "Localhost";
-						this.elClient.innerText = clientText;
-					
-						const stateText = document.getElementById('stateText');
-						stateText.innerHTML = 'Main page ' + clientText;
-						stateText.style.color = "#00ffcc";
-					
-						currentStep = 1;
-						this.log('Start compute. Source: ' + clientText);
-						break;
-					case "MAIN_DISCONNECTED":
-						this.elStatus.innerText = "IDLE";
-						if (this.config) currentStep = this.config.totalSteps - 1;
-						this.log('Main page disconnected.');
-						break;
-					case "PROGRESS":
-						progressStep(data.currentStep);
-						break;
-					default:
-						const error = 'socket message: Invalid data.type: ' + data.type;
-						this.setState(error, true);
-				}
-			} else {
-				// Двоичные данные
-				this.elStatus.innerText = "Binary data received";
-				positionArray = new Float32Array(event.data);
-				try {
-					await this.runAuto();
-				} catch (e) {
-					this.elStatus.innerText = "ERROR";
-					this.cleanupGpuResources();
-					this.setState(this.sError + e.message, true);
-				}
-			}
-		}
-*/
 		this.engineName = () => { return 'Thomson problen for hypersphere'; }
 		this.type = () => { return 'gpu'; }
 		this.addElements = () => { return `
@@ -98,16 +45,7 @@ class GPUThomsonEngine extends GPUEngine {
 			<div>Points Per Step: <span id="pointsPerStep">---</span></div>
 		`;
 		}
-//		this.requiredPosBufSize = () => { return this.config.totalSteps * this.config.pointsPerStep * 16; }
-		this.deviceError = () => {
-			// Принудительно останавливаем циклы в runAuto (сбрасываем счетчик шагов)
-/*не помню почему вставил это условие
-			if (window.config) {
-				currentStep = this.config.totalSteps;
-			}
-*/			
-			currentStep = this.config.totalSteps;
-		}
+		this.deviceError = () => { currentStep = this.config.totalSteps; }
 		this.createShaderCode = () => {
 			//for random function in WebGPU
 
@@ -330,14 +268,6 @@ class GPUThomsonEngine extends GPUEngine {
 		this.paramsBufferSize = 32; // 8 x 4 bytes (aligned)
 		this.createEntries = () => {
 			const itemSize = 4; // 4D: x, y, z, w. и размер цвета
-/*
-			// Буфер позиций
-			gpuPositionsBuffer = this.device.createBuffer({
-				size: this.positionArray.byteLength,
-				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
-			});
-			this.device.queue.writeBuffer(gpuPositionsBuffer, 0, this.positionArray);
-*/			
 			const gpuBuffers = this.gpuBuffers;
 
 			// Буфер скоростей
@@ -347,15 +277,6 @@ class GPUThomsonEngine extends GPUEngine {
 				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
 			});
 			this.device.queue.writeBuffer(gpuBuffers.gpuVelocitiesBuffer, 0, velocitiesArray);
-/*
-			// Uniform-буфер для параметров
-			gpuParamsBuffer = this.device.createBuffer({
-				size: paramsBufferSize,
-				usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-			});
-*/
-			// Создаем буфер для одного числа u32. Этот буфер используется для генератора случайных чисел в GPU.
-			//timeBuffer = this.device.createBuffer({ size: 4, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
 
 			//Создание буфера случайных чисел, которые затем будут использоваться в WebGPU вместо герерации случайного числа в WebGPU
 
@@ -410,7 +331,6 @@ class GPUThomsonEngine extends GPUEngine {
 		}
 		const progressStep = async (currentStepNew) => {
 			currentStep = currentStepNew != undefined ? currentStepNew : currentStep;
-//			const _this = this;
 			const updateDisplay = () => {
 				document.getElementById('stepCounter').innerText = currentStep;
 				document.getElementById('radVal').innerText = radiusPrev.toFixed(2);
@@ -457,7 +377,7 @@ class GPUThomsonEngine extends GPUEngine {
 				pass.end();
 				this.device.queue.submit([encoder.finish()]);
 				updateDisplay();
-				radiusPrev = newRadius;// currentStep++;
+				radiusPrev = newRadius;
 				return;
 			}
 

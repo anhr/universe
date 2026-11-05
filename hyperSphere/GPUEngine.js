@@ -16,7 +16,6 @@
 const sGPUEngine = 'GPUEngine';
 class GPUEngine {
 	constructor() {
-//		const _this = this;
 		this.engineStatusElement = () => { return `
 	<div class="engine-status">
 		<h3>ENGINE: ` + this.engineName() + `</h3>
@@ -96,7 +95,6 @@ class GPUEngine {
 
 					// 3. Вызываем метод без раздражающего предупреждения
 					const high = await navigator.gpu.requestAdapter(adapterOptions);
-	//					const high = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
 					if (high) availableAdapters.push(high);
 					else throw new Error('No available adapters');
 				}
@@ -186,18 +184,12 @@ class GPUEngine {
 			// 4. Прием сообщений
 			this.socket.onmessage = async (event) => {
 				try {
-//					this.onmessage(event);
 					if (typeof event.data === 'string') {
 						const data = JSON.parse(event.data);
 						switch (data.type) {
 							case "START_COMPUTE":
 								this.config = data;
 								if (this.onmessageStartCompute) this.onmessageStartCompute();
-/*								
-								count = config.totalSteps * config.pointsPerStep;
-								document.getElementById('pointsPerStep').innerText = config.pointsPerStep;
-								document.getElementById('totalStepsDisplay').innerText = config.totalSteps;
-*/								
 								this.elStatus.innerText = "CONFIG RECEIVED";
 								const clientText = event.origin || "Localhost";
 								this.elClient.innerText = clientText;
@@ -211,14 +203,8 @@ class GPUEngine {
 							case "MAIN_DISCONNECTED":
 								this.elStatus.innerText = "IDLE";
 								if (this.mainDisconnected) this.mainDisconnected()
-//								if (this.config) currentStep = this.config.totalSteps - 1;
 								this.log('Main page disconnected.');
 								break;
-/*								
-							case "PROGRESS":
-								progressStep(data.currentStep);
-								break;
-*/								
 							case "RUN":
 								try {
 									await this.runAuto(); // runAuto уже async
@@ -238,17 +224,6 @@ class GPUEngine {
 					} else {
 						// Двоичные данные
 						this.elStatus.innerText = "Binary data received";
-//						if (this.onmessageBinaryData) this.onmessageBinaryData(event);
-/*						
-						this.positionArray = new Float32Array(event.data);
-						try {
-							await this.runAuto();
-						} catch (e) {
-							this.elStatus.innerText = "ERROR";
-							this.cleanupGpuResources();
-							this.setState(this.sError + e.message, true);
-						}
-*/
 						const view = new DataView(event.data);
 						const tag = new TextDecoder().decode(new Uint8Array(event.data, 0, 4));
 						const payload = new Float32Array(event.data, 4); // offset 4 байта
@@ -298,12 +273,6 @@ class GPUEngine {
 		}
 		// Удобная функция очистки всех используемых буферов/ресурсов
 		this.cleanupGpuResources = () => {
-//			destroyIfBuffer(velBuf);
-//			destroyIfBuffer(debugBuf);
-//			destroyIfBuffer(messageArray);
-//			destroyIfBuffer(timeBuffer);
-
-//			velBuf = debugBuf = messageArray = timeBuffer = null;
 			this.bindGroup = this.pipeline = null;
 
 			try {
@@ -331,16 +300,12 @@ class GPUEngine {
 
 			//Сейчас использую универсальный перехватчик во время исполнения
 			// 2. Извлекаем ошибку валидации
+			// временно отключено, чтобы проверить глобальный перехватчик
 			const validationError = await this.device.popErrorScope();
 			if (validationError) {
 				// Если буфер превысил лимит, мы попадем сюда. Прерываем выполнение!
 				recommendationThrow(validationError.message.replace(/\n/g, '<br>'));
 			}
-/*
-			this.radiusPrev = this.config.baseRadius;
-			this.radiusStep = (this.config.radiusMax - this.config.baseRadius) / (this.config.totalSteps - 1);
-			document.getElementById('totalStepsDisplay').innerText = this.config.totalSteps;
-*/			
 			this.gpuStart();//currentStep);
 		};
 		const recommendationThrow = (recommendation) => {
@@ -371,7 +336,6 @@ class GPUEngine {
 			//Выделяем необходимый размер памяти
 			// 1. Рассчитываем точный объем в байтах для самой тяжелой структуры (posBuf)
 			const requiredPosBufSize = this.config.totalSteps * this.config.pointsPerStep * 16;
-//			const requiredPosBufSize = this.requiredPosBufSize();
 
 			// Базовые лимиты WebGPU по умолчанию
 			const DEFAULT_MAX_BUFFER = 268435456;      // 256 MB
@@ -404,15 +368,9 @@ class GPUEngine {
 			this.device = await adapter.requestDevice(deviceDescriptor);
 
 			// НАЗНАЧАЕМ ГЛОБАЛЬНЫЙ ПЕРЕХВАТЧИК ОШИБОК СРАЗУ ПОСЛЕ СОЗДАНИЯ DEVICE
-			this.device.onuncaughterror = (event) => {
+			this.device.addEventListener('uncapturederror', (event) => {
 				console.error(sGPUEngine + ": Uncaught WebGPU error: " + event.error.message);
 
-/*				
-				// Принудительно останавливаем циклы в runAuto (сбрасываем счетчик шагов)
-				if (window.config) {
-					currentStep = this.config.totalSteps;
-				}
-*/
 				this.deviceError();
 
 				// Переводим текст ошибки, заменяя \n на <br> для вывода пользователю
@@ -421,7 +379,20 @@ class GPUEngine {
 
 				// Освобождаем ресурсы, чтобы очистить видеокарту
 				this.cleanupGpuResources();
-			};
+			});
+
+			/*
+			// Временный тестовый код: намеренно создаём буфер, превышающий лимит устройства что бы сработал ГЛОБАЛЬНЫЙ ПЕРЕХВАТЧИК ОШИБОК
+			// Еще надо временно закомментировать this.device.pushErrorScope('validation'); и const validationError = await this.device.popErrorScope();
+			try {
+				this.device.createBuffer({
+					size: 999999999999, // невероятно большое число, вызовет ошибку валидации
+					usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+				});
+			} catch (e) {
+				// Синхронные исключения не сработают, нужны асинхронные ошибки валидации
+			}
+			*/
 
 			// КРИТИЧЕСКИЙ ДОБАВОК: Перехватчик аппаратного краша / потери устройства
 			this.device.lost.then((info) => {
@@ -433,10 +404,6 @@ class GPUEngine {
 
 				console.warn(`WebGPU Device was lost! Reason: ${info.reason}, Message: ${info.message}`);
 
-/*				
-				// Принудительно останавливаем циклы в runAuto
-				currentStep = this.config.totalSteps;
-*/				
 				this.deviceError();
 
 				let userMessage = `CRITICAL ERROR: GPU Device Lost.`;
@@ -463,225 +430,6 @@ class GPUEngine {
 				this.cleanupGpuResources();
 			});
 			const dynamicShaderCode = this.createShaderCode();
-/*
-			//for random function in WebGPU
-
-			let random_gpu, ramdom_param, ramdom_param2;
-			switch (config.RANDOM_POINTS) {
-				case 0:
-					ramdom_param = ``;
-					ramdom_param2 = ``;
-					random_gpu = `
-							fn random() -> f32 { return ${config.PSEUDO_RANDOM}; }`
-					break;
-				case 1:
-					//Хеширование (Hashing). Простой генератор псевдослучайных чисел (PCG). Permuted Congruential Generator (Перемешанный конгруэнтный генератор).
-					// Функция принимает указатель на состояние и обновляет его внутри
-					ramdom_param = `seed: ptr < function, u32 >`;
-					ramdom_param2 = `seed`;
-					random_gpu =
-						`
-							fn random(${ramdom_param}) -> f32 {
-								// 1. Извлекаем текущее значение, перемешиваем его
-								var x = *seed;
-								x = ((x >> 16u) ^ x) * 0x45d9f3bu;
-								x = ((x >> 16u) ^ x) * 0x45d9f3bu;
-								x = (x >> 16u) ^ x;
-
-								// 2. Сохраняем обновленное состояние обратно
-								*seed = x;
-
-								// 3. Возвращаем нормализованное число 0.0 - 1.0
-								return f32(x) / f32(0xffffffffu);
-							}`
-					break;
-				case 2:
-					ramdom_param = `pointIndex: u32, counter: ptr<function, u32>`;
-					ramdom_param2 = `pointIndex, counter`;
-					random_gpu = `
-							fn random(${ramdom_param}) -> f32 {
-								let poolSize = arrayLength(&randomPool);
-
-								// 1. Берем текущее значение счетчика
-								let currentOffset = *counter;
-
-								// 2. Вычисляем индекс (смешиваем индекс точки, время и текущий offset)
-								// Используем множители, чтобы "прыжки" по таблице были более хаотичными
-								let idx = (pointIndex + uTime + currentOffset * 13u) % poolSize;
-
-								// 3. Увеличиваем счетчик для следующего вызова
-								*counter = currentOffset + 1u;
-								return randomPool[idx];
-							}`
-					break;
-				case 3:
-					//Метод Weyl Sequence (последовательность Вейля) или просто линейным конгруэнтным методом поверх хеша.
-					ramdom_param = `state: ptr<function, f32>`;
-					ramdom_param2 = `state`;
-					random_gpu = `
-								// Качественный хеш для инициализации (выполняется 1 раз)
-								fn hash_u32(n: u32) -> u32 {
-									var x = n;
-									x = ((x >> 16u) ^ x) * 0x45d9f3bu;
-									x = ((x >> 16u) ^ x) * 0x45d9f3bu;
-									x = (x >> 16u) ^ x;
-									return x;
-								}
-
-								// Сверхбыстрая функция random (выполняется многократно)
-								// Используем f32 для работы с дробной частью через fract
-								fn random(${ramdom_param}) -> f32 {
-									// Константа: иррациональное число (например, золотое сечение или корень из 2)
-									// Это гарантирует, что дробная часть будет меняться максимально хаотично
-									let phi: f32 = 0.61803398875;
-
-									// Быстрая арифметика: прибавляем константу
-									// Это и есть последовательность Вейля: x = fract(x + k)
-									*state = fract(*state + phi);
-
-									return *state;
-								}`
-					break;
-				default: console.error(sGPUEngine + ': Invalid RANDOM_POINTS = ' + RANDOM_POINTS);
-			}
-			let hyperbola_gpu;
-			const calculateHyperbola = (p) => {
-
-				// Крайние случаи
-				if (p === 0) {
-					// Прямая линия: y = x (через точки (0,0) и (π,π))
-					hyperbola_gpu = `
-								fn hyperbola_gpu(arc: f32, i: u32) -> f32 {
-									return arc;
-								}`;
-					return;// (arc) => { return arc; }
-				}
-
-				if (p === 1) {
-					// Два отрезка: вертикальный и горизонтальный
-					hyperbola_gpu = `
-								fn hyperbola_gpu(arc: f32, i: u32) -> f32 {
-									if (arc == 0) { return 0.0; }
-									return PI;
-								}`;
-					return;
-				}
-
-				// Общий случай: гипербола вида y = a/(x - h) + k
-				// У нас есть две точки: (0,0) и (π,π)
-				// и дополнительное условие: при x = 0, y = 0
-				// при x = π, y = π
-
-				// Из точки (0,0): 0 = a/(0 - h) + k => k = a/h
-
-				// Из точки (π,π): π = a/(π - h) + a/h
-
-				// Вводим параметр p для контроля кривизны
-				// Будем использовать p для определения положения асимптоты h
-				// При p -> 0: h -> -∞ (гипербола вырождается в прямую)
-				// При p -> 1: h -> 0 (гипербола вырождается в вертикальную линию)
-
-				// Свяжем h с p: h = - (1-p)/p * C, где C некоторая константа
-				// Чтобы при p=1, h=0; при p=0, h=-∞
-				// Возьмем C = π/2 для хорошей визуализации
-
-				const C = π / 2;
-
-				// Избегаем деления на ноль при p=0 (уже обработано выше)
-				let h;
-				if (p < 0.001) {
-					// Для очень малых p используем линейную аппроксимацию
-					h = -C / p;
-				} else {
-					h = -C * (1 - p) / p;
-				}
-
-				// Вычисляем a из уравнения π = a/(π - h) + a/h
-				// a = π / (1/(π - h) + 1/h) = π / ((h + π - h)/(h(π - h))) = π * h(π - h) / π = h(π - h)
-				// Упростим: a = h * (PI - h)
-
-				const a = h * (π - h);
-
-				// Вычисляем к
-				const k = a / h;
-				hyperbola_gpu = `
-							fn hyperbola_gpu(x: f32, i: u32) -> f32 {
-								if (abs(x - (${h})) < 0.001) {
-									messageBuffer.errorCode = 1u; // Код ошибки 1 = "hyperbola_gpu: Under construction"
-									messageBuffer.i = i;
-									messageBuffer.value = x;
-									return PI;
-								}
-								return ${a} / (x - (${h})) + (${k});
-							}`;
-				return
-
-			}
-			calculateHyperbola(config.p);
-
-			let bindingId = 0;
-
-			// ГЕНЕРАЦИЯ ШЕЙДЕРА (МЕТАПРОГРАММИРОВАНИЕ)
-			const dynamicShaderCode = `
-					struct Params {
-						eta : f32,
-						beta : f32,
-						rRatio : f32,
-						nextR : f32,
-						timeId : u32,
-						positionBlockLength : u32,
-					};
-
-					@group(0) @binding(${bindingId++}) var<uniform> params : Params;
-					@group(0) @binding(${bindingId++}) var<storage, read_write> positions : array<vec4<f32>>;
-					@group(0) @binding(${bindingId++}) var<storage, read_write> velocities : array<vec4<f32>>;
-
-					@compute @workgroup_size(64)
-					fn main(@builtin(global_invocation_id) global_id : vec3<u32>) {
-						let i = global_id.x;
-						if (i >= params.positionBlockLength) {
-							return;
-						}
-
-						// 1. Масштабирование скорости
-						var v = velocities[i] * params.rRatio;
-
-						// 2. Вычисление силы отталкивания
-						let srcOffset = (params.timeId - 1u) * params.positionBlockLength + i;
-						let pi = positions[srcOffset];
-						var force = vec4<f32>(0.0, 0.0, 0.0, 0.0);
-
-						for (var j : u32 = 0u; j < params.positionBlockLength; j = j + 1u) {
-							if (i == j) {
-								continue;
-							}
-
-							let jOffset = (params.timeId - 1u) * params.positionBlockLength + j;
-							let pj = positions[jOffset];
-
-							let d = pi - pj;
-							let d2 = dot(d, d);
-							let dist = sqrt(d2);
-
-							if (dist > 0.0) {
-								let m = 1.0 / (d2 * dist);
-								force = force + d * m;
-							}
-						}
-
-						// 3. Обновление скорости (Momentum)
-						v = params.beta * v + params.eta * force;
-						velocities[i] = v;
-
-						// 4. Обновление позиции и проекция на гиперсферу
-						let updated = pi + v;
-						let mag = length(updated);
-
-						let destOffset = params.timeId * params.positionBlockLength + i;
-						positions[destOffset] = (updated / mag) * params.nextR;
-					}
-				`;
-*/
 			this.pipeline = this.device.createComputePipeline({
 				layout: 'auto', compute: { module: this.device.createShaderModule({ code: dynamicShaderCode }), entryPoint: 'main' }
 			});
@@ -699,7 +447,7 @@ class GPUEngine {
 
 			//Сейчас использую универсальный перехватчик во время исполнения
 			// 1. Включаем перехват ВАЛИДАЦИОННЫХ ошибок (превышение лимитов — это валидация)
-			this.device.pushErrorScope('validation');
+			this.device.pushErrorScope('validation');// временно отключено, чтобы проверить глобальный перехватчик
 
 			this.gpuBuffers = {};
 			
@@ -718,77 +466,6 @@ class GPUEngine {
 			});
 			
 			this.createEntries();
-/*
-			// Буфер позиций
-			gpuPositionsBuffer = device.createBuffer({
-				size: positionArray.byteLength,
-				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
-			});
-			device.queue.writeBuffer(gpuPositionsBuffer, 0, positionArray);
-
-			// Буфер скоростей
-			const velocitiesArray = new Float32Array(config.pointsPerStep * itemSize);
-			const gpuVelocitiesBuffer = device.createBuffer({
-				size: velocitiesArray.byteLength,
-				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-			});
-			device.queue.writeBuffer(gpuVelocitiesBuffer, 0, velocitiesArray);
-
-			// Uniform-буфер для параметров
-			gpuParamsBuffer = device.createBuffer({
-				size: paramsBufferSize,
-				usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-			});
-
-			// Создаем буфер для одного числа u32. Этот буфер используется для генератора случайных чисел в GPU.
-			//timeBuffer = device.createBuffer({ size: 4, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
-
-			//Создание буфера случайных чисел, которые затем будут использоваться в WebGPU вместо герерации случайного числа в WebGPU
-
-			// Функция проверки, является ли число простым
-			function isPrime(n) {
-				for (let i = 2, s = Math.sqrt(n); i <= s; i++) {
-					if (n % i === 0) return false;
-				}
-				return n > 1;
-			}
-
-			// Находим ближайшее простое число к целевому значению
-			function getNearestPrime(target) {
-				let n = Math.floor(target);
-				while (!isPrime(n)) { n++; }
-				return n;
-			}
-
-			let randomBuffer;
-			if (config.RANDOM_POINTS === 2) {
-				// Подготовка данных LUT
-				const totalPoints = config.pointsPerStep * config.totalSteps;; // Ваше текущее число точек
-				// Размер буфера: 25% от количества точек, но не более 4096
-				// Если totalPoints = 5000, то target = 1250. Ближайшее простое будет 1259.
-				const lutSize = getNearestPrime(Math.min(totalPoints * 0.25, 4096));
-
-				const randomData = new Float32Array(lutSize);
-				for (let i = 0; i < lutSize; i++) {
-					randomData[i] = Math.random();
-				}
-
-				// Создание буфера случайныз чисел на GPU
-				randomBuffer = device.createBuffer({
-					size: randomData.byteLength,
-					usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-				});
-				device.queue.writeBuffer(randomBuffer, 0, randomData);
-			}
-			bindingId = 0;
-			const entries = [
-				{ binding: bindingId++, resource: { buffer: gpuParamsBuffer } },
-				{ binding: bindingId++, resource: { buffer: gpuPositionsBuffer } },
-				{ binding: bindingId++, resource: { buffer: gpuVelocitiesBuffer } },
-			]
-			bindGroup = device.createBindGroup({ layout: pipeline.getBindGroupLayout(0), entries: entries });
-//			log("GPU Device Ready");
-*/
 			this.log("GPU Device Ready");
 		}
 		window.addEventListener('beforeunload', () => {
