@@ -26,7 +26,7 @@ import * as fileHandler from '../../../../commonNodeJS/master/fileHandler.js';
 
 const classSettings = {
 	compute: {
-		//isUseCPU: true,
+		isUseCPU: true,
 		//serverAddress: 'ws://localhost:5000/ws',
 		config: {
 
@@ -150,7 +150,7 @@ const classSettings = {
 
 		probabilityDensity: false,
 		middleVertice: false,
-		log: true,//нет значения по умолчанию. Надо явно задавать
+		log: false,//нет значения по умолчанию. Надо явно задавать
 		edges: false,
 		random: () => { return 0.5 },//replacing random vertices with strictly defined vertices.
 
@@ -166,7 +166,7 @@ const classSettings = {
 			//color: 0xffffff,
 			geometry: {
 
-				positionsFileName: 'positions5.bin',
+				//positionsFileName: 'positions5.bin',
 				//Tesseract https://en.wikipedia.org/wiki/Tesseract
 				//Please set indices.edges for tesseract
 				angles: [
@@ -286,7 +286,11 @@ const classSettings = {
 						[Math.PI / 4, Math.PI / 22, -Math.PI / 2],//3
 						[Math.PI / 5, Math.PI / 23, Math.PI],//4
 					],
-						angles: { count: 500, },
+					angles: [
+						[Math.PI / 1.5, Math.PI / 19, Math.PI / 10],//0.
+						[Math.PI / 1.5, Math.PI / 19, Math.PI / 10],//1.
+					],
+						//angles: { count: 500, },
 						//angles: { count: 500000, },//недостаточно памяти при количестве шагов плеера 1000
 						//angles: { count: 124875, },//выделяется максимально возможное количество памяти при шагов плеера 134. ВНИМАНИЕ!!! Использовать с осторожностью. Вебстраница сильно зависает.
 
