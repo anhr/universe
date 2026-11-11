@@ -76,7 +76,7 @@ class Universe
 					//цвета вершин зависит от текущего времени в проигрывателе
 					case 'min': return rRange.min != undefined ? rRange.min : myThreeOptions.playerOptions.min;
 					case 'max': return rRange.max != undefined ? rRange.max : myThreeOptions.playerOptions.max;
-					case 'isColor': return true;
+					case 'isColor': return false;//если тут сделать true, то полярная координата всех точек w  для каждого момента времени будет одинаковая 
 
 				}
 				return rRange[name];
