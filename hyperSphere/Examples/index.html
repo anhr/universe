@@ -35,8 +35,10 @@
 		//if ( HypersphericalUniverse.default ) HypersphericalUniverse = HypersphericalUniverse.default;
 
 		import * as HUniverseParams from '../../../../commonNodeJS/master/HyperSphere/HSphereParams.js'
+		import loadPositions from '../../../../commonNodeJS/master/loadPositions.js'
 
-		await HUniverseParams.loadPositions();
+//		await HUniverseParams.loadPositions();
+		await loadPositions(HUniverseParams.classSettings, HUniverseParams.myThreeOptions);
 		new HypersphericalUniverse(HUniverseParams.classSettings, HUniverseParams.myThreeOptions);
 
 	</script>

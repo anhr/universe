@@ -37,6 +37,7 @@
 		import * as HUniverseParams from '../../../../commonNodeJS/master/HyperSphere/HSphereParams.js'
 		import ND from '../../../../commonNodeJS/master/nD/nD.js';
 		import Position from '../../../../commonNodeJS/master/HyperSphere/position.js'
+		import loadPositions from '../../../../commonNodeJS/master/loadPositions.js'
 
 		const iterationConfig = {
 			steps: 10,//Количество итераций, в ходе которых будет вычисляться гипервселенная с разными настройками
@@ -65,7 +66,8 @@
 		scalesZ.min *= steps; scalesZ.max *= steps; scalesZ.name = 'DAMPING';
 		HUniverseParams.myThreeOptions.scene.scale.z /= steps;
 
-		await HUniverseParams.loadPositions();
+//		await HUniverseParams.loadPositions();
+		await loadPositions(HUniverseParams.classSettings, HUniverseParams.myThreeOptions);
 		const hypersphericalUniverse = new HypersphericalUniverse(HUniverseParams.classSettings, HUniverseParams.myThreeOptions);
 		class IterationProgressBar {
 			constructor() {
