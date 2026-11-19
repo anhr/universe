@@ -497,7 +497,21 @@ class Universe
 								if (!overriddenProperties.verticeAngles) overriddenProperties.verticeAngles = (anglesCur, verticeId) => {
 
 									const guiPoints = settings.guiPoints;
-									return guiPoints.timeAngles[guiPoints.verticeId != undefined ? guiPoints.verticeId : verticeId];
+/*									
+									const timeId = settings.guiPoints ?
+										settings.guiPoints.timeId === undefined ?
+											settings.options.player.getTimeId() :
+											settings.guiPoints.timeId :
+										0;
+									verticeId = (guiPoints.verticeId != undefined ? guiPoints.verticeId : verticeId) - (settings.object.geometry.angles.length * timeId);
+*/										
+									verticeId = guiPoints.verticeId != undefined ? guiPoints.verticeId : verticeId;
+									settings.bufferGeometry.userData.timeId = 0;
+ 									while ((verticeId - settings.object.geometry.angles.length ) >= 0) {
+										settings.bufferGeometry.userData.timeId++;
+										verticeId -= settings.object.geometry.angles.length;
+									}
+									return guiPoints.timeAngles[verticeId];
 									
 								}
 								if (!overriddenProperties.verticeText) overriddenProperties.verticeText = (intersection, text) => {
