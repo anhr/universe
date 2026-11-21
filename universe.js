@@ -102,6 +102,21 @@ class Universe
 
 		if (myThreeOptions.palette === undefined) myThreeOptions.palette = MyThree.ColorPicker.paletteIndexes.rainbow;
 
+		const timeData = (verticeId) => {
+			const settings = classSettings.settings;
+			settings.bufferGeometry.userData.timeId = 0;
+			const anglesLength = settings.object.geometry.angles.length;
+/*			
+			while ((verticeId - settings.object.geometry.angles.length) >= 0) {
+				settings.bufferGeometry.userData.timeId++;
+				verticeId -= anglesLength;
+			}
+			return verticeId;
+*/
+			settings.bufferGeometry.userData.timeId = parseInt(verticeId/anglesLength);
+			return verticeId - settings.bufferGeometry.userData.timeId * anglesLength;
+		}
+
 		new MyThree((scene, options) => {
 
 			let traces, traceVerticeId;
@@ -497,20 +512,14 @@ class Universe
 								if (!overriddenProperties.verticeAngles) overriddenProperties.verticeAngles = (anglesCur, verticeId) => {
 
 									const guiPoints = settings.guiPoints;
+									verticeId = timeData(guiPoints.verticeId != undefined ? guiPoints.verticeId : verticeId);
 /*									
-									const timeId = settings.guiPoints ?
-										settings.guiPoints.timeId === undefined ?
-											settings.options.player.getTimeId() :
-											settings.guiPoints.timeId :
-										0;
-									verticeId = (guiPoints.verticeId != undefined ? guiPoints.verticeId : verticeId) - (settings.object.geometry.angles.length * timeId);
-*/										
-									verticeId = guiPoints.verticeId != undefined ? guiPoints.verticeId : verticeId;
 									settings.bufferGeometry.userData.timeId = 0;
  									while ((verticeId - settings.object.geometry.angles.length ) >= 0) {
 										settings.bufferGeometry.userData.timeId++;
 										verticeId -= settings.object.geometry.angles.length;
 									}
+*/									
 									return guiPoints.timeAngles[verticeId];
 									
 								}
@@ -896,7 +905,17 @@ class Universe
 
 						cTimes = fPoints.add({ Times: lang.notSelected }, 'Times', { [lang.notSelected]: -1 });
 						dat.controllerNameAndTitle(cTimes, lang.time, lang.timeTitle);
-						classSettings.settings.options.dat.gui.cTimes = cTimes;
+						const settings = classSettings.settings;
+						settings.options.dat.gui.cTimes = cTimes;
+						settings.options.dat.gui.setTimeGui = (verticeId) => {
+							verticeId = timeData(verticeId);
+							const option = cTimes.__select[settings.bufferGeometry.userData.timeId + 1];//Добавляем единицу потому что в cTimes первая строка это не выбранное время
+							cTimes.__onChange(settings.bufferGeometry.userData.timeId);
+							option.selected = true;
+							
+							cPoints.__onChange(verticeId);
+							cPoints.__select[verticeId + 1].selected = true;;//Добавляем единицу потому что в cTimes первая строка это не выбранное время
+						}
 
 					}
 
